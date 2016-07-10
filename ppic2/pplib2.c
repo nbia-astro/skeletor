@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <complex.h>
 #include "mpi.h"
 #include "pplib2.h"
       

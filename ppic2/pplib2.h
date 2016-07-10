@@ -1,5 +1,7 @@
 /* header file for pplib2.c */
 
+#include <complex.h>
+
 void cppinit2(int *idproc, int *nvp, int argc, char *argv[]);
 
 void cppexit();

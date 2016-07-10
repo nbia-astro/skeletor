@@ -1,5 +1,7 @@
 /* header file for ppush2.c */
 
+#include <complex.h>
+
 double ranorm();
 
 void cpdicomp2l(float edges[], int *nyp, int *noff, int *nypmx,
