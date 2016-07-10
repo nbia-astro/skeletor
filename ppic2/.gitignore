@@ -1,0 +1,6 @@
+# Executables
+/cppic2
+/fppic2
+
+# Fortran module files
+*.mod
