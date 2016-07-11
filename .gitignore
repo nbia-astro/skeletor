@@ -1,3 +1,10 @@
+# Error file
+/C.2
+
+# Cython byproducts
+/ppic2_wrapper.c
+/ppic2_wrapper.*.so
+
 # Vim swap files
 *.swp
 
