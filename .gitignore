@@ -5,6 +5,9 @@
 /ppic2_wrapper.c
 /ppic2_wrapper.*.so
 
+# Python cache
+__pycache__
+
 # Vim swap files
 *.swp
 
