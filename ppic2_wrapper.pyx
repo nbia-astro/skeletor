@@ -48,6 +48,8 @@ def cppgpush2l(
         float dt, int nx, int ny, int idimp, int npmax, int nxv,
         int nypmx, int idps, int ntmax, int ipbc):
     cdef int ndim = 2
+    # Set the force to zero (this will of course change in the future).
+    # TODO: Pass this array as argument.
     cdef ndarray[float_t, ndim=1] fxy = numpy.zeros(ndim*nxv*nypmx, Float)
     cdef ndarray[int, ndim=1] ihole = numpy.empty(ntmax+1, Int)
     cdef float_t qbm = 0.0
@@ -62,6 +64,8 @@ def cppmove2(
         particle_t[:] particles, float_t[:] edges, int npp,
         int[:] ihole, int ny, int kstrt, int nvp, int idimp,
         int npmax, int idps, int nbmax, int ntmax):
+    # TODO: Allocate these arrays once and for all in the Particle class
+    # and pass them as arguments.
     cdef ndarray[float_t, ndim=1] sbufl = numpy.zeros(idimp*nbmax, Float)
     cdef ndarray[float_t, ndim=1] sbufr = numpy.zeros(idimp*nbmax, Float)
     cdef ndarray[float_t, ndim=1] rbufl = numpy.zeros(idimp*nbmax, Float)
