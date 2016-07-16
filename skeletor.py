@@ -52,6 +52,8 @@ idproc, nvp = cppinit ()
 # Synchronize random number generator across processes
 sync_rng ()
 
+# Create numerical grid. This contains information about the extent of the
+# subdomain assigned to each processor.
 grid = Grid (nx, ny)
 
 # Total number of particles in simulation
@@ -63,7 +65,6 @@ npmax = int (1.5*np/nvp)
 # Uniform distribution of particle positions
 x = grid.nx*numpy.random.uniform (size=np).astype (Float)
 y = grid.nx*numpy.random.uniform (size=np).astype (Float)
-
 # Normal distribution (possibly with shift) of particle positions
 vx = vdx + vtx*numpy.random.normal (size=np).astype (Float)
 vy = vdy + vty*numpy.random.normal (size=np).astype (Float)
@@ -75,29 +76,29 @@ electrons = Particles (x[ind], y[ind], vx[ind], vy[ind], npmax)
 # number of particles
 assert mpi_allsum (electrons.np) == np
 
+# Sanity check.
+# Combine particles from all processes into a single array and make sure that
+# the result agrees with the global particle array
 all_electrons = mpi_allconcatenate (electrons[:electrons.np])
-assert all_electrons.size == np
-
 assert isclose_sorted (x, all_electrons["x"])
 assert isclose_sorted (y, all_electrons["y"])
 assert isclose_sorted (vx, all_electrons["vx"])
 assert isclose_sorted (vy, all_electrons["vy"])
 
+# Push particles on each processor. This call also sends and receives particles
+# to and from other processors/subdomains. The latter is the only non-trivial
+# step in the entire code so far.
 electrons.push (grid, dt)
-# Make sure the number of particles in each subdomain add up to the total
-# number of particles
-assert mpi_allsum (electrons.np) == np
 
-all_electrons = mpi_allconcatenate (electrons[:electrons.np])
-assert all_electrons.size == np
-
-# Drift all particles
+# Push global particle array and apply boundary conditions.
 x += vx*dt
 y += vy*dt
-# ... and apply periodic boundary conditions
 x %= nx
 y %= ny
 
+# Combine particles from all processes into a single array and make sure that
+# the result agrees with the global particle array
+all_electrons = mpi_allconcatenate (electrons[:electrons.np])
 assert isclose_sorted (x, all_electrons["x"])
 assert isclose_sorted (y, all_electrons["y"])
 assert isclose_sorted (vx, all_electrons["vx"])
