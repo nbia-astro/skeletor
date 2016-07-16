@@ -1,9 +1,10 @@
+![alt text](https://github.com/nbia-astro/skeletor/raw/master/images/logo.png)
+
 # Introduction
 
 The skeleton codes are available
-[here](http://picksc.idre.ucla.edu/software/skeleton-code/). As a warm up
-excercise we are currently only concerned with the serial 2D electrostatic code
-`pic2` and its MPI-parallized version `ppic2`.
+[here](http://picksc.idre.ucla.edu/software/skeleton-code/). At the moment we
+are only using the 2D MPI-parallelized code `ppic2`.
 
 # Installation
 
@@ -15,13 +16,13 @@ I assume you intend to run the code on OS X and that you're using Homebrew.
    brew install python python3 open-mpi
    ```
 
-2. Install a tool that helps manage Python virtual environments.
+2. Install tool for managing virtual Python environments.
 
    ```
    pip install virtualenvwrapper
    ```
 
-3. Create a Python 3 virtual environment ldhs
+3. Create a Python 3 virtual environment.
 
    ```
    mkvirtualenv -p python3.5 skeletor
