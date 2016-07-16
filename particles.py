@@ -15,7 +15,7 @@ class Particles (numpy.ndarray):
 
     def __new__ (cls, x, y, vx, vy, npmax):
 
-        from ppic2_wrapper import Float
+        from dtypes import Particle
         from warnings import warn
 
         # Number of particles in subdomain
@@ -36,9 +36,7 @@ class Particles (numpy.ndarray):
         ntmax = 2*nbmax
 
         # Create structured array to hold the particle phase space coordinates
-        records = [('x', Float), ('y', Float), ('vx', Float), ('vy', Float)]
-        dtype = numpy.dtype (records, align=True)
-        obj = super ().__new__ (cls, shape=npmax, dtype=dtype)
+        obj = super ().__new__ (cls, shape=npmax, dtype=Particle)
 
         # Add additional attributes (see also __array_finalize__)
         obj.np = np

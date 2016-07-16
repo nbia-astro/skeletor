@@ -1,14 +1,11 @@
 # distutils: sources = ppic2/pplib2.c ppic2/ppush2.c
 
-from types cimport float_t, complex_t, particle_t
+from ctypes cimport float_t, particle_t
+from dtypes import Float, Int
 cimport pplib2, ppush2
 from numpy cimport ndarray
 from mpi4py import MPI
 import numpy
-
-Int = numpy.dtype ("i{}".format (sizeof (int)))
-Float = numpy.dtype ("f{}".format (sizeof (float_t)))
-Complex = numpy.dtype ("c{}".format (sizeof (complex_t)))
 
 def cppinit(comm=MPI.COMM_WORLD):
     """Start parallel processing"""

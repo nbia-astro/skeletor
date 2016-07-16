@@ -1,4 +1,5 @@
-import ppic2_wrapper as ppic2
+from ppic2_wrapper import cppinit, cppexit
+from dtypes import Float
 from grid import Grid
 from particles import Particles
 import numpy
@@ -46,7 +47,7 @@ dt = 0.1
 # source file (`ppic2/pplib2.c`). The returned variables `idproc` and `nvp` are
 # simply the MPI rank (i.e. processor id) and size (i.e. total number of
 # processes), respectively.
-idproc, nvp = ppic2.cppinit ()
+idproc, nvp = cppinit ()
 
 # Synchronize random number generator across processes
 sync_rng ()
@@ -60,12 +61,12 @@ np = npc*grid.nx*grid.ny
 npmax = int (1.5*np/nvp)
 
 # Uniform distribution of particle positions
-x = grid.nx*numpy.random.uniform (size=np).astype (ppic2.Float)
-y = grid.nx*numpy.random.uniform (size=np).astype (ppic2.Float)
+x = grid.nx*numpy.random.uniform (size=np).astype (Float)
+y = grid.nx*numpy.random.uniform (size=np).astype (Float)
 
 # Normal distribution (possibly with shift) of particle positions
-vx = vdx + vtx*numpy.random.normal (size=np).astype (ppic2.Float)
-vy = vdy + vty*numpy.random.normal (size=np).astype (ppic2.Float)
+vx = vdx + vtx*numpy.random.normal (size=np).astype (Float)
+vy = vdy + vty*numpy.random.normal (size=np).astype (Float)
 
 # Assign particles to subdomains
 ind = numpy.logical_and (y >= grid.edges[0], y < grid.edges[1])
@@ -103,4 +104,4 @@ assert isclose_sorted (vx, all_electrons["vx"])
 assert isclose_sorted (vy, all_electrons["vy"])
 
 # End parallel processing
-ppic2.cppexit ()
+cppexit ()

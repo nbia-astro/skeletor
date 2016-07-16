@@ -4,6 +4,8 @@
 # Cython byproducts
 /ppic2_wrapper.c
 /ppic2_wrapper.*.so
+/dtypes.c
+/dtypes.*.so
 
 # Python cache
 __pycache__
