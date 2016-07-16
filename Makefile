@@ -1,8 +1,11 @@
 python:
 	CC=mpicc python setup.py build_ext --inplace
 
-cython_c=$(patsubst %.pyx, %.c, $(wildcard *.pyx))
-cython_so=$(patsubst %.pyx, %.*.so, $(wildcard *.pyx))
 clean:
 	CC=mpicc python setup.py clean
-	rm -f C.2 $(cython_c) $(cython_so)
+	rm -rf C.2 __pycache__
+
+cython_sources=$(patsubst %.pyx, %.c, $(wildcard *.pyx))
+cython_modules=$(patsubst %.pyx, %.*.so, $(wildcard *.pyx))
+cython_clean:
+	rm -f $(cython_sources) $(cython_modules)
