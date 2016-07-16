@@ -1,11 +1,12 @@
 from mpi4py import MPI
 
+
 class Grid:
 
     # Number of partition boundaries
     idps = 2
 
-    def __init__ (self, nx, ny, nghost=1, comm=MPI.COMM_WORLD):
+    def __init__(self, nx, ny, nghost=1, comm=MPI.COMM_WORLD):
 
         from ppic2_wrapper import cpdicomp
 
@@ -24,15 +25,15 @@ class Grid:
         # noff = lowermost global gridpoint in particle partition
         # nypmx = maximum size of particle partition, including guard cells
         # nypmn = minimum value of nyp
-        edges, nyp, noff, nypmx, nypmn = cpdicomp (ny, kstrt, nvp, self.idps)
+        edges, nyp, noff, nypmx, nypmn = cpdicomp(ny, kstrt, nvp, self.idps)
 
         if nvp > ny:
             msg = "Too many processors requested: ny={}, nvp={}"
-            raise RuntimeError (msg.format (ny, nvp))
+            raise RuntimeError(msg.format(ny, nvp))
 
         if nypmn < 1:
             msg = "Combination not supported: ny={}, nvp={}"
-            raise RuntimeError (msg.format (ny, nvp))
+            raise RuntimeError(msg.format(ny, nvp))
 
         self.edges = edges
         self.nyp = nyp
@@ -41,11 +42,11 @@ class Grid:
         self.nypmn = nypmn
 
     @property
-    def mx (self):
+    def mx(self):
         "Number of total (active plus guard) grid cells in x-direction"
         return self.nx + 2*self.nghost
 
     @property
-    def my (self):
+    def my(self):
         "Number of total (active plus guard) grid cells in y-direction"
         return self.ny + 2*self.nghost
