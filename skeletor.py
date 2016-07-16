@@ -40,6 +40,8 @@ vdx, vdy = 0.0, 0.0
 
 # Timestep
 dt = 0.1
+# Number of timesteps to run for
+nt = 10
 
 # Start parallel processing. Calling this function necessary even though
 # `MPI.Init()` has already been called by importing `MPI` from `mpi4py`. The
@@ -85,16 +87,18 @@ assert isclose_sorted (y, all_electrons["y"])
 assert isclose_sorted (vx, all_electrons["vx"])
 assert isclose_sorted (vy, all_electrons["vy"])
 
-# Push particles on each processor. This call also sends and receives particles
-# to and from other processors/subdomains. The latter is the only non-trivial
-# step in the entire code so far.
-electrons.push (grid, dt)
+for it in range (nt):
 
-# Push global particle array and apply boundary conditions.
-x += vx*dt
-y += vy*dt
-x %= nx
-y %= ny
+    # Push particles on each processor. This call also sends and receives
+    # particles to and from other processors/subdomains. The latter is the only
+    # non-trivial step in the entire code so far.
+    electrons.push (grid, dt)
+
+    # Push global particle array and apply boundary conditions.
+    x += vx*dt
+    y += vy*dt
+    x %= nx
+    y %= ny
 
 # Combine particles from all processes into a single array and make sure that
 # the result agrees with the global particle array
