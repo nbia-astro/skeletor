@@ -6,6 +6,8 @@
 /ppic2_wrapper.*.so
 /dtypes.c
 /dtypes.*.so
+/deposit.c
+/deposit.*.so
 
 # Python cache
 __pycache__

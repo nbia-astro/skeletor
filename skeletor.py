@@ -2,6 +2,7 @@ from ppic2_wrapper import cppinit
 from dtypes import Float
 from grid import Grid
 from particles import Particles
+from sources import Sources, GlobalSources
 import numpy
 from mpi4py import MPI
 
@@ -112,3 +113,29 @@ assert isclose_sorted(x, all_electrons["x"])
 assert isclose_sorted(y, all_electrons["y"])
 assert isclose_sorted(vx, all_electrons["vx"])
 assert isclose_sorted(vy, all_electrons["vy"])
+
+# Check charge deposition
+all_sources = GlobalSources(grid, dtype=Float)
+all_sources.deposit(all_electrons)
+assert numpy.isclose(all_sources.rho.sum(), np)
+all_sources.rho.add_guards()
+assert numpy.isclose(all_sources.rho[1:-1, 1:-1].sum(), np)
+
+sources = Sources(grid, dtype=Float)
+sources.deposit(electrons)
+
+assert numpy.isclose(sources.rho.sum(), electrons.np)
+
+rho = sources.rho.copy()
+
+sources.rho.add_guards()
+rho.add_guards2()
+
+assert numpy.isclose(mpi_allsum(rho[1:-1, 1:-1].sum()), np)
+assert numpy.isclose(mpi_allsum(sources.rho[1:-1, 1:-1].sum()), np)
+
+assert numpy.all(numpy.isclose(rho[1:-1, 1:-1], sources.rho[1:-1, 1:-1]))
+
+assert numpy.all(numpy.isclose(
+    mpi_allconcatenate(sources.rho[1:-1, 1:-1]),
+    all_sources.rho[1:-1, 1:-1]))
