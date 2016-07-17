@@ -87,11 +87,11 @@ assert mpi_allsum(electrons.np) == np
 # Sanity check.
 # Combine particles from all processes into a single array and make sure that
 # the result agrees with the global particle array
-all_electrons = mpi_allconcatenate(electrons[:electrons.np])
-assert allclose_sorted(x, all_electrons["x"])
-assert allclose_sorted(y, all_electrons["y"])
-assert allclose_sorted(vx, all_electrons["vx"])
-assert allclose_sorted(vy, all_electrons["vy"])
+global_electrons = mpi_allconcatenate(electrons[:electrons.np])
+assert allclose_sorted(x, global_electrons["x"])
+assert allclose_sorted(y, global_electrons["y"])
+assert allclose_sorted(vx, global_electrons["vx"])
+assert allclose_sorted(vy, global_electrons["vy"])
 
 for it in range(nt):
 
@@ -108,18 +108,18 @@ for it in range(nt):
 
 # Combine particles from all processes into a single array and make sure that
 # the result agrees with the global particle array
-all_electrons = mpi_allconcatenate(electrons[:electrons.np])
-assert allclose_sorted(x, all_electrons["x"])
-assert allclose_sorted(y, all_electrons["y"])
-assert allclose_sorted(vx, all_electrons["vx"])
-assert allclose_sorted(vy, all_electrons["vy"])
+global_electrons = mpi_allconcatenate(electrons[:electrons.np])
+assert allclose_sorted(x, global_electrons["x"])
+assert allclose_sorted(y, global_electrons["y"])
+assert allclose_sorted(vx, global_electrons["vx"])
+assert allclose_sorted(vy, global_electrons["vy"])
 
 # Check charge deposition
-all_sources = GlobalSources(grid, dtype=Float)
-all_sources.deposit(all_electrons)
-assert numpy.isclose(all_sources.rho.sum(), np)
-all_sources.rho.add_guards()
-assert numpy.isclose(all_sources.rho[1:-1, 1:-1].sum(), np)
+global_sources = GlobalSources(grid, dtype=Float)
+global_sources.deposit(global_electrons)
+assert numpy.isclose(global_sources.rho.sum(), np)
+global_sources.rho.add_guards()
+assert numpy.isclose(global_sources.rho[1:-1, 1:-1].sum(), np)
 
 sources = Sources(grid, dtype=Float)
 sources.deposit(electrons)
@@ -138,4 +138,4 @@ assert numpy.allclose(rho[1:-1, 1:-1], sources.rho[1:-1, 1:-1])
 
 assert numpy.allclose(
     mpi_allconcatenate(sources.rho[1:-1, 1:-1]),
-    all_sources.rho[1:-1, 1:-1])
+    global_sources.rho[1:-1, 1:-1])
