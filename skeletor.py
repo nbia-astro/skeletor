@@ -1,4 +1,4 @@
-from ppic2_wrapper import cppinit, cppexit
+from ppic2_wrapper import cppinit
 from dtypes import Float
 from grid import Grid
 from particles import Particles
@@ -72,14 +72,14 @@ npmax = int(1.5*np/nvp)
 # Uniform distribution of particle positions
 x = grid.nx*numpy.random.uniform(size=np).astype(Float)
 y = grid.nx*numpy.random.uniform(size=np).astype(Float)
-# Normal distribution (possibly with shift) of particle positions
+# Normal distribution of particle velocities
 vx = vdx + vtx*numpy.random.normal(size=np).astype(Float)
 vy = vdy + vty*numpy.random.normal(size=np).astype(Float)
 
 # Assign particles to subdomains
 ind = numpy.logical_and(y >= grid.edges[0], y < grid.edges[1])
 electrons = Particles(x[ind], y[ind], vx[ind], vy[ind], npmax)
-# Make sure the number of particles in each subdomain add up to the total
+# Make sure the numbers of particles in each subdomain add up to the total
 # number of particles
 assert mpi_allsum(electrons.np) == np
 
@@ -112,6 +112,3 @@ assert isclose_sorted(x, all_electrons["x"])
 assert isclose_sorted(y, all_electrons["y"])
 assert isclose_sorted(vx, all_electrons["vx"])
 assert isclose_sorted(vy, all_electrons["vy"])
-
-# End parallel processing
-cppexit()
