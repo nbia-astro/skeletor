@@ -119,7 +119,7 @@ global_sources = GlobalSources(grid, dtype=Float)
 global_sources.deposit(global_electrons)
 assert numpy.isclose(global_sources.rho.sum(), np)
 global_sources.rho.add_guards()
-assert numpy.isclose(global_sources.rho[1:-1, 1:-1].sum(), np)
+assert numpy.isclose(global_sources.rho.trim().sum(), np)
 
 sources = Sources(grid, dtype=Float)
 sources.deposit(electrons)
@@ -131,11 +131,10 @@ rho = sources.rho.copy()
 sources.rho.add_guards()
 rho.add_guards2()
 
-assert numpy.isclose(mpi_allsum(rho[1:-1, 1:-1].sum()), np)
-assert numpy.isclose(mpi_allsum(sources.rho[1:-1, 1:-1].sum()), np)
+assert numpy.isclose(mpi_allsum(rho.trim().sum()), np)
+assert numpy.isclose(mpi_allsum(sources.rho.trim().sum()), np)
 
-assert numpy.allclose(rho[1:-1, 1:-1], sources.rho[1:-1, 1:-1])
+assert numpy.allclose(rho.trim(), sources.rho.trim())
 
 assert numpy.allclose(
-    mpi_allconcatenate(sources.rho[1:-1, 1:-1]),
-    global_sources.rho[1:-1, 1:-1])
+    mpi_allconcatenate(sources.rho.trim()), global_sources.rho.trim())

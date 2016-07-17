@@ -1,4 +1,4 @@
-from numpy import ndarray
+from numpy import ndarray, asarray
 from mpi4py.MPI import COMM_WORLD as comm
 
 
@@ -6,8 +6,10 @@ class Field(ndarray):
 
     def __new__(cls, grid, **kwds):
 
-        shape = grid.nyp + 2*grid.nghost, grid.nx + 2*grid.nghost
+        shape = grid.nyp + 2, grid.nx + 2
         obj = super().__new__(cls, shape, **kwds)
+
+        obj.grid = grid
 
         return obj
 
@@ -18,6 +20,9 @@ class Field(ndarray):
 
         self.up = {'dest': above, 'source': below}
         self.down = {'dest': below, 'source': above}
+
+    def trim(self):
+        return asarray(self[1:-1, 1:-1])
 
     def sendrecv(sendbuf, **kwds):
         return comm.sendrecv(sendbuf, **kwds)
@@ -72,7 +77,7 @@ class GlobalField(Field):
 
     def __new__(cls, grid, **kwds):
 
-        shape = grid.ny + 2*grid.nghost, grid.nx + 2*grid.nghost
+        shape = grid.ny + 2, grid.nx + 2
         obj = super(Field, cls).__new__(cls, shape, **kwds)
 
         return obj
@@ -85,7 +90,7 @@ class GlobalSourceField(SourceField):
 
     def __new__(cls, grid, **kwds):
 
-        shape = grid.ny + 2*grid.nghost, grid.nx + 2*grid.nghost
+        shape = grid.ny + 2, grid.nx + 2
         obj = super(Field, cls).__new__(cls, shape, **kwds)
 
         return obj
