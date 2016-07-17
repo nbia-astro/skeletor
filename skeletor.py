@@ -7,12 +7,12 @@ import numpy
 from mpi4py import MPI
 
 
-def isclose_sorted(a, b, **kwargs):
+def allclose_sorted(a, b, **kwargs):
     """This function first sorts the input arrays 'a' and 'b' (out of place)
     and returns true if the sorted arrays are almost equal to each other
     (element by element)."""
-    from numpy import isclose, sort
-    return all(isclose(sort(a), sort(b), **kwargs))
+    from numpy import allclose, sort
+    return allclose(sort(a), sort(b), **kwargs)
 
 
 def sync_rng(comm=MPI.COMM_WORLD):
@@ -88,10 +88,10 @@ assert mpi_allsum(electrons.np) == np
 # Combine particles from all processes into a single array and make sure that
 # the result agrees with the global particle array
 all_electrons = mpi_allconcatenate(electrons[:electrons.np])
-assert isclose_sorted(x, all_electrons["x"])
-assert isclose_sorted(y, all_electrons["y"])
-assert isclose_sorted(vx, all_electrons["vx"])
-assert isclose_sorted(vy, all_electrons["vy"])
+assert allclose_sorted(x, all_electrons["x"])
+assert allclose_sorted(y, all_electrons["y"])
+assert allclose_sorted(vx, all_electrons["vx"])
+assert allclose_sorted(vy, all_electrons["vy"])
 
 for it in range(nt):
 
@@ -109,10 +109,10 @@ for it in range(nt):
 # Combine particles from all processes into a single array and make sure that
 # the result agrees with the global particle array
 all_electrons = mpi_allconcatenate(electrons[:electrons.np])
-assert isclose_sorted(x, all_electrons["x"])
-assert isclose_sorted(y, all_electrons["y"])
-assert isclose_sorted(vx, all_electrons["vx"])
-assert isclose_sorted(vy, all_electrons["vy"])
+assert allclose_sorted(x, all_electrons["x"])
+assert allclose_sorted(y, all_electrons["y"])
+assert allclose_sorted(vx, all_electrons["vx"])
+assert allclose_sorted(vy, all_electrons["vy"])
 
 # Check charge deposition
 all_sources = GlobalSources(grid, dtype=Float)
@@ -134,8 +134,8 @@ rho.add_guards2()
 assert numpy.isclose(mpi_allsum(rho[1:-1, 1:-1].sum()), np)
 assert numpy.isclose(mpi_allsum(sources.rho[1:-1, 1:-1].sum()), np)
 
-assert numpy.all(numpy.isclose(rho[1:-1, 1:-1], sources.rho[1:-1, 1:-1]))
+assert numpy.allclose(rho[1:-1, 1:-1], sources.rho[1:-1, 1:-1])
 
-assert numpy.all(numpy.isclose(
+assert numpy.allclose(
     mpi_allconcatenate(sources.rho[1:-1, 1:-1]),
-    all_sources.rho[1:-1, 1:-1]))
+    all_sources.rho[1:-1, 1:-1])
