@@ -4,10 +4,13 @@
 # Cython byproducts
 /ppic2_wrapper.c
 /ppic2_wrapper.*.so
+/ppic2_wrapper.html
 /dtypes.c
 /dtypes.*.so
+/dtypes.html
 /deposit.c
 /deposit.*.so
+/deposit.html
 
 # Python cache
 __pycache__
