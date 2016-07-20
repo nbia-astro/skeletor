@@ -6,16 +6,13 @@ class Grid:
     # Number of partition boundaries
     idps = 2
 
-    def __init__(self, nx, ny, nghost=1, comm=MPI.COMM_WORLD):
+    def __init__(self, nx, ny, comm=MPI.COMM_WORLD):
 
         from ppic2_wrapper import cpdicomp
 
         # Number of grid points in x- and y-direction
         self.nx = nx
         self.ny = ny
-
-        # Number of grid points on each side
-        self.nghost = nghost
 
         kstrt = comm.rank + 1
         nvp = comm.size
@@ -40,13 +37,3 @@ class Grid:
         self.noff = noff
         self.nypmx = nypmx
         self.nypmn = nypmn
-
-    @property
-    def mx(self):
-        "Number of total (active plus guard) grid cells in x-direction"
-        return self.nx + 2*self.nghost
-
-    @property
-    def my(self):
-        "Number of total (active plus guard) grid cells in y-direction"
-        return self.ny + 2*self.nghost

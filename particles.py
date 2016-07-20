@@ -69,7 +69,7 @@ class Particles(numpy.ndarray):
 
         ihole, ek = cppgpush2l(
                 self, grid.edges, self.np, grid.noff, dt, grid.nx, grid.ny,
-                self.idimp, self.npmax, grid.mx, grid.nypmx, self.idps,
+                self.idimp, self.npmax, grid.nx + 2, grid.nypmx, self.idps,
                 self.ntmax, self.ipbc)
 
         # Check for ihole overflow error
