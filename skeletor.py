@@ -131,14 +131,18 @@ assert numpy.allclose(sources.rho, sources2.rho)
 assert numpy.isclose(sources.rho.sum(), electrons.np)
 
 rho = sources.rho.copy()
+rho2 = sources.rho.copy()
 
 sources.rho.add_guards()
 rho.add_guards2()
+rho2.add_guards_ppic2()
 
+assert numpy.isclose(mpi_allsum(rho2.trim().sum()), np)
 assert numpy.isclose(mpi_allsum(rho.trim().sum()), np)
 assert numpy.isclose(mpi_allsum(sources.rho.trim().sum()), np)
 
 assert numpy.allclose(rho.trim(), sources.rho.trim())
+assert numpy.allclose(rho2.trim(), sources.rho.trim())
 
 assert numpy.allclose(
     mpi_allconcatenate(sources.rho.trim()), global_sources.rho.trim())

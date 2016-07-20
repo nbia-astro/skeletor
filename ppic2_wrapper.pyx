@@ -88,3 +88,22 @@ def cppgpost2l(
 
     ppush2.cppgpost2l(&particles[0].x, &rho[0,0], np, noff, qme, idimp,
             npmax, nxe, nypmx)
+
+def cppaguard2xl(float_t[:,:] rho, int nyp, int nx):
+
+    cdef int nxe = rho.shape[1]
+    cdef int nypmx = rho.shape[0]
+
+    ppush2.cppaguard2xl(&rho[0,0], nyp, nx, nxe, nypmx)
+
+
+def cppnaguard2l(float_t[:,:] rho, int nyp, int nx, comm=MPI.COMM_WORLD):
+
+    cdef int kstrt = comm.rank + 1
+    cdef int nvp = comm.size
+    cdef int nxe = rho.shape[1]
+    cdef int nypmx = rho.shape[0]
+
+    cdef ndarray[float_t, ndim=2] scr = numpy.zeros((2, nxe), Float)
+
+    pplib2.cppnaguard2l(&rho[0,0], &scr[0,0], nyp, nx, kstrt, nvp, nxe, nypmx)

@@ -1,5 +1,8 @@
 from numpy import ndarray, asarray
 from mpi4py.MPI import COMM_WORLD as comm
+from ppic2_wrapper import cppaguard2xl, cppnaguard2l
+from dtypes import Float
+import numpy
 
 
 class Field(ndarray):
@@ -53,6 +56,15 @@ class Field(ndarray):
 
         self[:, 0] += self[:, -1]
         self[0, :] += self.sendrecv(self[-1, :], **self.up)
+
+    def add_guards_ppic2(self):
+
+        grid = self.grid
+        field = numpy.zeros((grid.nypmx, grid.nx + 2), Float)
+        field[:grid.nyp+1, :grid.nx+1] = self
+        cppaguard2xl(field, grid.nyp, grid.nx)
+        cppnaguard2l(field, grid.nyp, grid.nx)
+        self[...] = field[:grid.nyp+1, :grid.nx+1]
 
 
 class GlobalField(Field):
