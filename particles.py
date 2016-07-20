@@ -45,6 +45,9 @@ class Particles(numpy.ndarray):
         obj.nbmax = nbmax
         obj.ntmax = ntmax
 
+        # Location of hole left in particle arrays
+        obj.ihole = numpy.zeros(ntmax, numpy.int32)
+
         # Fill structured array
         obj["x"][:np] = x
         obj["y"][:np] = y
@@ -63,27 +66,32 @@ class Particles(numpy.ndarray):
         self.nbmax = obj.nbmax
         self.ntmax = obj.ntmax
 
-    def push(self, grid, dt):
+        self.ihole = obj.ihole
+
+    def push(self, fxy, dt):
 
         from ppic2_wrapper import cppgpush2l, cppmove2
 
-        ihole, ek = cppgpush2l(
-                self, grid.edges, self.np, grid.noff, dt, grid.nx, grid.ny,
-                self.idimp, self.npmax, grid.nx + 2, grid.nypmx, self.idps,
-                self.ntmax, self.ipbc)
+        grid = fxy.grid
+
+        ek = cppgpush2l(
+                self, fxy, grid.edges, self.np, grid.noff, self.ihole, dt,
+                grid.nx, grid.ny)
 
         # Check for ihole overflow error
-        if ihole[0] < 0:
-            ierr = -ihole[0]
+        if self.ihole[0] < 0:
+            ierr = -self.ihole[0]
             msg = "ihole overflow error: ntmax={}, ierr={}"
             raise RuntimeError(msg.format(self.ntmax, ierr))
 
         kstrt = comm.rank + 1
         nvp = comm.size
         self.np, info = cppmove2(
-                self, grid.edges, self.np, ihole, grid.ny, kstrt, nvp,
+                self, grid.edges, self.np, self.ihole, grid.ny, kstrt, nvp,
                 self.idimp, self.npmax, self.idps, self.nbmax, self.ntmax)
 
         # Make sure particles actually reside in the local subdomain
         assert all(self["y"][:self.np] >= grid.edges[0])
         assert all(self["y"][:self.np] < grid.edges[1])
+
+        return ek

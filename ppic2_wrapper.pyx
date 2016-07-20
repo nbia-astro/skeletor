@@ -44,20 +44,24 @@ def cpdicomp(int ny, int kstrt, int nvp, int idps):
 
 
 def cppgpush2l(
-        particle_t[:] particles, float_t[:] edges, int npp, int noff,
-        float dt, int nx, int ny, int idimp, int npmax, int nxv,
-        int nypmx, int idps, int ntmax, int ipbc):
-    cdef int ndim = 2
-    # Set the force to zero (this will of course change in the future).
-    # TODO: Pass this array as argument.
-    cdef ndarray[float_t, ndim=1] fxy = numpy.zeros(ndim*nxv*nypmx, Float)
-    cdef ndarray[int, ndim=1] ihole = numpy.empty(ntmax+1, Int)
-    cdef float_t qbm = 0.0
+        particle_t[:] particles, force_t[:,:] fxy, float_t[:] edges,
+        int npp, int noff, int[:] ihole, float dt, int nx, int ny):
+
+    cdef float_t qme = 1.0
     cdef float_t ek = 0.0
+    cdef int idimp = 4
+    cdef int npmax = particles.shape[0]
+    cdef int nxe = fxy.shape[1]
+    cdef int nypmx = fxy.shape[0]
+    cdef int idps = 2
+    cdef int ntmax = ihole.shape[0] - 1
+    cdef int ipbc = 1
+
     ppush2.cppgpush2l(
-            &particles[0].x, &fxy[0], &edges[0], npp, noff, &ihole[0], qbm, dt,
-            &ek, nx, ny, idimp, npmax, nxv, nypmx, idps, ntmax, ipbc)
-    return ihole, ek
+            &particles[0].x, &fxy[0,0].x, &edges[0], npp, noff, &ihole[0],
+            qme, dt, &ek, nx, ny, idimp, npmax, nxe, nypmx, idps, ntmax, ipbc)
+
+    return ek
 
 
 def cppmove2(

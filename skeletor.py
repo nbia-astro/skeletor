@@ -1,6 +1,7 @@
 from ppic2_wrapper import cppinit
 from dtypes import Float
 from grid import Grid
+from fields import Field
 from particles import Particles
 from sources import Sources, GlobalSources
 import numpy
@@ -93,12 +94,17 @@ assert allclose_sorted(y, global_electrons["y"])
 assert allclose_sorted(vx, global_electrons["vx"])
 assert allclose_sorted(vy, global_electrons["vy"])
 
+# Set the force to zero (this will of course change in the future).
+dtype = [('x', Float), ('y', Float)]
+fxy = Field(grid, dtype=dtype)
+fxy.fill(0.0)
+
 for it in range(nt):
 
     # Push particles on each processor. This call also sends and receives
     # particles to and from other processors/subdomains. The latter is the only
     # non-trivial step in the entire code so far.
-    electrons.push(grid, dt)
+    electrons.push(fxy, dt)
 
     # Push global particle array and apply boundary conditions.
     x += vx*dt
