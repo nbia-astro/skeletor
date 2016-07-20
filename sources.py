@@ -30,7 +30,7 @@ class Sources:
 
         cppgpost2l(particles, rho, particles.np, grid.noff, particles.npmax)
 
-        self.rho += rho[:grid.nyp+1, :grid.nx+1].copy()
+        self.rho += rho[:, :-1].copy()
 
 
 class GlobalSources(Sources):
