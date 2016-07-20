@@ -38,8 +38,8 @@ class Field(ndarray):
     def copy_guards(self):
 
         self[:-1, -1] = self[:-1, 0]
-        self[-1, :-1] = self.sendrecv(self[0, :-1], **self.up)
-        self[-1, -1] = self.sendrecv(self[0, 0], **self.up)
+        self[-1, :-1] = self.sendrecv(self[0, :-1], **self.down)
+        self[-1, -1] = self.sendrecv(self[0, 0], **self.down)
 
     def add_guards(self):
 
