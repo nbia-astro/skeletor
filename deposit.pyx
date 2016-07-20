@@ -10,8 +10,8 @@ def deposit (particle_t[:] particles, floating[:,:] density, int noff=0):
 
     for ip in range(particles.shape[0]):
 
-        x = particles[ip].x + 0.5
-        y = particles[ip].y + 0.5
+        x = particles[ip].x
+        y = particles[ip].y
 
         ix = <int> x
         iy = <int> y

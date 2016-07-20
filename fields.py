@@ -6,7 +6,7 @@ class Field(ndarray):
 
     def __new__(cls, grid, **kwds):
 
-        shape = grid.nyp + 2, grid.nx + 2
+        shape = grid.nyp + 1, grid.nx + 1
         obj = super().__new__(cls, shape, **kwds)
 
         obj.grid = grid
@@ -22,59 +22,39 @@ class Field(ndarray):
         self.down = {'dest': below, 'source': above}
 
     def trim(self):
-        return asarray(self[1:-1, 1:-1])
+        return asarray(self[:-1, :-1])
 
     def sendrecv(self, sendbuf, **kwds):
         return comm.sendrecv(sendbuf, **kwds)
 
     def copy_guards(self):
 
-        self[1:-1, -1] = self[1:-1, 1]
-        self[1:-1, 0] = self[1:-1, -2]
-
-        self[-1, 1:-1] = self.sendrecv(self[1, 1:-1], **self.down)
-        self[0, 1:-1] = self.sendrecv(self[-2, 1:-1], **self.up)
-
-        self[-1, -1] = self.sendrecv(self[1, 1], **self.down)
-        self[-1, 0] = self.sendrecv(self[1, -2], **self.down)
-        self[0, -1] = self.sendrecv(self[-2, 1], **self.up)
-        self[0, 0] = self.sendrecv(self[-2, -2], **self.up)
+        self[:-1, -1] = self[:-1, 0]
+        self[-1, :-1] = self.sendrecv(self[0, :-1], **self.up)
+        self[-1, -1] = self.sendrecv(self[0, 0], **self.up)
 
     def add_guards(self):
 
-        self[1:-1, 1] += self[1:-1, -1]
-        self[1:-1, -2] += self[1:-1, 0]
-
-        self[1, 1:-1] += self.sendrecv(self[-1, 1:-1], **self.up)
-        self[-2, 1:-1] += self.sendrecv(self[0, 1:-1], **self.down)
-
-        self[1, 1] += self.sendrecv(self[-1, -1], **self.up)
-        self[1, -2] += self.sendrecv(self[-1, 0], **self.up)
-        self[-2, 1] += self.sendrecv(self[0, -1], **self.down)
-        self[-2, -2] += self.sendrecv(self[0, 0], **self.down)
+        self[:-1, 0] += self[:-1, -1]
+        self[0, :-1] += self.sendrecv(self[-1, :-1], **self.up)
+        self[0, 0] += self.sendrecv(self[-1, -1], **self.up)
 
     def copy_guards2(self):
 
-        self[-1, 1:-1] = self.sendrecv(self[1, 1:-1], **self.down)
-        self[0, 1:-1] = self.sendrecv(self[-2, 1:-1], **self.up)
-
-        self[:, -1] = self[:, 1]
-        self[:, 0] = self[:, -2]
+        self[:, -1] = self[:, 0]
+        self[-1, :] = self.sendrecv(self[0, :], **self.down)
 
     def add_guards2(self):
 
-        self[:, 1] += self[:, -1]
-        self[:, -2] += self[:, 0]
-
-        self[1, 1:-1] += self.sendrecv(self[-1, 1:-1], **self.up)
-        self[-2, 1:-1] += self.sendrecv(self[0, 1:-1], **self.down)
+        self[:, 0] += self[:, -1]
+        self[0, :] += self.sendrecv(self[-1, :], **self.up)
 
 
 class GlobalField(Field):
 
     def __new__(cls, grid, **kwds):
 
-        shape = grid.ny + 2, grid.nx + 2
+        shape = grid.ny + 1, grid.nx + 1
         obj = super(Field, cls).__new__(cls, shape, **kwds)
 
         return obj
