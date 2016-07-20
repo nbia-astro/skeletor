@@ -15,7 +15,7 @@ class Particles(numpy.ndarray):
 
     def __new__(cls, x, y, vx, vy, npmax):
 
-        from dtypes import Particle
+        from dtypes import Int, Particle
         from warnings import warn
 
         # Number of particles in subdomain
@@ -45,7 +45,7 @@ class Particles(numpy.ndarray):
         obj.ntmax = ntmax
 
         # Location of hole left in particle arrays
-        obj.ihole = numpy.zeros(ntmax, numpy.int32)
+        obj.ihole = numpy.zeros(ntmax, Int)
 
         # Buffer arrays for MPI communcation
         obj.sbufl = numpy.zeros(nbmax, Particle)
@@ -54,7 +54,7 @@ class Particles(numpy.ndarray):
         obj.rbufr = numpy.zeros(nbmax, Particle)
 
         # Info array used for checking errors in particle move
-        obj.info = numpy.zeros(7, numpy.int32)
+        obj.info = numpy.zeros(7, Int)
 
         # Fill structured array
         obj["x"][:np] = x
