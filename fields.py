@@ -21,6 +21,11 @@ class Field(ndarray):
         self.up = {'dest': above, 'source': below}
         self.down = {'dest': below, 'source': above}
 
+        if obj is None:
+            return
+
+        self.grid = obj.grid
+
     def trim(self):
         return asarray(self[:-1, :-1])
 
@@ -56,6 +61,8 @@ class GlobalField(Field):
 
         shape = grid.ny + 1, grid.nx + 1
         obj = super(Field, cls).__new__(cls, shape, **kwds)
+
+        obj.grid = grid
 
         return obj
 
