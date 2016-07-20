@@ -6,13 +6,6 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    # Number of partition boundaries
-    idps = 2
-    # number of particle phase space coordinates
-    idimp = 4
-    # ipbc = particle boundary condition: 1 = periodic
-    ipbc = 1
-
     def __new__(cls, x, y, vx, vy, npmax):
 
         from dtypes import Int, Particle

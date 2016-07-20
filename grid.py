@@ -3,9 +3,6 @@ from mpi4py import MPI
 
 class Grid:
 
-    # Number of partition boundaries
-    idps = 2
-
     def __init__(self, nx, ny, comm=MPI.COMM_WORLD):
 
         from ppic2_wrapper import cpdicomp
@@ -22,7 +19,7 @@ class Grid:
         # noff = lowermost global gridpoint in particle partition
         # nypmx = maximum size of particle partition, including guard cells
         # nypmn = minimum value of nyp
-        edges, nyp, noff, nypmx, nypmn = cpdicomp(ny, kstrt, nvp, self.idps)
+        edges, nyp, noff, nypmx, nypmn = cpdicomp(ny, kstrt, nvp)
 
         if nvp > ny:
             msg = "Too many processors requested: ny={}, nvp={}"

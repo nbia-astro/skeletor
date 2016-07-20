@@ -8,6 +8,17 @@ from mpi4py import MPI
 import numpy
 
 
+# Number of partition boundaries
+cdef int idps = 2
+# Number of particle phase space coordinates
+cdef int idimp = 4
+# Particle boundary condition: 1 = periodic
+cdef int ipbc = 1
+# Particle charge (hard-coded for now)
+# TODO: This should be an attribute of the particle class
+cdef float_t qme = 1.0
+
+
 def cppinit(comm=MPI.COMM_WORLD):
     """Start parallel processing"""
     from mpi4py.MPI import Is_initialized
@@ -29,7 +40,7 @@ def cppexit():
     assert Is_finalized()
 
 
-def cpdicomp(int ny, int kstrt, int nvp, int idps):
+def cpdicomp(int ny, int kstrt, int nvp):
     # edges[0] = lower boundary of particle partition
     # edges[1] = upper boundary of particle partition
     cdef ndarray[float_t, ndim=1] edges = numpy.empty(idps, Float)
@@ -47,15 +58,11 @@ def cppgpush2l(
         particle_t[:] particles, force_t[:,:] fxy, float_t[:] edges,
         int npp, int noff, int[:] ihole, float dt, int nx, int ny):
 
-    cdef float_t qme = 1.0
     cdef float_t ek = 0.0
-    cdef int idimp = 4
     cdef int npmax = particles.shape[0]
     cdef int nxe = fxy.shape[1]
     cdef int nypmx = fxy.shape[0]
-    cdef int idps = 2
     cdef int ntmax = ihole.shape[0] - 1
-    cdef int ipbc = 1
 
     ppush2.cppgpush2l(
             &particles[0].x, &fxy[0,0].x, &edges[0], npp, noff, &ihole[0],
@@ -72,9 +79,7 @@ def cppmove2(
 
     cdef int kstrt = comm.rank + 1
     cdef int nvp = comm.size
-    cdef int idimp = 4
     cdef int npmax = particles.shape[0]
-    cdef int idps = 2
     cdef int nbmax = sbufl.shape[0]
     cdef int ntmax = ihole.shape[0] - 1
 
@@ -89,8 +94,6 @@ def cppgpost2l(
         particle_t[:] particles, float_t[:,:] rho, int np, int noff,
         int npmax):
 
-    cdef float_t qme = 1.0;
-    cdef int idimp = 4
     cdef int nxe = rho.shape[1]
     cdef int nypmx = rho.shape[0]
 
