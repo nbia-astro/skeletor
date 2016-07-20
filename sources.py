@@ -7,14 +7,15 @@ class Sources:
     def __init__(self, grid, **kwds):
 
         self.rho = Field(grid, **kwds)
-        self.noff = grid.noff
 
     def deposit(self, particles, erase=True):
 
         if erase:
             self.rho.fill(0.0)
 
-        cython_deposit(particles[:particles.np], self.rho, self.noff)
+        cython_deposit(
+                particles[:particles.np], self.rho, self.rho.grid.noff)
+
 
 
 class GlobalSources(Sources):
