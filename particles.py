@@ -31,11 +31,8 @@ class Particles(numpy.ndarray):
         # Create structured array to hold the particle phase space coordinates
         obj = super().__new__(cls, shape=npmax, dtype=Particle)
 
-        # Add additional attributes (see also __array_finalize__)
+        # Store number of particles
         obj.np = np
-        obj.npmax = npmax
-        obj.nbmax = nbmax
-        obj.ntmax = ntmax
 
         # Location of hole left in particle arrays
         obj.ihole = numpy.zeros(ntmax, Int)
@@ -63,11 +60,12 @@ class Particles(numpy.ndarray):
             return
 
         self.np = obj.np
-        self.npmax = obj.npmax
-        self.nbmax = obj.nbmax
-        self.ntmax = obj.ntmax
-
         self.ihole = obj.ihole
+        self.sbufl = obj.sbufl
+        self.sbufr = obj.sbufr
+        self.rbufl = obj.rbufl
+        self.rbufr = obj.rbufr
+        self.info = obj.info
 
     def push(self, fxy, dt):
 
@@ -83,7 +81,7 @@ class Particles(numpy.ndarray):
         if self.ihole[0] < 0:
             ierr = -self.ihole[0]
             msg = "ihole overflow error: ntmax={}, ierr={}"
-            raise RuntimeError(msg.format(self.ntmax, ierr))
+            raise RuntimeError(msg.format(self.ihole.size - 1, ierr))
 
         self.np = cppmove2(
                 self, grid.edges, self.np, self.sbufl, self.sbufr, self.rbufl,

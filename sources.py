@@ -24,7 +24,7 @@ class Sources:
 
         cppgpost2l(
                 particles, self.rho, particles.np, self.rho.grid.noff,
-                particles.npmax)
+                particles.size)
 
 
 class GlobalSources(Sources):
