@@ -60,21 +60,19 @@ class Field(ndarray):
 
     def add_guards_ppic2(self):
 
-        grid = self.grid
-        field = numpy.zeros((grid.nypmx, grid.nx + 2), Float)
-        field[:grid.nyp+1, :grid.nx+1] = self
-        cppaguard2xl(field, grid.nyp, grid.nx)
-        cppnaguard2l(field, grid.nyp, grid.nx)
-        self[...] = field[:grid.nyp+1, :grid.nx+1]
+        field = numpy.zeros((self.grid.nypmx, self.grid.nx + 2), Float)
+        field[:, :-1] = self
+        cppaguard2xl(field, self.grid.nyp, self.grid.nx)
+        cppnaguard2l(field, self.grid.nyp, self.grid.nx)
+        self[...] = field[:, :-1]
 
     def copy_guards_ppic2(self):
 
-        grid = self.grid
-        field = numpy.zeros((grid.nypmx, grid.nx + 2, 2), Float)
-        field[:grid.nyp+1, :grid.nx+1, 0] = self
-        cppncguard2l(field, grid.nyp, grid.nx)
-        cppcguard2xl(field, grid.nyp, grid.nx)
-        self[...] = field[:grid.nyp+1, :grid.nx+1, 0]
+        field = numpy.zeros((self.grid.nypmx, self.grid.nx + 2, 2), Float)
+        field[:, :-1, 0] = self
+        cppncguard2l(field, self.grid.nyp, self.grid.nx)
+        cppcguard2xl(field, self.grid.nyp, self.grid.nx)
+        self[...] = field[:, :-1, 0]
 
 
 class GlobalField(Field):
