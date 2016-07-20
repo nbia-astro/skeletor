@@ -13,3 +13,6 @@ cdef extern from "ppic2/pplib2.h":
 
     void cppnaguard2l(float f[], float scr[], int nyp, int nx, int kstrt,
             int nvp, int nxv, int nypmx)
+
+    void cppncguard2l(float f[], int nyp, int kstrt, int nvp, int nxv,
+            int nypmx)

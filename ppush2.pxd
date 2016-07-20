@@ -16,3 +16,6 @@ cdef extern from "ppic2/ppush2.h":
             int idimp, int npmax, int nxv, int nypmx)
 
     void cppaguard2xl(float q[], int nyp, int nx, int nxe, int nypmx)
+
+    void cppcguard2xl(float fxy[], int nyp, int nx, int ndim, int nxe,
+            int nypmx)

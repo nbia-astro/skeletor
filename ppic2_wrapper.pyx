@@ -107,3 +107,23 @@ def cppnaguard2l(float_t[:,:] rho, int nyp, int nx, comm=MPI.COMM_WORLD):
     cdef ndarray[float_t, ndim=2] scr = numpy.zeros((2, nxe), Float)
 
     pplib2.cppnaguard2l(&rho[0,0], &scr[0,0], nyp, nx, kstrt, nvp, nxe, nypmx)
+
+
+def cppcguard2xl(float_t[:,:,:] fxy, int nyp, int nx):
+
+    cdef int ndim = fxy.shape[2]
+    cdef int nxe = fxy.shape[1]
+    cdef int nypmx = fxy.shape[0]
+
+    ppush2.cppcguard2xl(&fxy[0,0,0], nyp, nx, ndim, nxe, nypmx)
+
+
+def cppncguard2l(float_t[:,:,:] fxy, int nyp, int nx, comm=MPI.COMM_WORLD):
+
+    cdef int kstrt = comm.rank + 1
+    cdef int nvp = comm.size
+    cdef int ndim = fxy.shape[2]
+    cdef int nxe = fxy.shape[1]
+    cdef int nypmx = fxy.shape[0]
+
+    pplib2.cppncguard2l(&fxy[0,0,0], nyp, kstrt, nvp, ndim*nxe, nypmx)

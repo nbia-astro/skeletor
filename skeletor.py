@@ -144,5 +144,12 @@ assert numpy.isclose(mpi_allsum(sources.rho.trim().sum()), np)
 assert numpy.allclose(rho.trim(), sources.rho.trim())
 assert numpy.allclose(rho2.trim(), sources.rho.trim())
 
+sources.rho.copy_guards()
+rho.copy_guards2()
+rho2.copy_guards_ppic2()
+
+assert numpy.allclose(rho, sources.rho)
+assert numpy.allclose(rho2, sources.rho)
+
 assert numpy.allclose(
     mpi_allconcatenate(sources.rho.trim()), global_sources.rho.trim())

@@ -1,6 +1,7 @@
 from numpy import ndarray, asarray
 from mpi4py.MPI import COMM_WORLD as comm
 from ppic2_wrapper import cppaguard2xl, cppnaguard2l
+from ppic2_wrapper import cppcguard2xl, cppncguard2l
 from dtypes import Float
 import numpy
 
@@ -65,6 +66,15 @@ class Field(ndarray):
         cppaguard2xl(field, grid.nyp, grid.nx)
         cppnaguard2l(field, grid.nyp, grid.nx)
         self[...] = field[:grid.nyp+1, :grid.nx+1]
+
+    def copy_guards_ppic2(self):
+
+        grid = self.grid
+        field = numpy.zeros((grid.nypmx, grid.nx + 2, 2), Float)
+        field[:grid.nyp+1, :grid.nx+1, 0] = self
+        cppncguard2l(field, grid.nyp, grid.nx)
+        cppcguard2xl(field, grid.nyp, grid.nx)
+        self[...] = field[:grid.nyp+1, :grid.nx+1, 0]
 
 
 class GlobalField(Field):
