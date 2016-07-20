@@ -66,20 +66,24 @@ def cppgpush2l(
 
 def cppmove2(
         particle_t[:] particles, float_t[:] edges, int npp,
-        int[:] ihole, int ny, int kstrt, int nvp, int idimp,
-        int npmax, int idps, int nbmax, int ntmax):
-    # TODO: Allocate these arrays once and for all in the Particle class
-    # and pass them as arguments.
-    cdef ndarray[float_t, ndim=1] sbufl = numpy.zeros(idimp*nbmax, Float)
-    cdef ndarray[float_t, ndim=1] sbufr = numpy.zeros(idimp*nbmax, Float)
-    cdef ndarray[float_t, ndim=1] rbufl = numpy.zeros(idimp*nbmax, Float)
-    cdef ndarray[float_t, ndim=1] rbufr = numpy.zeros(idimp*nbmax, Float)
-    cdef ndarray[int, ndim=1] info = numpy.zeros(7, Int)
+        particle_t[:] sbufl, particle_t[:] sbufr,
+        particle_t[:] rbufl, particle_t[:] rbufr,
+        int[:] ihole, int ny, int[:] info, comm=MPI.COMM_WORLD):
+
+    cdef int kstrt = comm.rank + 1
+    cdef int nvp = comm.size
+    cdef int idimp = 4
+    cdef int npmax = particles.shape[0]
+    cdef int idps = 2
+    cdef int nbmax = sbufl.shape[0]
+    cdef int ntmax = ihole.shape[0] - 1
+
     pplib2.cppmove2(
-            &particles[0].x, &edges[0], &npp, &sbufr[0], &sbufl[0], &rbufr[0],
-            &rbufl[0], &ihole[0], ny, kstrt, nvp, idimp, npmax, idps, nbmax,
-            ntmax, &info[0])
-    return npp, info
+            &particles[0].x, &edges[0], &npp,
+            &sbufr[0].x, &sbufl[0].x, &rbufr[0].x, &rbufl[0].x, &ihole[0],
+            ny, kstrt, nvp, idimp, npmax, idps, nbmax, ntmax, &info[0])
+
+    return npp
 
 def cppgpost2l(
         particle_t[:] particles, float_t[:,:] rho, int np, int noff,

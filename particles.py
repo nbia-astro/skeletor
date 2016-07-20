@@ -1,5 +1,4 @@
 import numpy
-from mpi4py.MPI import COMM_WORLD as comm
 
 
 class Particles(numpy.ndarray):
@@ -48,6 +47,15 @@ class Particles(numpy.ndarray):
         # Location of hole left in particle arrays
         obj.ihole = numpy.zeros(ntmax, numpy.int32)
 
+        # Buffer arrays for MPI communcation
+        obj.sbufl = numpy.zeros(nbmax, Particle)
+        obj.sbufr = numpy.zeros(nbmax, Particle)
+        obj.rbufl = numpy.zeros(nbmax, Particle)
+        obj.rbufr = numpy.zeros(nbmax, Particle)
+
+        # Info array used for checking errors in particle move
+        obj.info = numpy.zeros(7, numpy.int32)
+
         # Fill structured array
         obj["x"][:np] = x
         obj["y"][:np] = y
@@ -84,11 +92,9 @@ class Particles(numpy.ndarray):
             msg = "ihole overflow error: ntmax={}, ierr={}"
             raise RuntimeError(msg.format(self.ntmax, ierr))
 
-        kstrt = comm.rank + 1
-        nvp = comm.size
-        self.np, info = cppmove2(
-                self, grid.edges, self.np, self.ihole, grid.ny, kstrt, nvp,
-                self.idimp, self.npmax, self.idps, self.nbmax, self.ntmax)
+        self.np = cppmove2(
+                self, grid.edges, self.np, self.sbufl, self.sbufr, self.rbufl,
+                self.rbufr, self.ihole, grid.ny, self.info)
 
         # Make sure particles actually reside in the local subdomain
         assert all(self["y"][:self.np] >= grid.edges[0])
