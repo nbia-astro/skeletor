@@ -124,6 +124,10 @@ assert numpy.isclose(global_sources.rho.trim().sum(), np)
 sources = Sources(grid, dtype=Float)
 sources.deposit(electrons)
 
+sources2 = Sources(grid, dtype=Float)
+sources2.deposit_ppic2(electrons)
+assert numpy.allclose(sources.rho, sources2.rho)
+
 assert numpy.isclose(sources.rho.sum(), electrons.np)
 
 rho = sources.rho.copy()

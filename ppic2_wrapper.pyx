@@ -76,3 +76,15 @@ def cppmove2(
             &rbufl[0], &ihole[0], ny, kstrt, nvp, idimp, npmax, idps, nbmax,
             ntmax, &info[0])
     return npp, info
+
+def cppgpost2l(
+        particle_t[:] particles, float_t[:,:] rho, int np, int noff,
+        int npmax):
+
+    cdef float_t qme = 1.0;
+    cdef int idimp = 4
+    cdef int nxe = rho.shape[1]
+    cdef int nypmx = rho.shape[0]
+
+    ppush2.cppgpost2l(&particles[0].x, &rho[0,0], np, noff, qme, idimp,
+            npmax, nxe, nypmx)
