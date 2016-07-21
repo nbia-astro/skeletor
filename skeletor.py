@@ -16,12 +16,6 @@ def allclose_sorted(a, b, **kwargs):
     return allclose(sort(a), sort(b), **kwargs)
 
 
-def sync_rng(comm=MPI.COMM_WORLD):
-    """Synchronize random number generator across processes."""
-    from numpy.random import get_state, set_state
-    set_state(comm.bcast(get_state()))
-
-
 def mpi_allsum(A, comm=MPI.COMM_WORLD):
     """Sum over all processes. The result is available on all processes."""
     return comm.allreduce(A, op=MPI.SUM)
@@ -50,6 +44,9 @@ dt = 0.1
 # Number of timesteps to run for
 nt = 10
 
+# Synchronize random number generator across ALL processes
+numpy.random.set_state(MPI.COMM_WORLD.bcast(numpy.random.get_state()))
+
 # Start parallel processing. Calling this function necessary even though
 # `MPI.Init()` has already been called by importing `MPI` from `mpi4py`. The
 # reason is that `cppinit()` sets a number of global variables in the C library
@@ -57,9 +54,6 @@ nt = 10
 # simply the MPI rank (i.e. processor id) and size (i.e. total number of
 # processes), respectively.
 idproc, nvp = cppinit()
-
-# Synchronize random number generator across processes
-sync_rng()
 
 # Create numerical grid. This contains information about the extent of the
 # subdomain assigned to each processor.
