@@ -1,4 +1,5 @@
-from numpy import ndarray, asarray
+from numpy import ndarray, asarray, zeros
+from dtypes import Float
 from mpi4py.MPI import COMM_WORLD as comm
 from ppic2_wrapper import cppaguard2xl, cppnaguard2l
 from ppic2_wrapper import cppcguard2xl, cppncguard2l
@@ -14,7 +15,11 @@ class Field(ndarray):
         shape = grid.nyp + 1, grid.nx + 2
         obj = super().__new__(cls, shape, **kwds)
 
+        # Store grid
         obj.grid = grid
+
+        # Scratch array needed for PPIC2's "add_guards" routine
+        obj.scr = zeros((2, grid.nx + 2), Float)
 
         return obj
 
@@ -30,6 +35,7 @@ class Field(ndarray):
             return
 
         self.grid = obj.grid
+        self.scr = obj.scr
 
     def trim(self):
         return asarray(self[:-1, :-2])
@@ -62,7 +68,7 @@ class Field(ndarray):
     def add_guards_ppic2(self):
 
         cppaguard2xl(self, self.grid.nyp, self.grid.nx)
-        cppnaguard2l(self, self.grid.nyp, self.grid.nx)
+        cppnaguard2l(self, self.scr, self.grid.nyp, self.grid.nx)
 
     def copy_guards_ppic2(self):
 
@@ -86,6 +92,7 @@ class GlobalField(Field):
         obj = super(Field, cls).__new__(cls, shape, **kwds)
 
         obj.grid = grid
+        obj.scr = zeros((2, grid.nx + 2), Float)
 
         return obj
 
