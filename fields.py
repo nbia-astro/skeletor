@@ -74,9 +74,9 @@ class Field(ndarray):
     def copy_guards_ppic2(self):
 
         from fields import Field
-        from dtypes import Float
+        from dtypes import Float2
 
-        field = Field(self.grid, dtype=[("x", Float), ("y", Float)])
+        field = Field(self.grid, dtype=Float2)
         field["x"] = self
 
         cppncguard2l(field, self.grid.nyp, self.grid.nx)

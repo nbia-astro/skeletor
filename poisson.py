@@ -1,6 +1,6 @@
 from ppic2_wrapper import cppinit
 from ppic2_wrapper import cwpfft2rinit, cppois22, cwppfft2r, cwppfft2r2
-from dtypes import Complex, Float, Int
+from dtypes import Complex, Complex2, Float, Float2, Int
 from grid import Grid
 from fields import Field
 
@@ -34,10 +34,6 @@ kyp = (ny - 1)//nvp + 1
 nye = ny + 2
 nxhy = (nxh if nxh > ny else ny)
 nxyh = (nx if nx > ny else ny)//2
-
-# TODO: Define these in dtypes.py and use it throughout the code
-Float2 = [('x', Float), ('y', Float)]
-Complex2 = [('x', Complex), ('y', Complex)]
 
 qe = Field(grid, dtype=Float)
 qe.fill(0.0)

@@ -1,5 +1,5 @@
 from ppic2_wrapper import cppinit
-from dtypes import Float
+from dtypes import Float, Float2
 from grid import Grid
 from fields import Field
 from particles import Particles
@@ -89,8 +89,7 @@ assert allclose_sorted(vx, global_electrons["vx"])
 assert allclose_sorted(vy, global_electrons["vy"])
 
 # Set the force to zero (this will of course change in the future).
-dtype = [('x', Float), ('y', Float)]
-fxy = Field(grid, dtype=dtype)
+fxy = Field(grid, dtype=Float2)
 fxy.fill(0.0)
 
 for it in range(nt):
