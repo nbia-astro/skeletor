@@ -4,5 +4,5 @@ ctypedef float complex complex_t
 cdef struct particle_t:
     float_t x, y, vx, vy
 
-cdef struct force_t:
+cdef struct float2_t:
     float_t x, y

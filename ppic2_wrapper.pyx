@@ -1,6 +1,6 @@
 # distutils: sources = ppic2/pplib2.c ppic2/ppush2.c
 
-from ctypes cimport float_t, force_t, particle_t
+from ctypes cimport float_t, float2_t, particle_t
 from dtypes import Float, Int
 cimport pplib2, ppush2
 from numpy cimport ndarray
@@ -55,7 +55,7 @@ def cpdicomp(int ny, int kstrt, int nvp):
 
 
 def cppgpush2l(
-        particle_t[:] particles, force_t[:,:] fxy, float_t[:] edges,
+        particle_t[:] particles, float2_t[:,:] fxy, float_t[:] edges,
         int npp, int noff, int[:] ihole, float dt, int nx, int ny):
 
     cdef float_t ek = 0.0
@@ -120,7 +120,7 @@ def cppnaguard2l(
     pplib2.cppnaguard2l(&rho[0,0], &scr[0,0], nyp, nx, kstrt, nvp, nxe, nypmx)
 
 
-def cppcguard2xl(force_t[:,:] fxy, int nyp, int nx):
+def cppcguard2xl(float2_t[:,:] fxy, int nyp, int nx):
 
     cdef int nxe = fxy.shape[1]
     cdef int nypmx = fxy.shape[0]
@@ -128,7 +128,7 @@ def cppcguard2xl(force_t[:,:] fxy, int nyp, int nx):
     ppush2.cppcguard2xl(&fxy[0,0].x, nyp, nx, 2, nxe, nypmx)
 
 
-def cppncguard2l(force_t[:,:] fxy, int nyp, int nx, comm=MPI.COMM_WORLD):
+def cppncguard2l(float2_t[:,:] fxy, int nyp, int nx, comm=MPI.COMM_WORLD):
 
     cdef int kstrt = comm.rank + 1
     cdef int nvp = comm.size
