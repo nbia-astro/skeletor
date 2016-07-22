@@ -1,13 +1,12 @@
 from numpy import ndarray, asarray, zeros
 from dtypes import Float
-from mpi4py import MPI
 from ppic2_wrapper import cppaguard2xl, cppnaguard2l
 from ppic2_wrapper import cppcguard2xl, cppncguard2l
 
 
 class Field(ndarray):
 
-    def __new__(cls, grid, comm=MPI.COMM_WORLD, **kwds):
+    def __new__(cls, grid, comm, **kwds):
 
         # I don't know why PPIC2 uses two guard cells in the x-direction
         # instead of one. Whatever the reason though, let's not change this for
@@ -17,6 +16,9 @@ class Field(ndarray):
 
         # Store grid
         obj.grid = grid
+
+        # Store MPI communicator
+        obj.comm = comm
 
         # MPI communication
         above = (comm.rank + 1) % comm.size
@@ -37,6 +39,7 @@ class Field(ndarray):
             return
 
         self.grid = obj.grid
+        self.comm = obj.comm
         self.scr = obj.scr
         self.send_up = obj.send_up
         self.send_down = obj.send_down
@@ -69,32 +72,17 @@ class Field(ndarray):
     def add_guards_ppic2(self):
 
         cppaguard2xl(self, self.grid.nyp, self.grid.nx)
-        cppnaguard2l(self, self.scr, self.grid.nyp, self.grid.nx)
+        cppnaguard2l(self, self.scr, self.grid.nyp, self.grid.nx, self.comm)
 
     def copy_guards_ppic2(self):
 
         from fields import Field
         from dtypes import Float2
 
-        field = Field(self.grid, dtype=Float2)
+        field = Field(self.grid, self.comm, dtype=Float2)
         field["x"] = self
 
-        cppncguard2l(field, self.grid.nyp, self.grid.nx)
+        cppncguard2l(field, self.grid.nyp, self.grid.nx, self.comm)
         cppcguard2xl(field, self.grid.nyp, self.grid.nx)
 
         self[...] = field["x"]
-
-
-class GlobalField(Field):
-
-    def __new__(cls, grid, comm=MPI.COMM_WORLD, **kwds):
-
-        shape = grid.ny + 1, grid.nx + 2
-        obj = super(Field, cls).__new__(cls, shape, **kwds)
-
-        obj.grid = grid
-        obj.scr = zeros((2, grid.nx + 2), Float)
-        obj.send_up = lambda sendbuf: sendbuf
-        obj.send_down = lambda sendbuf: sendbuf
-
-        return obj

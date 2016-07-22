@@ -3,6 +3,7 @@ from ppic2_wrapper import cwpfft2rinit, cppois22, cwppfft2r, cwppfft2r2
 from dtypes import Complex, Complex2, Float, Float2, Int
 from grid import Grid
 from fields import Field
+from mpi4py import MPI
 
 import numpy
 import matplotlib.pyplot as plt
@@ -15,7 +16,9 @@ ny = 1 << indy
 
 np = nx*ny*npc
 
-idproc, nvp = cppinit()
+comm = MPI.COMM_WORLD
+
+idproc, nvp = cppinit(comm)
 # The following definition is surely a Fortran relic
 kstrt = idproc + 1
 
@@ -35,9 +38,9 @@ nye = ny + 2
 nxhy = (nxh if nxh > ny else ny)
 nxyh = (nx if nx > ny else ny)//2
 
-qe = Field(grid, dtype=Float)
+qe = Field(grid, comm, dtype=Float)
 qe.fill(0.0)
-fxye = Field(grid, dtype=Float2)
+fxye = Field(grid, comm, dtype=Float2)
 fxye.fill(0.0)
 
 # TODO: Define complex field in dtypes module
@@ -60,7 +63,7 @@ affp = nx*ny/np
 
 # Calculate form factors
 isign = 0
-we = cppois22(qt, fxyt, isign, ffc, ax, ay, affp, nx, ny)
+we = cppois22(qt, fxyt, isign, ffc, ax, ay, affp, nx, ny, comm)
 
 # Initialize density field
 ikx, iky = 1, 2
@@ -69,17 +72,17 @@ qe[:ny, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
 # Transform charge to fourier space with standard procedure:
 # updates qt, modifies qe
 isign = -1
-ttp = cwppfft2r(qe.copy(), qt, bs, br, isign, mixup, sct, indx, indy)
+ttp = cwppfft2r(qe.copy(), qt, bs, br, isign, mixup, sct, indx, indy, comm)
 
 # Calculate force/charge in fourier space with standard procedure:
 # updates fxyt, we
 isign = -1
-we = cppois22(qt, fxyt, isign, ffc, ax, ay, affp, nx, ny)
+we = cppois22(qt, fxyt, isign, ffc, ax, ay, affp, nx, ny, comm)
 
 # Transform force to real space with standard procedure:
 # updates fxye, modifies fxyt
 isign = 1
-cwppfft2r2(fxye, fxyt, bs, br, isign, mixup, sct, indx, indy)
+cwppfft2r2(fxye, fxyt, bs, br, isign, mixup, sct, indx, indy, comm)
 
 plt.rc('image', origin='lower', interpolation='nearest')
 plt.figure(1)

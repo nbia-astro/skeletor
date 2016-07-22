@@ -1,6 +1,9 @@
+from mpi4py.libmpi cimport MPI_Comm
+
 cdef extern from "ppic2/pplib2.h":
 
-    void cppinit2 (int *idproc, int *nvp, int argc, char *argv[])
+    void cppinit2 (int *idproc, int *nvp, MPI_Comm comm,
+            int argc, char *argv[])
 
     void cppexit ()
 

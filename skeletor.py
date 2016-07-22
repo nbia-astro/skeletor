@@ -3,7 +3,7 @@ from dtypes import Float, Float2
 from grid import Grid
 from fields import Field
 from particles import Particles
-from sources import Sources, GlobalSources
+from sources import Sources
 import numpy
 from mpi4py import MPI
 
@@ -16,12 +16,12 @@ def allclose_sorted(a, b, **kwargs):
     return allclose(sort(a), sort(b), **kwargs)
 
 
-def mpi_allsum(A, comm=MPI.COMM_WORLD):
+def mpi_allsum(A):
     """Sum over all processes. The result is available on all processes."""
     return comm.allreduce(A, op=MPI.SUM)
 
 
-def mpi_allconcatenate(A, comm=MPI.COMM_WORLD):
+def mpi_allconcatenate(A):
     """Concatenate the array A on each process into one large continguous
     array. The result is available on all processes."""
     from numpy import concatenate
@@ -47,108 +47,81 @@ nt = 10
 # Synchronize random number generator across ALL processes
 numpy.random.set_state(MPI.COMM_WORLD.bcast(numpy.random.get_state()))
 
-# Start parallel processing. Calling this function necessary even though
-# `MPI.Init()` has already been called by importing `MPI` from `mpi4py`. The
-# reason is that `cppinit()` sets a number of global variables in the C library
-# source file (`ppic2/pplib2.c`). The returned variables `idproc` and `nvp` are
-# simply the MPI rank (i.e. processor id) and size (i.e. total number of
-# processes), respectively.
-idproc, nvp = cppinit()
-
-# Create numerical grid. This contains information about the extent of the
-# subdomain assigned to each processor.
-grid = Grid(nx, ny)
-
 # Total number of particles in simulation
-np = npc*grid.nx*grid.ny
-
-# Maximum number of electrons in each partition
-npmax = int(1.5*np/nvp)
+np = npc*nx*ny
 
 # Uniform distribution of particle positions
-x = grid.nx*numpy.random.uniform(size=np).astype(Float)
-y = grid.nx*numpy.random.uniform(size=np).astype(Float)
+x = nx*numpy.random.uniform(size=np).astype(Float)
+y = nx*numpy.random.uniform(size=np).astype(Float)
 # Normal distribution of particle velocities
 vx = vdx + vtx*numpy.random.normal(size=np).astype(Float)
 vy = vdy + vty*numpy.random.normal(size=np).astype(Float)
 
-# Assign particles to subdomains
-ind = numpy.logical_and(y >= grid.edges[0], y < grid.edges[1])
-electrons = Particles(x[ind], y[ind], vx[ind], vy[ind], npmax)
-# Make sure the numbers of particles in each subdomain add up to the total
-# number of particles
-assert mpi_allsum(electrons.np) == np
+global_electrons = []
+global_rho = []
 
-# Sanity check.
-# Combine particles from all processes into a single array and make sure that
-# the result agrees with the global particle array
-global_electrons = mpi_allconcatenate(electrons[:electrons.np])
-assert allclose_sorted(x, global_electrons["x"])
-assert allclose_sorted(y, global_electrons["y"])
-assert allclose_sorted(vx, global_electrons["vx"])
-assert allclose_sorted(vy, global_electrons["vy"])
+for comm in [MPI.COMM_SELF, MPI.COMM_WORLD]:
 
-# Set the force to zero (this will of course change in the future).
-fxy = Field(grid, dtype=Float2)
-fxy.fill(0.0)
+    # Start parallel processing. Calling this function necessary even though
+    # `MPI.Init()` has already been called by importing `MPI` from `mpi4py`.
+    # The reason is that `cppinit()` sets a number of global variables in the C
+    # library source file (`ppic2/pplib2.c`). The returned variables `idproc`
+    # and `nvp` are simply the MPI rank (i.e. processor id) and size (i.e.
+    # total number of processes), respectively.
+    idproc, nvp = cppinit(comm)
 
-for it in range(nt):
+    # Create numerical grid. This contains information about the extent of the
+    # subdomain assigned to each processor.
+    grid = Grid(nx, ny, comm)
 
-    # Push particles on each processor. This call also sends and receives
-    # particles to and from other processors/subdomains. The latter is the only
-    # non-trivial step in the entire code so far.
-    electrons.push(fxy, dt)
+    # Maximum number of electrons in each partition
+    npmax = int(1.5*np/nvp)
 
-    # Push global particle array and apply boundary conditions.
-    x += vx*dt
-    y += vy*dt
-    x %= nx
-    y %= ny
+    # Assign particles to subdomains
+    ind = numpy.logical_and(y >= grid.edges[0], y < grid.edges[1])
+    electrons = Particles(x[ind], y[ind], vx[ind], vy[ind], npmax, comm)
+    # Make sure the numbers of particles in each subdomain add up to the total
+    # number of particles
+    assert mpi_allsum(electrons.np) == np
 
-# Combine particles from all processes into a single array and make sure that
-# the result agrees with the global particle array
-global_electrons = mpi_allconcatenate(electrons[:electrons.np])
-assert allclose_sorted(x, global_electrons["x"])
-assert allclose_sorted(y, global_electrons["y"])
-assert allclose_sorted(vx, global_electrons["vx"])
-assert allclose_sorted(vy, global_electrons["vy"])
+    # Set the force to zero (this will of course change in the future).
+    fxy = Field(grid, comm, dtype=Float2)
+    fxy.fill(0.0)
 
-# Check charge deposition
-global_sources = GlobalSources(grid, dtype=Float)
-global_sources.deposit(global_electrons)
-assert numpy.isclose(global_sources.rho.sum(), np)
-global_sources.rho.add_guards()
-assert numpy.isclose(global_sources.rho.trim().sum(), np)
+    for it in range(nt):
 
-sources = Sources(grid, dtype=Float)
-sources.deposit(electrons)
+        # Push particles on each processor. This call also sends and receives
+        # particles to and from other processors/subdomains. The latter is the
+        # only non-trivial step in the entire code so far.
+        electrons.push(fxy, dt)
 
-sources2 = Sources(grid, dtype=Float)
-sources2.deposit_ppic2(electrons)
-assert numpy.allclose(sources.rho, sources2.rho)
+    # Combine particles from all processes into a single array and make sure
+    # that the result agrees with the global particle array
+    global_electrons += [mpi_allconcatenate(electrons[:electrons.np])]
 
-assert numpy.isclose(sources.rho.sum(), electrons.np)
+    sources = Sources(grid, comm, dtype=Float)
+    sources2 = Sources(grid, comm, dtype=Float)
 
-rho = sources.rho.copy()
-rho2 = sources.rho.copy()
+    sources.deposit(electrons)
+    sources2.deposit_ppic2(electrons)
 
-sources.rho.add_guards()
-rho.add_guards2()
-rho2.add_guards_ppic2()
+    assert numpy.allclose(sources.rho, sources2.rho)
+    assert numpy.isclose(sources.rho.sum(), electrons.np)
 
-assert numpy.isclose(mpi_allsum(rho2.trim().sum()), np)
-assert numpy.isclose(mpi_allsum(rho.trim().sum()), np)
-assert numpy.isclose(mpi_allsum(sources.rho.trim().sum()), np)
+    sources.rho.add_guards()
+    sources2.rho.add_guards_ppic2()
 
-assert numpy.allclose(rho.trim(), sources.rho.trim())
-assert numpy.allclose(rho2.trim(), sources.rho.trim())
+    sources.rho.copy_guards()
+    sources2.rho.copy_guards_ppic2()
 
-sources.rho.copy_guards()
-rho.copy_guards2()
-rho2.copy_guards_ppic2()
+    assert numpy.allclose(sources.rho, sources2.rho)
+    assert numpy.isclose(mpi_allsum(sources.rho.trim().sum()), np)
 
-assert numpy.allclose(rho, sources.rho)
-assert numpy.allclose(rho2, sources.rho)
+    global_rho += [mpi_allconcatenate(sources.rho.trim())]
 
-assert numpy.allclose(
-    mpi_allconcatenate(sources.rho.trim()), global_sources.rho.trim())
+for component in ["x", "y", "vx", "vy"]:
+    assert allclose_sorted(
+        global_electrons[0][component],
+        global_electrons[1][component])
+
+assert numpy.allclose(global_rho[0], global_rho[1])

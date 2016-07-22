@@ -6,7 +6,7 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, x, y, vx, vy, npmax):
+    def __new__(cls, x, y, vx, vy, npmax, comm):
 
         from dtypes import Int, Particle
         from warnings import warn
@@ -30,6 +30,9 @@ class Particles(numpy.ndarray):
 
         # Create structured array to hold the particle phase space coordinates
         obj = super().__new__(cls, shape=npmax, dtype=Particle)
+
+        # Store MPI communicator
+        obj.comm = comm
 
         # Store number of particles
         obj.np = np
@@ -59,6 +62,7 @@ class Particles(numpy.ndarray):
         if obj is None:
             return
 
+        self.comm = obj.comm
         self.np = obj.np
         self.ihole = obj.ihole
         self.sbufl = obj.sbufl
@@ -85,7 +89,7 @@ class Particles(numpy.ndarray):
 
         self.np = cppmove2(
                 self, grid.edges, self.np, self.sbufl, self.sbufr, self.rbufl,
-                self.rbufr, self.ihole, grid.ny, self.info)
+                self.rbufr, self.ihole, grid.ny, self.info, self.comm)
 
         # Make sure particles actually reside in the local subdomain
         assert all(self["y"][:self.np] >= grid.edges[0])

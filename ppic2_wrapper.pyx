@@ -4,7 +4,7 @@ from ctypes cimport complex_t, complex2_t, float_t, float2_t, particle_t
 from dtypes import Float, Int
 cimport pplib2, ppush2
 from numpy cimport ndarray
-from mpi4py import MPI
+cimport mpi4py.MPI as MPI
 import numpy
 
 
@@ -21,11 +21,11 @@ cdef float_t qme = 1.0
 cdef int ntpose = 1
 
 
-def cppinit(comm=MPI.COMM_WORLD):
+def cppinit(MPI.Comm comm):
     """Start parallel processing"""
     from mpi4py.MPI import Is_initialized
     cdef int idproc, nvp
-    pplib2.cppinit2(&idproc, &nvp, 0, NULL)
+    pplib2.cppinit2(&idproc, &nvp, comm.ob_mpi, 0, NULL)
     # Make sure MPI is indeed initialized
     assert Is_initialized()
     # 'idproc' and 'nvp' are simply the MPI rank and size. Make sure that this
@@ -77,7 +77,7 @@ def cppmove2(
         particle_t[:] particles, float_t[:] edges, int npp,
         particle_t[:] sbufl, particle_t[:] sbufr,
         particle_t[:] rbufl, particle_t[:] rbufr,
-        int[:] ihole, int ny, int[:] info, comm=MPI.COMM_WORLD):
+        int[:] ihole, int ny, int[:] info, MPI.Comm comm):
 
     cdef int kstrt = comm.rank + 1
     cdef int nvp = comm.size
@@ -112,7 +112,7 @@ def cppaguard2xl(float_t[:,:] rho, int nyp, int nx):
 
 def cppnaguard2l(
         float_t[:,:] rho, float_t[:,:] scr, int nyp, int nx,
-        comm=MPI.COMM_WORLD):
+        MPI.Comm comm):
 
     cdef int kstrt = comm.rank + 1
     cdef int nvp = comm.size
@@ -130,7 +130,7 @@ def cppcguard2xl(float2_t[:,:] fxy, int nyp, int nx):
     ppush2.cppcguard2xl(&fxy[0,0].x, nyp, nx, 2, nxe, nypmx)
 
 
-def cppncguard2l(float2_t[:,:] fxy, int nyp, int nx, comm=MPI.COMM_WORLD):
+def cppncguard2l(float2_t[:,:] fxy, int nyp, int nx, MPI.Comm comm):
 
     cdef int kstrt = comm.rank + 1
     cdef int nvp = comm.size
@@ -149,8 +149,8 @@ def cwpfft2rinit(int[:] mixup, complex_t[:] sct, int indx, int indy):
 def cwppfft2r(
         float_t[:,:] qe, complex_t[:,:] qt,
         complex2_t[:,:] bs, complex2_t[:,:] br,
-        int isign, int[:] mixup, complex_t[:] sct, int indx, int indy,
-        comm=MPI.COMM_WORLD):
+        int isign, int[:] mixup, complex_t[:] sct,
+        int indx, int indy, MPI.Comm comm):
 
     cdef int nxe = qe.shape[1]
     cdef int nypmx = qe.shape[0]
@@ -174,7 +174,7 @@ def cwppfft2r(
 def cppois22(
         complex_t[:,:] qt, complex2_t[:,:] fxyt,
         int isign, complex_t[:,:] ffc, float_t ax, float_t ay, float_t affp,
-        int nx, int ny, comm=MPI.COMM_WORLD):
+        int nx, int ny, MPI.Comm comm):
 
     cdef int nye = qt.shape[1]
     cdef int kxp = qt.shape[0]
@@ -193,7 +193,7 @@ def cwppfft2r2(
         float2_t[:,:] fxye, complex2_t[:,:] fxyt,
         complex2_t[:,:] bs, complex2_t[:,:] br,
         int isign, int[:] mixup, complex_t[:] sct,
-        int indx, int indy, comm=MPI.COMM_WORLD):
+        int indx, int indy, MPI.Comm comm):
 
     cdef int nxe = fxye.shape[1]
     cdef int nypmx = fxye.shape[0]

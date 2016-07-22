@@ -1,9 +1,6 @@
-from mpi4py import MPI
-
-
 class Grid:
 
-    def __init__(self, nx, ny, comm=MPI.COMM_WORLD):
+    def __init__(self, nx, ny, comm):
 
         from ppic2_wrapper import cpdicomp
 
