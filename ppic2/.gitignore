@@ -2,5 +2,8 @@
 /cppic2
 /fppic2
 
+# Error file
+/C.2
+
 # Fortran module files
 *.mod
