@@ -6,3 +6,6 @@ cdef struct particle_t:
 
 cdef struct float2_t:
     float_t x, y
+
+cdef struct complex2_t:
+    complex_t x, y

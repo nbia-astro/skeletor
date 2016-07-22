@@ -1,6 +1,6 @@
 # distutils: sources = ppic2/pplib2.c ppic2/ppush2.c
 
-from ctypes cimport float_t, float2_t, particle_t
+from ctypes cimport complex_t, complex2_t, float_t, float2_t, particle_t
 from dtypes import Float, Int
 cimport pplib2, ppush2
 from numpy cimport ndarray
@@ -17,6 +17,8 @@ cdef int ipbc = 1
 # Particle charge (hard-coded for now)
 # TODO: This should be an attribute of the particle class
 cdef float_t qme = 1.0
+# Not sure what this is for
+cdef int ntpose = 1
 
 
 def cppinit(comm=MPI.COMM_WORLD):
@@ -136,3 +138,78 @@ def cppncguard2l(float2_t[:,:] fxy, int nyp, int nx, comm=MPI.COMM_WORLD):
     cdef int nypmx = fxy.shape[0]
 
     pplib2.cppncguard2l(&fxy[0,0].x, nyp, kstrt, nvp, 2*nxe, nypmx)
+
+def cwpfft2rinit(int[:] mixup, complex_t[:] sct, int indx, int indy):
+
+    cdef int nxhy = mixup.shape[0]
+    cdef int nxyh = sct.shape[0]
+
+    ppush2.cwpfft2rinit(&mixup[0], &sct[0], indx, indy, nxhy, nxyh)
+
+def cwppfft2r(
+        float_t[:,:] qe, complex_t[:,:] qt,
+        complex2_t[:,:] bs, complex2_t[:,:] br,
+        int isign, int[:] mixup, complex_t[:] sct, int indx, int indy,
+        comm=MPI.COMM_WORLD):
+
+    cdef int nxe = qe.shape[1]
+    cdef int nypmx = qe.shape[0]
+    cdef int nye = qt.shape[1]
+    cdef int kxp = bs.shape[1]
+    cdef int kyp = bs.shape[0]
+    cdef int nxhy = mixup.shape[0]
+    cdef int nxyh = sct.shape[0]
+    cdef int kstrt = comm.rank + 1
+    cdef int nvp = comm.size
+
+    cdef float_t ttp = 0.0
+
+    ppush2.cwppfft2r(
+        <complex_t *>&qe[0,0], &qt[0,0], &bs[0,0].x, &br[0,0].x,
+        isign, ntpose, &mixup[0], &sct[0], &ttp, indx, indy,
+        kstrt, nvp, nxe//2, nye, kxp, kyp, nypmx, nxhy, nxyh)
+
+    return ttp
+
+def cppois22(
+        complex_t[:,:] qt, complex2_t[:,:] fxyt,
+        int isign, complex_t[:,:] ffc, float_t ax, float_t ay, float_t affp,
+        int nx, int ny, comm=MPI.COMM_WORLD):
+
+    cdef int nye = qt.shape[1]
+    cdef int kxp = qt.shape[0]
+    cdef int nyh = ffc.shape[1]
+    cdef int kstrt = comm.rank + 1
+
+    cdef float_t we = 0.0
+
+    ppush2.cppois22(
+            &qt[0,0], &fxyt[0,0].x, isign, &ffc[0,0], ax, ay, affp,
+            &we, nx, ny, kstrt, nye, kxp, nyh)
+
+    return we
+
+def cwppfft2r2(
+        float2_t[:,:] fxye, complex2_t[:,:] fxyt,
+        complex2_t[:,:] bs, complex2_t[:,:] br,
+        int isign, int[:] mixup, complex_t[:] sct,
+        int indx, int indy, comm=MPI.COMM_WORLD):
+
+    cdef int nxe = fxye.shape[1]
+    cdef int nypmx = fxye.shape[0]
+    cdef int nye = fxyt.shape[1]
+    cdef int kxp = bs.shape[1]
+    cdef int kyp = bs.shape[0]
+    cdef int nxhy = mixup.shape[0]
+    cdef int nxyh = sct.shape[0]
+    cdef int kstrt = comm.rank + 1
+    cdef int nvp = comm.size
+
+    cdef float_t ttp = 0.0
+
+    ppush2.cwppfft2r2(
+            <complex_t *>&fxye[0,0].x, &fxyt[0,0].x, &bs[0,0].x, &br[0,0].x,
+            isign, ntpose, &mixup[0], &sct[0], &ttp, indx, indy,
+            kstrt, nvp, nxe//2, nye, kxp, kyp, nypmx, nxhy, nxyh)
+
+    return ttp
