@@ -12,8 +12,8 @@ class Field(ndarray):
         # I don't know why PPIC2 uses two guard cells in the x-direction
         # instead of one. Whatever the reason though, let's not change this for
         # now.
-        shape = grid.nyp + 1, grid.nx + 2
-        obj = super().__new__(cls, shape, **kwds)
+        nxv = grid.nx + 2
+        obj = super().__new__(cls, shape=(grid.nypmx, nxv), **kwds)
 
         # Store grid
         obj.grid = grid
