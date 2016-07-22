@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "mpi.h"
 #include "pplib2.h"
       
 /* common block for parallel processing
@@ -66,7 +65,7 @@ int iresult(int iprec) {
 }
 
 /*--------------------------------------------------------------------*/
-void cppinit2(int *idproc, int *nvp, int argc, char *argv[]) {
+void cppinit2(int *idproc, int *nvp, MPI_Comm comm, int argc, char *argv[]) {
 /* this subroutine initializes parallel processing
    lgrp communicator = MPI_COMM_WORLD
    output: idproc, nvp
@@ -98,7 +97,7 @@ local data */
       ierror = MPI_Init(&argc,&argv);
       if (ierror) exit(1);
    }
-   lworld = MPI_COMM_WORLD;
+   lworld = comm;
    lgrp = lworld;
 /* determine the rank of the calling process in the communicator */
    ierror = MPI_Comm_rank(lgrp,idproc);
@@ -982,8 +981,8 @@ L180: nps = mpp + jsl[1] + jsr[1] - jss[0];
 /* Interfaces to Fortran */
 
 /*--------------------------------------------------------------------*/
-void cppinit2_(int *idproc, int *nvp, int *argc, char *argv[]) {
-   cppinit2(idproc,nvp,*argc,argv);
+void cppinit2_(int *idproc, int *nvp, MPI_Comm comm, int *argc, char *argv[]) {
+   cppinit2(idproc,nvp,comm,*argc,argv);
    return;
 }
 

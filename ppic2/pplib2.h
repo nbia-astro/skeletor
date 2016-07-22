@@ -1,8 +1,9 @@
 /* header file for pplib2.c */
 
+#include "mpi.h"
 #include <complex.h>
 
-void cppinit2(int *idproc, int *nvp, int argc, char *argv[]);
+void cppinit2(int *idproc, int *nvp, MPI_Comm comm, int argc, char *argv[]);
 
 void cppexit();
 

@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
 
 /* nvp = number of MPI ranks */
 /* initialize for distributed memory parallel processing */
-   cppinit2(&idproc,&nvp,argc,argv);
+   cppinit2(&idproc,&nvp,MPI_COMM_WORLD,argc,argv);
    kstrt = idproc + 1;
 /* check if too many processors */
    if (nvp > ny) {
