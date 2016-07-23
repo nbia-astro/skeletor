@@ -220,3 +220,13 @@ def cwppfft2r2(
             kstrt, nvp, nxe//2, nye, kxp, kyp, nypmx, nxhy, nxyh)
 
     return ttp
+
+def cppdsortp2yl(
+        particle_t[:] particles, particle_t[:] particles2,
+        int[:] npic, int npp, grid_t grid):
+
+    cdef int npmax = particles.shape[0]
+
+    ppush2.cppdsortp2yl(
+            &particles[0].x, &particles2[0].x, &npic[0],
+            npp, grid.noff, grid.nyp, idimp, npmax, grid.nypmx)
