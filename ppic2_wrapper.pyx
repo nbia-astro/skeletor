@@ -8,6 +8,8 @@ cimport mpi4py.MPI as MPI
 import numpy
 
 
+# Number of velocity coordinates
+cdef int ndim = 2
 # Number of partition boundaries
 cdef int idps = 2
 # Number of particle phase space coordinates
@@ -19,6 +21,14 @@ cdef int ipbc = 1
 cdef float_t qme = 1.0
 # Not sure what this is for
 cdef int ntpose = 1
+
+
+cdef class grid_t(object):
+    """Grid extension type.
+    This is inherited by the Grid class (see grid.py)."""
+    cdef public int nx, ny
+    cdef public float_t edges[2]
+    cdef public int nyp, noff, nypmx, nypmn
 
 
 def cppinit(MPI.Comm comm):
@@ -45,7 +55,7 @@ def cppexit():
 def cpdicomp(int ny, int kstrt, int nvp):
     # edges[0] = lower boundary of particle partition
     # edges[1] = upper boundary of particle partition
-    cdef ndarray[float_t, ndim=1] edges = numpy.empty(idps, Float)
+    cdef float_t edges[2]
     # nyp = number of primary (complete) gridpoints in particle partition
     # noff = lowermost global gridpoint in particle partition
     # nypmx = maximum size of particle partition, including guard cells
@@ -57,27 +67,27 @@ def cpdicomp(int ny, int kstrt, int nvp):
 
 
 def cppgpush2l(
-        particle_t[:] particles, float2_t[:,:] fxy, float_t[:] edges,
-        int npp, int noff, int[:] ihole, float dt, int nx, int ny):
+        particle_t[:] particles, float2_t[:,:] fxy,
+        int npp, int[:] ihole, float dt, grid_t grid):
 
     cdef float_t ek = 0.0
     cdef int npmax = particles.shape[0]
     cdef int nxe = fxy.shape[1]
-    cdef int nypmx = fxy.shape[0]
     cdef int ntmax = ihole.shape[0] - 1
 
     ppush2.cppgpush2l(
-            &particles[0].x, &fxy[0,0].x, &edges[0], npp, noff, &ihole[0],
-            qme, dt, &ek, nx, ny, idimp, npmax, nxe, nypmx, idps, ntmax, ipbc)
+            &particles[0].x, &fxy[0,0].x, grid.edges, npp, grid.noff,
+            &ihole[0], qme, dt, &ek, grid.nx, grid.ny, idimp, npmax, nxe,
+            grid.nypmx, idps, ntmax, ipbc)
 
     return ek
 
 
 def cppmove2(
-        particle_t[:] particles, float_t[:] edges, int npp,
+        particle_t[:] particles, int npp,
         particle_t[:] sbufl, particle_t[:] sbufr,
         particle_t[:] rbufl, particle_t[:] rbufr,
-        int[:] ihole, int ny, int[:] info, MPI.Comm comm):
+        int[:] ihole, int[:] info, grid_t grid, MPI.Comm comm):
 
     cdef int kstrt = comm.rank + 1
     cdef int nvp = comm.size
@@ -86,9 +96,9 @@ def cppmove2(
     cdef int ntmax = ihole.shape[0] - 1
 
     pplib2.cppmove2(
-            &particles[0].x, &edges[0], &npp,
+            &particles[0].x, grid.edges, &npp,
             &sbufr[0].x, &sbufl[0].x, &rbufr[0].x, &rbufl[0].x, &ihole[0],
-            ny, kstrt, nvp, idimp, npmax, idps, nbmax, ntmax, &info[0])
+            grid.ny, kstrt, nvp, idimp, npmax, idps, nbmax, ntmax, &info[0])
 
     return npp
 
@@ -102,42 +112,39 @@ def cppgpost2l(
     ppush2.cppgpost2l(&particles[0].x, &rho[0,0], np, noff, qme, idimp,
             npmax, nxe, nypmx)
 
-def cppaguard2xl(float_t[:,:] rho, int nyp, int nx):
+def cppaguard2xl(float_t[:,:] rho, grid_t grid):
 
     cdef int nxe = rho.shape[1]
-    cdef int nypmx = rho.shape[0]
 
-    ppush2.cppaguard2xl(&rho[0,0], nyp, nx, nxe, nypmx)
+    ppush2.cppaguard2xl(&rho[0,0], grid.nyp, grid.nx, nxe, grid.nypmx)
 
 
 def cppnaguard2l(
-        float_t[:,:] rho, float_t[:,:] scr, int nyp, int nx,
-        MPI.Comm comm):
+        float_t[:,:] rho, float_t[:,:] scr, grid_t grid, MPI.Comm comm):
 
     cdef int kstrt = comm.rank + 1
     cdef int nvp = comm.size
     cdef int nxe = rho.shape[1]
-    cdef int nypmx = rho.shape[0]
 
-    pplib2.cppnaguard2l(&rho[0,0], &scr[0,0], nyp, nx, kstrt, nvp, nxe, nypmx)
+    pplib2.cppnaguard2l(
+            &rho[0,0], &scr[0,0], grid.nyp, grid.nx,
+            kstrt, nvp, nxe, grid.nypmx)
 
 
-def cppcguard2xl(float2_t[:,:] fxy, int nyp, int nx):
+def cppcguard2xl(float2_t[:,:] fxy, grid_t grid):
 
     cdef int nxe = fxy.shape[1]
-    cdef int nypmx = fxy.shape[0]
 
-    ppush2.cppcguard2xl(&fxy[0,0].x, nyp, nx, 2, nxe, nypmx)
+    ppush2.cppcguard2xl(&fxy[0,0].x, grid.nyp, grid.nx, ndim, nxe, grid.nypmx)
 
 
-def cppncguard2l(float2_t[:,:] fxy, int nyp, int nx, MPI.Comm comm):
+def cppncguard2l(float2_t[:,:] fxy, grid_t grid, MPI.Comm comm):
 
     cdef int kstrt = comm.rank + 1
     cdef int nvp = comm.size
     cdef int nxe = fxy.shape[1]
-    cdef int nypmx = fxy.shape[0]
 
-    pplib2.cppncguard2l(&fxy[0,0].x, nyp, kstrt, nvp, 2*nxe, nypmx)
+    pplib2.cppncguard2l(&fxy[0,0].x, grid.nyp, kstrt, nvp, 2*nxe, grid.nypmx)
 
 def cwpfft2rinit(int[:] mixup, complex_t[:] sct, int indx, int indy):
 
@@ -174,7 +181,7 @@ def cwppfft2r(
 def cppois22(
         complex_t[:,:] qt, complex2_t[:,:] fxyt,
         int isign, complex_t[:,:] ffc, float_t ax, float_t ay, float_t affp,
-        int nx, int ny, MPI.Comm comm):
+        grid_t grid, MPI.Comm comm):
 
     cdef int nye = qt.shape[1]
     cdef int kxp = qt.shape[0]
@@ -185,7 +192,7 @@ def cppois22(
 
     ppush2.cppois22(
             &qt[0,0], &fxyt[0,0].x, isign, &ffc[0,0], ax, ay, affp,
-            &we, nx, ny, kstrt, nye, kxp, nyh)
+            &we, grid.nx, grid.ny, kstrt, nye, kxp, nyh)
 
     return we
 

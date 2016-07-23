@@ -22,7 +22,7 @@ idproc, nvp = cppinit(comm)
 # The following definition is surely a Fortran relic
 kstrt = idproc + 1
 
-grid = Grid(nx, ny)
+grid = Grid(nx, ny, comm)
 
 x = numpy.arange(grid.nx, dtype=Float)
 y = numpy.arange(grid.ny, dtype=Float)
@@ -63,7 +63,7 @@ affp = nx*ny/np
 
 # Calculate form factors
 isign = 0
-we = cppois22(qt, fxyt, isign, ffc, ax, ay, affp, nx, ny, comm)
+we = cppois22(qt, fxyt, isign, ffc, ax, ay, affp, grid, comm)
 
 # Initialize density field
 ikx, iky = 1, 2
@@ -77,7 +77,7 @@ ttp = cwppfft2r(qe.copy(), qt, bs, br, isign, mixup, sct, indx, indy, comm)
 # Calculate force/charge in fourier space with standard procedure:
 # updates fxyt, we
 isign = -1
-we = cppois22(qt, fxyt, isign, ffc, ax, ay, affp, nx, ny, comm)
+we = cppois22(qt, fxyt, isign, ffc, ax, ay, affp, grid, comm)
 
 # Transform force to real space with standard procedure:
 # updates fxye, modifies fxyt

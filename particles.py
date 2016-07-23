@@ -77,9 +77,7 @@ class Particles(numpy.ndarray):
 
         grid = fxy.grid
 
-        ek = cppgpush2l(
-                self, fxy, grid.edges, self.np, grid.noff, self.ihole, dt,
-                grid.nx, grid.ny)
+        ek = cppgpush2l(self, fxy, self.np, self.ihole, dt, grid)
 
         # Check for ihole overflow error
         if self.ihole[0] < 0:
@@ -88,8 +86,8 @@ class Particles(numpy.ndarray):
             raise RuntimeError(msg.format(self.ihole.size - 1, ierr))
 
         self.np = cppmove2(
-                self, grid.edges, self.np, self.sbufl, self.sbufr, self.rbufl,
-                self.rbufr, self.ihole, grid.ny, self.info, self.comm)
+                self, self.np, self.sbufl, self.sbufr, self.rbufl,
+                self.rbufr, self.ihole, self.info, grid, self.comm)
 
         # Make sure particles actually reside in the local subdomain
         assert all(self["y"][:self.np] >= grid.edges[0])

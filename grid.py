@@ -1,4 +1,7 @@
-class Grid:
+from ppic2_wrapper import grid_t
+
+
+class Grid(grid_t):
 
     def __init__(self, nx, ny, comm):
 
