@@ -6,7 +6,7 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, npmax):
+    def __new__(cls, npmax, charge=1.0, mass=1.0):
 
         from dtypes import Int, Particle
 
@@ -17,6 +17,10 @@ class Particles(numpy.ndarray):
 
         # Create structured array to hold the particle phase space coordinates
         obj = super().__new__(cls, shape=npmax, dtype=Particle)
+
+        # Particle charge and mass
+        obj.charge = charge
+        obj.mass = mass
 
         # Location of hole left in particle arrays
         obj.ihole = numpy.zeros(ntmax, Int)
@@ -37,6 +41,8 @@ class Particles(numpy.ndarray):
         if obj is None:
             return
 
+        self.charge = obj.charge
+        self.mass = obj.mass
         self.ihole = obj.ihole
         self.sbufl = obj.sbufl
         self.sbufr = obj.sbufr
