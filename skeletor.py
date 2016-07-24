@@ -34,6 +34,10 @@ nx, ny = 32, 32
 # Average number of particles per cell
 npc = 256
 
+# Particle charge and mass
+charge = -1.0
+mass = 1.0
+
 # Thermal velocity of electrons in x- and y-direction
 vtx, vty = 1.0, 1.0
 # Drift velocity of electrons in x- and y-direction
@@ -78,7 +82,7 @@ for comm in [MPI.COMM_SELF, MPI.COMM_WORLD]:
     npmax = int(1.5*np/nvp)
 
     # Create particle array
-    electrons = Particles(npmax)
+    electrons = Particles(npmax, charge, mass)
 
     # Assign particles to subdomains
     ind = numpy.logical_and(y >= grid.edges[0], y < grid.edges[1])
@@ -109,7 +113,7 @@ for comm in [MPI.COMM_SELF, MPI.COMM_WORLD]:
     sources2.deposit_ppic2(electrons)
 
     assert numpy.allclose(sources.rho, sources2.rho)
-    assert numpy.isclose(sources.rho.sum(), electrons.np)
+    assert numpy.isclose(sources.rho.sum(), electrons.np*charge)
 
     sources.rho.add_guards()
     sources2.rho.add_guards_ppic2()
@@ -118,7 +122,7 @@ for comm in [MPI.COMM_SELF, MPI.COMM_WORLD]:
     sources2.rho.copy_guards_ppic2()
 
     assert numpy.allclose(sources.rho, sources2.rho)
-    assert numpy.isclose(mpi_allsum(sources.rho.trim().sum()), np)
+    assert numpy.isclose(mpi_allsum(sources.rho.trim().sum()), np*charge)
 
     global_rho += [mpi_allconcatenate(sources.rho.trim())]
 

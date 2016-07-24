@@ -16,9 +16,6 @@ cdef int idps = 2
 cdef int idimp = 4
 # Particle boundary condition: 1 = periodic
 cdef int ipbc = 1
-# Particle charge (hard-coded for now)
-# TODO: This should be an attribute of the particle class
-cdef float_t qme = 1.0
 # Not sure what this is for
 cdef int ntpose = 1
 
@@ -68,7 +65,7 @@ def cpdicomp(int ny, int kstrt, int nvp):
 
 def cppgpush2l(
         particle_t[:] particles, float2_t[:,:] fxy,
-        int npp, int[:] ihole, float dt, grid_t grid):
+        int npp, int[:] ihole, float_t qm, float_t dt, grid_t grid):
 
     cdef float_t ek = 0.0
     cdef int npmax = particles.shape[0]
@@ -77,7 +74,7 @@ def cppgpush2l(
 
     ppush2.cppgpush2l(
             &particles[0].x, &fxy[0,0].x, grid.edges, npp, grid.noff,
-            &ihole[0], qme, dt, &ek, grid.nx, grid.ny, idimp, npmax, nxe,
+            &ihole[0], qm, dt, &ek, grid.nx, grid.ny, idimp, npmax, nxe,
             grid.nypmx, idps, ntmax, ipbc)
 
     return ek
@@ -104,12 +101,12 @@ def cppmove2(
 
 def cppgpost2l(
         particle_t[:] particles, float_t[:,:] rho, int np, int noff,
-        int npmax):
+        float_t charge, int npmax):
 
     cdef int nxe = rho.shape[1]
     cdef int nypmx = rho.shape[0]
 
-    ppush2.cppgpost2l(&particles[0].x, &rho[0,0], np, noff, qme, idimp,
+    ppush2.cppgpost2l(&particles[0].x, &rho[0,0], np, noff, charge, idimp,
             npmax, nxe, nypmx)
 
 def cppaguard2xl(float_t[:,:] rho, grid_t grid):

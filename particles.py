@@ -79,7 +79,9 @@ class Particles(numpy.ndarray):
         grid = fxy.grid
         comm = fxy.comm
 
-        ek = cppgpush2l(self, fxy, self.np, self.ihole, dt, grid)
+        qm = self.charge/self.mass
+
+        ek = cppgpush2l(self, fxy, self.np, self.ihole, qm, dt, grid)
 
         # Check for ihole overflow error
         if self.ihole[0] < 0:
