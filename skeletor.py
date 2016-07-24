@@ -77,9 +77,12 @@ for comm in [MPI.COMM_SELF, MPI.COMM_WORLD]:
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/nvp)
 
+    # Create particle array
+    electrons = Particles(npmax)
+
     # Assign particles to subdomains
     ind = numpy.logical_and(y >= grid.edges[0], y < grid.edges[1])
-    electrons = Particles(x[ind], y[ind], vx[ind], vy[ind], npmax, comm)
+    electrons.initialize(x[ind], y[ind], vx[ind], vy[ind])
     # Make sure the numbers of particles in each subdomain add up to the total
     # number of particles
     assert mpi_allsum(electrons.np) == np

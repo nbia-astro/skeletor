@@ -6,22 +6,9 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, x, y, vx, vy, npmax, comm):
+    def __new__(cls, npmax):
 
         from dtypes import Int, Particle
-        from warnings import warn
-
-        # Number of particles in subdomain
-        np = x.size
-
-        # Make sure all phase space coordinate arrays have the same size
-        assert y.size == vx.size == vy.size == np
-
-        # Make sure particle array is large enough
-        assert npmax >= np
-        if npmax < int(5/4*np):
-            msg = "Particle array is probably not large enough"
-            warn(msg + " (np={}, npmax={})".format(np, npmax))
 
         # Size of buffer for passing particles between processors
         nbmax = int(0.1*npmax)
@@ -30,12 +17,6 @@ class Particles(numpy.ndarray):
 
         # Create structured array to hold the particle phase space coordinates
         obj = super().__new__(cls, shape=npmax, dtype=Particle)
-
-        # Store MPI communicator
-        obj.comm = comm
-
-        # Store number of particles
-        obj.np = np
 
         # Location of hole left in particle arrays
         obj.ihole = numpy.zeros(ntmax, Int)
@@ -49,12 +30,6 @@ class Particles(numpy.ndarray):
         # Info array used for checking errors in particle move
         obj.info = numpy.zeros(7, Int)
 
-        # Fill structured array
-        obj["x"][:np] = x
-        obj["y"][:np] = y
-        obj["vx"][:np] = vx
-        obj["vy"][:np] = vy
-
         return obj
 
     def __array_finalize__(self, obj):
@@ -62,8 +37,6 @@ class Particles(numpy.ndarray):
         if obj is None:
             return
 
-        self.comm = obj.comm
-        self.np = obj.np
         self.ihole = obj.ihole
         self.sbufl = obj.sbufl
         self.sbufr = obj.sbufr
@@ -71,11 +44,34 @@ class Particles(numpy.ndarray):
         self.rbufr = obj.rbufr
         self.info = obj.info
 
+    def initialize(self, x, y, vx, vy):
+
+        from warnings import warn
+
+        # Number of particles in subdomain
+        self.np = x.size
+
+        # Make sure all phase space coordinate arrays have the same size
+        assert y.size == vx.size == vy.size == self.np
+
+        # Make sure particle array is large enough
+        assert self.size >= self.np
+        if self.size < int(5/4*self.np):
+            msg = "Particle array is probably not large enough"
+            warn(msg + " (np={}, npmax={})".format(self.np, self.size))
+
+        # Fill structured array
+        self["x"][:self.np] = x
+        self["y"][:self.np] = y
+        self["vx"][:self.np] = vx
+        self["vy"][:self.np] = vy
+
     def push(self, fxy, dt):
 
         from ppic2_wrapper import cppgpush2l, cppmove2
 
         grid = fxy.grid
+        comm = fxy.comm
 
         ek = cppgpush2l(self, fxy, self.np, self.ihole, dt, grid)
 
@@ -87,7 +83,7 @@ class Particles(numpy.ndarray):
 
         self.np = cppmove2(
                 self, self.np, self.sbufl, self.sbufr, self.rbufl,
-                self.rbufr, self.ihole, self.info, grid, self.comm)
+                self.rbufr, self.ihole, self.info, grid, comm)
 
         # Make sure particles actually reside in the local subdomain
         assert all(self["y"][:self.np] >= grid.edges[0])
