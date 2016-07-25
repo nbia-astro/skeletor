@@ -122,14 +122,14 @@ if __name__ == "__main__":
 
     # Coordinate arrays
     x = numpy.arange(grid.nx, dtype=Float)
-    y = numpy.arange(grid.ny, dtype=Float)
+    y = grid.noff + numpy.arange(grid.nyp, dtype=Float)
     xx, yy = numpy.meshgrid(x, y)
 
     # Initialize density field
     qe = Field(grid, comm, dtype=Float)
     qe.fill(0.0)
     ikx, iky = 1, 2
-    qe[:ny, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
+    qe[:grid.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
 
     # Initialize force field
     fxye = Field(grid, comm, dtype=Float2)
@@ -141,6 +141,13 @@ if __name__ == "__main__":
     ##############################################
     # Solve Gauss' law with Numpy's built-in FFT #
     ##############################################
+
+    # Concatenate local arrays to obtain global arrays (without guard cells).
+    # The result is available on all processors.
+    def concatenate(arr):
+        return numpy.concatenate(comm.allgather(arr))
+    global_qe = concatenate(qe.trim())
+    global_fxye = concatenate(fxye.trim())
 
     # Wave number arrays
     kx = 2*numpy.pi*numpy.fft.rfftfreq(grid.nx)
@@ -162,34 +169,36 @@ if __name__ == "__main__":
     k21_eff = k21*numpy.exp(-((kx*ax)**2 + (ky*ay)**2))
 
     # Transform charge density to Fourier space
-    qt = numpy.fft.rfft2(qe[:ny, :nx])
+    qt = numpy.fft.rfft2(global_qe)
 
     # Solve Gauss' law in Fourier space and transform back to real space
     fx = affp*numpy.fft.irfft2(-1j*kx*k21_eff*qt)
     fy = affp*numpy.fft.irfft2(-1j*ky*k21_eff*qt)
 
     # Make sure the two solutions are close to each other
-    assert numpy.allclose(fx, fxye[:ny, :nx]["x"])
-    assert numpy.allclose(fy, fxye[:ny, :nx]["y"])
+    assert numpy.allclose(fx, global_fxye["x"])
+    assert numpy.allclose(fy, global_fxye["y"])
 
     #############
     # Visualize #
     #############
 
-    plt.rc('image', origin='lower', interpolation='nearest')
-    plt.figure(1)
-    plt.clf()
-    ax1 = plt.subplot2grid((2, 4), (0, 1), colspan=2)
-    ax2 = plt.subplot2grid((2, 4), (1, 0), colspan=2)
-    ax3 = plt.subplot2grid((2, 4), (1, 2), colspan=2)
-    ax1.imshow(qe)
-    ax2.imshow(fxye["x"])
-    ax3.imshow(fxye["y"])
-    ax1.set_title(r'$\rho$')
-    ax2.set_title(r'$f_x$')
-    ax3.set_title(r'$f_y$')
-    for ax in (ax1, ax2, ax3):
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$y$')
-    plt.draw()
-    plt.show()
+    if comm.rank == 0:
+
+        plt.rc('image', origin='lower', interpolation='nearest')
+        plt.figure(1)
+        plt.clf()
+        ax1 = plt.subplot2grid((2, 4), (0, 1), colspan=2)
+        ax2 = plt.subplot2grid((2, 4), (1, 0), colspan=2)
+        ax3 = plt.subplot2grid((2, 4), (1, 2), colspan=2)
+        ax1.imshow(global_qe)
+        ax2.imshow(global_fxye["x"])
+        ax3.imshow(global_fxye["y"])
+        ax1.set_title(r'$\rho$')
+        ax2.set_title(r'$f_x$')
+        ax3.set_title(r'$f_y$')
+        for ax in (ax1, ax2, ax3):
+            ax.set_xlabel(r'$x$')
+            ax.set_ylabel(r'$y$')
+        plt.draw()
+        plt.show()
