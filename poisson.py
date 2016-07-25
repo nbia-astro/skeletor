@@ -107,9 +107,14 @@ if __name__ == "__main__":
     # Total number of particles
     np = nx*ny*npc
 
-    idproc, nvp = cppinit(comm)
+    #############################################
+    # Solve Gauss' law with PPIC's parallel FFT #
+    #############################################
 
     # Start parallel processing.
+    idproc, nvp = cppinit(comm)
+
+    # Create numerical grid
     grid = Grid(nx, ny, comm)
 
     # Initialize Poisson solver
@@ -133,7 +138,44 @@ if __name__ == "__main__":
     # Solve Gauss' law
     poisson(qe, fxye)
 
-    # Visualize
+    ##############################################
+    # Solve Gauss' law with Numpy's built-in FFT #
+    ##############################################
+
+    # Wave number arrays
+    kx = 2*numpy.pi*numpy.fft.rfftfreq(grid.nx)
+    ky = 2*numpy.pi*numpy.fft.fftfreq(grid.ny)
+    kx, ky = numpy.meshgrid(kx, ky)
+
+    # Normalization constant
+    affp = grid.nx*grid.ny/np
+
+    # Compute inverse wave number squared
+    k2 = kx**2 + ky**2
+    k2[0, 0] = 1.0
+    k21 = 1.0/k2
+    k21[0, 0] = 0.0
+    k2[0, 0] = 0.0
+
+    # Effective inverse wave number for finite size particles
+    # TODO: Figure out how the exponential factor is actually derived
+    k21_eff = k21*numpy.exp(-((kx*ax)**2 + (ky*ay)**2))
+
+    # Transform charge density to Fourier space
+    qt = numpy.fft.rfft2(qe[:ny, :nx])
+
+    # Solve Gauss' law in Fourier space and transform back to real space
+    fx = affp*numpy.fft.irfft2(-1j*kx*k21_eff*qt)
+    fy = affp*numpy.fft.irfft2(-1j*ky*k21_eff*qt)
+
+    # Make sure the two solutions are close to each other
+    assert numpy.allclose(fx, fxye[:ny, :nx]["x"])
+    assert numpy.allclose(fy, fxye[:ny, :nx]["y"])
+
+    #############
+    # Visualize #
+    #############
+
     plt.rc('image', origin='lower', interpolation='nearest')
     plt.figure(1)
     plt.clf()
