@@ -100,7 +100,7 @@ for comm in [MPI.COMM_SELF, MPI.COMM_WORLD]:
         # Push particles on each processor. This call also sends and receives
         # particles to and from other processors/subdomains. The latter is the
         # only non-trivial step in the entire code so far.
-        electrons.push(fxy, dt)
+        electrons.push(fxy, dt, check=True)
 
     # Combine particles from all processes into a single array and make sure
     # that the result agrees with the global particle array
