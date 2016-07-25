@@ -1,13 +1,19 @@
 from ppic2_wrapper import cppdsortp2yl
-from dtypes import Int
-import numpy
 
 
-def particle_sort(particles, grid):
-    """Sort particles according to their y-coordinate, out of place."""
-    particles2 = numpy.empty_like(particles)
-    npic = numpy.empty(grid.nypmx, Int)
+class ParticleSort:
 
-    cppdsortp2yl(particles, particles2, npic, particles.np, grid)
+    def __init__(self, grid):
 
-    return particles2
+        from dtypes import Int
+        from numpy import empty
+
+        self.grid = grid
+        self.npic = empty(grid.nypmx, Int)
+
+    def __call__(self, particles, particles2):
+
+        cppdsortp2yl(
+                particles, particles2, self.npic, particles.np, self.grid)
+
+        particles2.np = particles.np
