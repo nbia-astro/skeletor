@@ -41,3 +41,7 @@ cdef extern from "ppic2/ppush2.h":
 
     void cppdsortp2yl(float parta[], float partb[], int npic[], int npp,
             int noff, int nyp, int idimp, int npmax, int nypm1)
+
+    void cpdistr2(float part[], float edges[], int *npp, int nps, float vtx,
+            float vty, float vdx, float vdy, int npx, int npy, int nx, int ny,
+            int idimp, int npmax, int idps, int ipbc, int *ierr)
