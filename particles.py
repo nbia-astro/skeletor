@@ -50,15 +50,15 @@ class Particles(numpy.ndarray):
         self.rbufr = obj.rbufr
         self.info = obj.info
 
-    def initialize(self, x, y, vx, vy):
+    def initialize(self, x, y, vx, vy, grid):
 
+        from numpy import logical_and, sum
         from warnings import warn
 
-        # Number of particles in subdomain
-        self.np = x.size
+        ind = logical_and(y >= grid.edges[0], y < grid.edges[1])
 
-        # Make sure all phase space coordinate arrays have the same size
-        assert y.size == vx.size == vy.size == self.np
+        # Number of particles in subdomain
+        self.np = sum(ind)
 
         # Make sure particle array is large enough
         assert self.size >= self.np
@@ -67,10 +67,10 @@ class Particles(numpy.ndarray):
             warn(msg + " (np={}, npmax={})".format(self.np, self.size))
 
         # Fill structured array
-        self["x"][:self.np] = x
-        self["y"][:self.np] = y
-        self["vx"][:self.np] = vx
-        self["vy"][:self.np] = vy
+        self["x"][:self.np] = x[ind]
+        self["y"][:self.np] = y[ind]
+        self["vx"][:self.np] = vx[ind]
+        self["vy"][:self.np] = vy[ind]
 
     def initialize_ppic2(self, vtx, vty, vdx, vdy, npx, npy, grid):
 
