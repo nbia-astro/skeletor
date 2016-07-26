@@ -76,8 +76,7 @@ vx = vdx + vtx*numpy.random.normal(size=np).astype(Float)
 vy = vdy + vty*numpy.random.normal(size=np).astype(Float)
 
 # Assign particles to subdomains
-ind = numpy.logical_and(y >= grid.edges[0], y < grid.edges[1])
-electrons.initialize(x[ind], y[ind], vx[ind], vy[ind])
+electrons.initialize(x, y, vx, vy, grid)
 assert numpy.isclose(comm.allreduce(electrons.np, op=SUM), np)
 
 # Total number of time steps
