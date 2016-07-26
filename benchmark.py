@@ -9,6 +9,7 @@ from sources import Sources
 
 from mpi4py.MPI import COMM_WORLD as comm, SUM
 import numpy
+import time
 
 # Number of grid points in x- and y-direction (nx = 2**indx, ...)
 nx, ny = 1 << 9, 1 << 9
@@ -83,6 +84,8 @@ assert comm.allreduce(electrons.np, op=SUM) == np
 nt = int(tend/dt + 1e-4)
 
 # Start integration
+start = time.clock()
+
 for it in range(nt):
 
     # Deposit charge
@@ -108,3 +111,6 @@ for it in range(nt):
             tmp = electrons
             electrons = electrons2
             electrons2 = tmp
+
+stop = time.clock()
+print("Total loop time: {} seconds".format(stop - start))

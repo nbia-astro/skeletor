@@ -34,7 +34,8 @@ int main(int argc, char *argv[]) {
 /* idps = number of partition boundaries */
    int idps = 2;
 /* wke/we/wt = particle kinetic/electric field/total energy */
-   float wke = 0.0, we = 0.0, wt = 0.0;
+   float wke = 0.0, we = 0.0, wt = 0.0, wt2 = 0.0;
+   clock_t start, stop;
 /* declare scalars for standard code */
    int j;
    int nx, ny, nxh, nyh, nxe, nye, nxeh, nnxe, nxyh, nxhy;
@@ -185,9 +186,12 @@ int main(int argc, char *argv[]) {
    }
 
 /* * * * start main iteration loop * * * */
+   start = clock();
 
-L500: if (nloop <= ntime)
+L500: if (nloop <= ntime) {
+         stop = clock();
          goto L2000;
+      }
 /*    if (kstrt==1) printf("ntime = %i\n",ntime); */
 
 /* deposit charge with standard procedure: updates qe */
@@ -335,6 +339,8 @@ L2000:
       printf("total particle time = %f\n",time);
       wt = time + tfield;
       printf("total time = %f\n",wt);
+      wt2 = (double)(stop - start)/CLOCKS_PER_SEC;
+      printf("total loop time = %f\n",wt2);
       printf("\n");
 
       wt = 1.0e+09/(((float) nloop)*((float) np));
