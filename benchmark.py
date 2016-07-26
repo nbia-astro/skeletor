@@ -47,7 +47,7 @@ idproc, nvp = cppinit(comm)
 grid = Grid(nx, ny, comm)
 
 # Initialize Poisson solver
-poisson = Poisson(grid, comm, ax, ay, np)
+poisson = Poisson(grid, ax, ay, np)
 
 # Initialize particle sort
 sort = ParticleSort(grid)

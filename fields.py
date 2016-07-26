@@ -72,7 +72,7 @@ class Field(ndarray):
     def add_guards_ppic2(self):
 
         cppaguard2xl(self, self.grid)
-        cppnaguard2l(self, self.scr, self.grid, self.comm)
+        cppnaguard2l(self, self.scr, self.grid)
 
     def copy_guards_ppic2(self):
 
@@ -82,7 +82,7 @@ class Field(ndarray):
         field = Field(self.grid, self.comm, dtype=Float2)
         field["x"] = self
 
-        cppncguard2l(field, self.grid, self.comm)
+        cppncguard2l(field, self.grid)
         cppcguard2xl(field, self.grid)
 
         self[...] = field["x"]

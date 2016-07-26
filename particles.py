@@ -87,7 +87,6 @@ class Particles(numpy.ndarray):
         from ppic2_wrapper import cppgpush2l, cppmove2
 
         grid = fxy.grid
-        comm = fxy.comm
 
         qm = self.charge/self.mass
 
@@ -101,7 +100,7 @@ class Particles(numpy.ndarray):
 
         self.np = cppmove2(
                 self, self.np, self.sbufl, self.sbufr, self.rbufl,
-                self.rbufr, self.ihole, self.info, grid, comm)
+                self.rbufr, self.ihole, self.info, grid)
 
         # Make sure particles actually reside in the local subdomain
         if check:
