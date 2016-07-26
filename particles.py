@@ -72,6 +72,16 @@ class Particles(numpy.ndarray):
         self["vx"][:self.np] = vx
         self["vy"][:self.np] = vy
 
+    def initialize_ppic2(self, vtx, vty, vdx, vdy, npx, npy, grid):
+
+        from ppic2_wrapper import cpdistr2
+
+        npp, ierr = cpdistr2(self, vtx, vty, vdx, vdy, npx, npy, grid)
+        if ierr != 0:
+            msg = "Particle initialization error: ierr={}"
+            raise RuntimeError(msg.format(ierr))
+        self.np = npp
+
     def push(self, fxy, dt, check=False):
 
         from ppic2_wrapper import cppgpush2l, cppmove2
