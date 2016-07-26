@@ -16,8 +16,9 @@ nx, ny = 1 << 9, 1 << 9
 # nx, ny = 1 << 5, 1 << 5
 
 # Total number of electrons
-np = 3072*3072
-# np = 256*256
+npx, npy = 3072, 3072
+# npx, npy = 256, 256
+np = npx*npy
 
 # Time at end of simulation, in units of plasma frequency
 tend = 10.0
@@ -68,15 +69,25 @@ electrons2 = Particles(npmax, charge, mass)
 # Synchronize random number generator across ALL processes
 numpy.random.set_state(comm.bcast(numpy.random.get_state()))
 
-# Uniform distribution of particle positions
-x = nx*numpy.random.uniform(size=np).astype(Float)
-y = nx*numpy.random.uniform(size=np).astype(Float)
-# Normal distribution of particle velocities
-vx = vdx + vtx*numpy.random.normal(size=np).astype(Float)
-vy = vdy + vty*numpy.random.normal(size=np).astype(Float)
+if False:
 
-# Assign particles to subdomains
-electrons.initialize(x, y, vx, vy, grid)
+    # Uniform distribution of particle positions
+    x = nx*numpy.random.uniform(size=np).astype(Float)
+    y = nx*numpy.random.uniform(size=np).astype(Float)
+    # Normal distribution of particle velocities
+    vx = vdx + vtx*numpy.random.normal(size=np).astype(Float)
+    vy = vdy + vty*numpy.random.normal(size=np).astype(Float)
+
+    # Assign particles to subdomains
+    electrons.initialize(x, y, vx, vy, grid)
+
+else:
+
+    # Use PPIC2's initialization
+    electrons.initialize_ppic2(vtx, vty, vdx, vdy, npx, npy, grid)
+
+# Make sure the numbers of particles in each subdomain add up to the total
+# number of particles
 assert numpy.isclose(comm.allreduce(electrons.np, op=SUM), np)
 
 # Total number of time steps
