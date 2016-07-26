@@ -50,19 +50,24 @@ class Poisson:
                 self.qt, self.fxyt, isign, self.ffc,
                 self.ax, self.ay, self.affp, grid, comm)
 
-    def __call__(self, qe, fxye):
+    def __call__(self, qe, fxye, destroy_input=True):
 
         from ppic2_wrapper import cppois22, cwppfft2r, cwppfft2r2
 
         grid = qe.grid
         comm = qe.comm
 
+        if destroy_input:
+            qe_ = qe
+        else:
+            qe_ = qe.copy()
+
         # Transform charge to fourier space with standard procedure:
         # updates qt, modifies qe
         isign = -1
         ttp = cwppfft2r(
-                qe.copy(), self.qt, self.bs, self.br, isign,
-                self.mixup, self.sct, self.indx, self.indy, comm)
+                qe_, self.qt, self.bs, self.br, isign, self.mixup, self.sct,
+                self.indx, self.indy, comm)
 
         # Calculate force/charge in fourier space with standard procedure:
         # updates fxyt, we
