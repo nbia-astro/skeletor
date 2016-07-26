@@ -2,7 +2,7 @@ class Poisson:
 
     """Solve Gauss' law ∇·E = ρ/ε0 via a discrete fourier transform."""
 
-    def __init__(self, grid, comm, ax, ay, np):
+    def __init__(self, grid, ax, ay, np):
 
         from dtypes import Complex, Complex2, Int
         from ppic2_wrapper import cwpfft2rinit, cppois22
@@ -22,16 +22,13 @@ class Poisson:
         # Normalization constant
         self.affp = grid.nx*grid.ny/np
 
-        # kstrt = comm.rank + 1
-        nvp = comm.size
-
         nxh = grid.nx//2
         nyh = (1 if 1 > grid.ny//2 else grid.ny//2)
         nxhy = (nxh if nxh > grid.ny else grid.ny)
         nxyh = (grid.nx if grid.nx > grid.ny else grid.ny)//2
         nye = grid.ny + 2
-        kxp = (nxh - 1)//nvp + 1
-        kyp = (grid.ny - 1)//nvp + 1
+        kxp = (nxh - 1)//grid.nvp + 1
+        kyp = (grid.ny - 1)//grid.nvp + 1
 
         self.qt = zeros((kxp, nye), Complex)
         self.fxyt = zeros((kxp, nye), Complex2)
@@ -48,14 +45,13 @@ class Poisson:
         isign = 0
         cppois22(
                 self.qt, self.fxyt, isign, self.ffc,
-                self.ax, self.ay, self.affp, grid, comm)
+                self.ax, self.ay, self.affp, grid)
 
     def __call__(self, qe, fxye, destroy_input=True):
 
         from ppic2_wrapper import cppois22, cwppfft2r, cwppfft2r2
 
         grid = qe.grid
-        comm = qe.comm
 
         if destroy_input:
             qe_ = qe
@@ -67,21 +63,21 @@ class Poisson:
         isign = -1
         ttp = cwppfft2r(
                 qe_, self.qt, self.bs, self.br, isign, self.mixup, self.sct,
-                self.indx, self.indy, comm)
+                self.indx, self.indy, grid)
 
         # Calculate force/charge in fourier space with standard procedure:
         # updates fxyt, we
         isign = -1
         we = cppois22(
                 self.qt, self.fxyt, isign, self.ffc,
-                self.ax, self.ay, self.affp, grid, comm)
+                self.ax, self.ay, self.affp, grid)
 
         # Transform force to real space with standard procedure:
         # updates fxye, modifies fxyt
         isign = 1
         cwppfft2r2(
                 fxye, self.fxyt, self.bs, self.br, isign,
-                self.mixup, self.sct, self.indx, self.indy, comm)
+                self.mixup, self.sct, self.indx, self.indy, grid)
 
         return ttp, we
 
@@ -123,7 +119,7 @@ if __name__ == "__main__":
     grid = Grid(nx, ny, comm)
 
     # Initialize Poisson solver
-    poisson = Poisson(grid, comm, ax, ay, np)
+    poisson = Poisson(grid, ax, ay, np)
 
     # Coordinate arrays
     x = numpy.arange(grid.nx, dtype=Float)

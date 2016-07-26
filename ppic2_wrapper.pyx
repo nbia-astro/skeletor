@@ -24,6 +24,7 @@ cdef class grid_t(object):
     """Grid extension type.
     This is inherited by the Grid class (see grid.py)."""
     cdef public int nx, ny
+    cdef public int kstrt, nvp
     cdef public float_t edges[2]
     cdef public int nyp, noff, nypmx, nypmn
 
@@ -84,10 +85,8 @@ def cppmove2(
         particle_t[:] particles, int npp,
         particle_t[:] sbufl, particle_t[:] sbufr,
         particle_t[:] rbufl, particle_t[:] rbufr,
-        int[:] ihole, int[:] info, grid_t grid, MPI.Comm comm):
+        int[:] ihole, int[:] info, grid_t grid):
 
-    cdef int kstrt = comm.rank + 1
-    cdef int nvp = comm.size
     cdef int npmax = particles.shape[0]
     cdef int nbmax = sbufl.shape[0]
     cdef int ntmax = ihole.shape[0] - 1
@@ -95,7 +94,8 @@ def cppmove2(
     pplib2.cppmove2(
             &particles[0].x, grid.edges, &npp,
             &sbufr[0].x, &sbufl[0].x, &rbufr[0].x, &rbufl[0].x, &ihole[0],
-            grid.ny, kstrt, nvp, idimp, npmax, idps, nbmax, ntmax, &info[0])
+            grid.ny, grid.kstrt, grid.nvp, idimp, npmax, idps, nbmax, ntmax,
+            &info[0])
 
     return npp
 
@@ -117,15 +117,13 @@ def cppaguard2xl(float_t[:,:] rho, grid_t grid):
 
 
 def cppnaguard2l(
-        float_t[:,:] rho, float_t[:,:] scr, grid_t grid, MPI.Comm comm):
+        float_t[:,:] rho, float_t[:,:] scr, grid_t grid):
 
-    cdef int kstrt = comm.rank + 1
-    cdef int nvp = comm.size
     cdef int nxe = rho.shape[1]
 
     pplib2.cppnaguard2l(
             &rho[0,0], &scr[0,0], grid.nyp, grid.nx,
-            kstrt, nvp, nxe, grid.nypmx)
+            grid.kstrt, grid.nvp, nxe, grid.nypmx)
 
 
 def cppcguard2xl(float2_t[:,:] fxy, grid_t grid):
@@ -135,13 +133,12 @@ def cppcguard2xl(float2_t[:,:] fxy, grid_t grid):
     ppush2.cppcguard2xl(&fxy[0,0].x, grid.nyp, grid.nx, ndim, nxe, grid.nypmx)
 
 
-def cppncguard2l(float2_t[:,:] fxy, grid_t grid, MPI.Comm comm):
+def cppncguard2l(float2_t[:,:] fxy, grid_t grid):
 
-    cdef int kstrt = comm.rank + 1
-    cdef int nvp = comm.size
     cdef int nxe = fxy.shape[1]
 
-    pplib2.cppncguard2l(&fxy[0,0].x, grid.nyp, kstrt, nvp, 2*nxe, grid.nypmx)
+    pplib2.cppncguard2l(
+            &fxy[0,0].x, grid.nyp, grid.kstrt, grid.nvp, 2*nxe, grid.nypmx)
 
 def cwpfft2rinit(int[:] mixup, complex_t[:] sct, int indx, int indy):
 
@@ -154,7 +151,7 @@ def cwppfft2r(
         float_t[:,:] qe, complex_t[:,:] qt,
         complex2_t[:,:] bs, complex2_t[:,:] br,
         int isign, int[:] mixup, complex_t[:] sct,
-        int indx, int indy, MPI.Comm comm):
+        int indx, int indy, grid_t grid):
 
     cdef int nxe = qe.shape[1]
     cdef int nypmx = qe.shape[0]
@@ -163,33 +160,30 @@ def cwppfft2r(
     cdef int kyp = bs.shape[0]
     cdef int nxhy = mixup.shape[0]
     cdef int nxyh = sct.shape[0]
-    cdef int kstrt = comm.rank + 1
-    cdef int nvp = comm.size
 
     cdef float_t ttp = 0.0
 
     ppush2.cwppfft2r(
         <complex_t *>&qe[0,0], &qt[0,0], &bs[0,0].x, &br[0,0].x,
         isign, ntpose, &mixup[0], &sct[0], &ttp, indx, indy,
-        kstrt, nvp, nxe//2, nye, kxp, kyp, nypmx, nxhy, nxyh)
+        grid.kstrt, grid.nvp, nxe//2, nye, kxp, kyp, nypmx, nxhy, nxyh)
 
     return ttp
 
 def cppois22(
         complex_t[:,:] qt, complex2_t[:,:] fxyt,
         int isign, complex_t[:,:] ffc, float_t ax, float_t ay, float_t affp,
-        grid_t grid, MPI.Comm comm):
+        grid_t grid):
 
     cdef int nye = qt.shape[1]
     cdef int kxp = qt.shape[0]
     cdef int nyh = ffc.shape[1]
-    cdef int kstrt = comm.rank + 1
 
     cdef float_t we = 0.0
 
     ppush2.cppois22(
             &qt[0,0], &fxyt[0,0].x, isign, &ffc[0,0], ax, ay, affp,
-            &we, grid.nx, grid.ny, kstrt, nye, kxp, nyh)
+            &we, grid.nx, grid.ny, grid.kstrt, nye, kxp, nyh)
 
     return we
 
@@ -197,7 +191,7 @@ def cwppfft2r2(
         float2_t[:,:] fxye, complex2_t[:,:] fxyt,
         complex2_t[:,:] bs, complex2_t[:,:] br,
         int isign, int[:] mixup, complex_t[:] sct,
-        int indx, int indy, MPI.Comm comm):
+        int indx, int indy, grid_t grid):
 
     cdef int nxe = fxye.shape[1]
     cdef int nypmx = fxye.shape[0]
@@ -206,15 +200,13 @@ def cwppfft2r2(
     cdef int kyp = bs.shape[0]
     cdef int nxhy = mixup.shape[0]
     cdef int nxyh = sct.shape[0]
-    cdef int kstrt = comm.rank + 1
-    cdef int nvp = comm.size
 
     cdef float_t ttp = 0.0
 
     ppush2.cwppfft2r2(
             <complex_t *>&fxye[0,0].x, &fxyt[0,0].x, &bs[0,0].x, &br[0,0].x,
             isign, ntpose, &mixup[0], &sct[0], &ttp, indx, indy,
-            kstrt, nvp, nxe//2, nye, kxp, kyp, nypmx, nxhy, nxyh)
+            grid.kstrt, grid.nvp, nxe//2, nye, kxp, kyp, nypmx, nxhy, nxyh)
 
     return ttp
 
