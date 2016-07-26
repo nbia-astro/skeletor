@@ -86,7 +86,7 @@ nt = int(tend/dt + 1e-4)
 for it in range(nt):
 
     # Deposit charge
-    sources.deposit(electrons)
+    sources.deposit_ppic2(electrons)
     # Add charge from guard cells
     sources.rho.add_guards_ppic2()
     assert numpy.isclose(comm.allreduce(
