@@ -141,7 +141,7 @@ if __name__ == "__main__":
     fxye.fill((0.0, 0.0))
 
     # Solve Gauss' law
-    poisson(qe, fxye)
+    poisson(qe, fxye, destroy_input=False)
 
     ##############################################
     # Solve Gauss' law with Numpy's built-in FFT #
