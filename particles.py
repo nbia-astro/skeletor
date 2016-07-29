@@ -82,7 +82,7 @@ class Particles(numpy.ndarray):
             raise RuntimeError(msg.format(ierr))
         self.np = npp
 
-    def push(self, fxy, dt, check=False):
+    def push(self, fxy, dt):
 
         from ppic2_wrapper import cppgpush2l, cppmove2
 
@@ -103,8 +103,7 @@ class Particles(numpy.ndarray):
                 self.rbufr, self.ihole, self.info, grid)
 
         # Make sure particles actually reside in the local subdomain
-        if check:
-            assert all(self["y"][:self.np] >= grid.edges[0])
-            assert all(self["y"][:self.np] < grid.edges[1])
+        assert all(self["y"][:self.np] >= grid.edges[0])
+        assert all(self["y"][:self.np] < grid.edges[1])
 
         return ek
