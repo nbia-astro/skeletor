@@ -20,3 +20,6 @@ __pycache__
 
 # Object files
 *.o
+
+# Jupyter notebook checkpoints
+/.ipynb_checkpoints
