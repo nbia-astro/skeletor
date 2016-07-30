@@ -41,3 +41,38 @@ I assume you intend to run the code on OS X and that you're using Homebrew.
    $ make
    $ mpirun -np 4 python skeletor.py
    ```
+
+# Running interactively on multiple processors
+
+For details see `ipyparallel`'s
+[documentation](https://ipyparallel.readthedocs.io/).
+
+### First time
+
+Make sure [`ipyparallel`](https://pypi.python.org/pypi/ipyparallel) and
+[`jupyter`](https://pypi.python.org/pypi/jupyter) are installed on your
+system/in your virtual environment. Then create a parallel `iPython` profile:
+
+```
+$ ipython profile create --parallel --profile=mpi
+```
+
+Edit the file `~/.ipython/profile_mpi/ipcluster_config.py` and add the line
+
+```
+c.IPClusterEngines.engine_launcher_class = 'MPIEngineSetLauncher'
+```
+
+### Every time
+
+Start the cluser:
+
+```
+$ ipcluster start -n 4 --profile=mpi
+```
+
+Open another terminal and start the `Jupyter` notebook:
+
+```
+$ jupyter notebook
+```
