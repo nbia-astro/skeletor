@@ -2,15 +2,9 @@
 /C.2
 
 # Cython byproducts
-/ppic2_wrapper.c
-/ppic2_wrapper.*.so
-/ppic2_wrapper.html
-/dtypes.c
-/dtypes.*.so
-/dtypes.html
-/deposit.c
-/deposit.*.so
-/deposit.html
+/skeletor/cython/*.c
+/skeletor/cython/*.so
+/skeletor/cython/*.html
 
 # Python cache
 __pycache__

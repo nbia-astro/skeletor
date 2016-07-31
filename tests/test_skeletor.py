@@ -1,9 +1,4 @@
-from ppic2_wrapper import cppinit
-from dtypes import Float, Float2
-from grid import Grid
-from fields import Field
-from particles import Particles
-from sources import Sources
+from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
 import numpy
 from mpi4py import MPI
 

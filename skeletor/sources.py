@@ -1,6 +1,6 @@
-from fields import Field
-from deposit import deposit as cython_deposit
-from ppic2_wrapper import cppgpost2l
+from .field import Field
+from .cython.deposit import deposit as cython_deposit
+from .cython.ppic2_wrapper import cppgpost2l
 
 
 class Sources:

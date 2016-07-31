@@ -8,7 +8,7 @@ class Particles(numpy.ndarray):
 
     def __new__(cls, npmax, charge=1.0, mass=1.0):
 
-        from dtypes import Int, Particle
+        from .cython.dtypes import Int, Particle
 
         # Size of buffer for passing particles between processors
         nbmax = int(0.1*npmax)
@@ -84,7 +84,7 @@ class Particles(numpy.ndarray):
 
     def push(self, fxy, dt):
 
-        from ppic2_wrapper import cppgpush2l, cppmove2
+        from .cython.ppic2_wrapper import cppgpush2l, cppmove2
 
         grid = fxy.grid
 

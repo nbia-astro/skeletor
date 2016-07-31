@@ -1,4 +1,4 @@
-cdef extern from "ppic2/ppush2.h":
+cdef extern from "../../picksc/ppic2/ppush2.h":
 
     void cpdicomp2l (float edges[], int *nyp, int *noff, int *nypmx,
             int *nypmn, int ny, int kstrt, int nvp, int idps)

@@ -1,11 +1,5 @@
-from dtypes import Float, Float2
-from fields import Field
-from grid import Grid
-from particles import Particles
-from particle_sort import ParticleSort
-from poisson import Poisson
-from ppic2_wrapper import cppinit
-from sources import Sources
+from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
+from skeletor import ParticleSort, Poisson
 
 from mpi4py.MPI import COMM_WORLD as comm, SUM
 import numpy

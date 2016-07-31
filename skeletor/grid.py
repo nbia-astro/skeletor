@@ -1,11 +1,11 @@
-from ppic2_wrapper import grid_t
+from .cython.ppic2_wrapper import grid_t
 
 
 class Grid(grid_t):
 
     def __init__(self, nx, ny, comm):
 
-        from ppic2_wrapper import cpdicomp
+        from .cython.ppic2_wrapper import cpdicomp
 
         # Number of grid points in x- and y-direction
         self.nx = nx

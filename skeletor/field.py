@@ -1,7 +1,7 @@
 from numpy import ndarray, asarray, zeros
-from dtypes import Float
-from ppic2_wrapper import cppaguard2xl, cppnaguard2l
-from ppic2_wrapper import cppcguard2xl, cppncguard2l
+from .cython.dtypes import Float
+from .cython.ppic2_wrapper import cppaguard2xl, cppnaguard2l
+from .cython.ppic2_wrapper import cppcguard2xl, cppncguard2l
 
 
 class Field(ndarray):
@@ -76,8 +76,8 @@ class Field(ndarray):
 
     def copy_guards_ppic2(self):
 
-        from fields import Field
-        from dtypes import Float2
+        from .field import Field
+        from .cython.dtypes import Float2
 
         field = Field(self.grid, self.comm, dtype=Float2)
         field["x"] = self

@@ -1,11 +1,11 @@
-from ppic2_wrapper import cppdsortp2yl
+from .cython.ppic2_wrapper import cppdsortp2yl
 
 
 class ParticleSort:
 
     def __init__(self, grid):
 
-        from dtypes import Int
+        from .cython.dtypes import Int
         from numpy import empty
 
         self.grid = grid
