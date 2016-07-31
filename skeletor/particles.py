@@ -41,14 +41,14 @@ class Particles(numpy.ndarray):
         if obj is None:
             return
 
-        self.charge = obj.charge
-        self.mass = obj.mass
-        self.ihole = obj.ihole
-        self.sbufl = obj.sbufl
-        self.sbufr = obj.sbufr
-        self.rbufl = obj.rbufl
-        self.rbufr = obj.rbufr
-        self.info = obj.info
+        self.charge = getattr(obj, "charge", None)
+        self.mass = getattr(obj, "mass", None)
+        self.ihole = getattr(obj, "ihole", None)
+        self.sbufl = getattr(obj, "sbufl", None)
+        self.sbufr = getattr(obj, "sbufr", None)
+        self.rbufl = getattr(obj, "rbufl", None)
+        self.rbufr = getattr(obj, "rbufr", None)
+        self.info = getattr(obj, "info", None)
 
     def initialize(self, x, y, vx, vy, grid):
 

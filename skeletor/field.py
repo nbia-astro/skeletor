@@ -38,11 +38,11 @@ class Field(ndarray):
         if obj is None:
             return
 
-        self.grid = obj.grid
-        self.comm = obj.comm
-        self.scr = obj.scr
-        self.send_up = obj.send_up
-        self.send_down = obj.send_down
+        self.grid = getattr(obj, "grid", None)
+        self.comm = getattr(obj, "comm", None)
+        self.scr = getattr(obj, "scr", None)
+        self.send_up = getattr(obj, "send_up", None)
+        self.send_down = getattr(obj, "send_down", None)
 
     def trim(self):
         return asarray(self[:-1, :-2])
