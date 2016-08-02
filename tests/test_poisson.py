@@ -4,113 +4,127 @@ from mpi4py.MPI import COMM_WORLD as comm
 import numpy
 import matplotlib.pyplot as plt
 
-# Spatial resolution
-indx, indy = 5, 5
-nx = 1 << indx
-ny = 1 << indy
 
-# Average number of particles per cell
-npc = 256
+def test_poisson(plot=False):
 
-# Smoothed particle size in x/y direction
-ax = 0.912871
-ay = 0.912871
+    # Spatial resolution
+    indx, indy = 5, 5
+    nx = 1 << indx
+    ny = 1 << indy
 
-# Total number of particles
-np = nx*ny*npc
+    # Average number of particles per cell
+    npc = 256
 
-#############################################
-# Solve Gauss' law with PPIC's parallel FFT #
-#############################################
+    # Smoothed particle size in x/y direction
+    ax = 0.912871
+    ay = 0.912871
 
-# Start parallel processing.
-idproc, nvp = cppinit(comm)
+    # Total number of particles
+    np = nx*ny*npc
 
-# Create numerical grid
-grid = Grid(nx, ny, comm)
+    #############################################
+    # Solve Gauss' law with PPIC's parallel FFT #
+    #############################################
 
-# Initialize Poisson solver
-poisson = Poisson(grid, ax, ay, np)
+    # Start parallel processing.
+    idproc, nvp = cppinit(comm)
 
-# Coordinate arrays
-x = numpy.arange(grid.nx, dtype=Float)
-y = grid.noff + numpy.arange(grid.nyp, dtype=Float)
-xx, yy = numpy.meshgrid(x, y)
+    # Create numerical grid
+    grid = Grid(nx, ny, comm)
 
-# Initialize density field
-qe = Field(grid, comm, dtype=Float)
-qe.fill(0.0)
-ikx, iky = 1, 2
-qe[:grid.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
+    # Initialize Poisson solver
+    poisson = Poisson(grid, ax, ay, np)
 
-# Initialize force field
-fxye = Field(grid, comm, dtype=Float2)
-fxye.fill((0.0, 0.0))
+    # Coordinate arrays
+    x = numpy.arange(grid.nx, dtype=Float)
+    y = grid.noff + numpy.arange(grid.nyp, dtype=Float)
+    xx, yy = numpy.meshgrid(x, y)
 
-# Solve Gauss' law
-poisson(qe, fxye, destroy_input=False)
+    # Initialize density field
+    qe = Field(grid, comm, dtype=Float)
+    qe.fill(0.0)
+    ikx, iky = 1, 2
+    qe[:grid.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
 
-##############################################
-# Solve Gauss' law with Numpy's built-in FFT #
-##############################################
+    # Initialize force field
+    fxye = Field(grid, comm, dtype=Float2)
+    fxye.fill((0.0, 0.0))
 
-# Concatenate local arrays to obtain global arrays (without guard cells).
-# The result is available on all processors.
-def concatenate(arr):
-    return numpy.concatenate(comm.allgather(arr))
-global_qe = concatenate(qe.trim())
-global_fxye = concatenate(fxye.trim())
+    # Solve Gauss' law
+    poisson(qe, fxye, destroy_input=False)
 
-# Wave number arrays
-kx = 2*numpy.pi*numpy.fft.rfftfreq(grid.nx)
-ky = 2*numpy.pi*numpy.fft.fftfreq(grid.ny)
-kx, ky = numpy.meshgrid(kx, ky)
+    ##############################################
+    # Solve Gauss' law with Numpy's built-in FFT #
+    ##############################################
 
-# Normalization constant
-affp = grid.nx*grid.ny/np
+    # Concatenate local arrays to obtain global arrays (without guard cells).
+    # The result is available on all processors.
+    def concatenate(arr):
+        return numpy.concatenate(comm.allgather(arr))
+    global_qe = concatenate(qe.trim())
+    global_fxye = concatenate(fxye.trim())
 
-# Compute inverse wave number squared
-k2 = kx**2 + ky**2
-k2[0, 0] = 1.0
-k21 = 1.0/k2
-k21[0, 0] = 0.0
-k2[0, 0] = 0.0
+    # Wave number arrays
+    kx = 2*numpy.pi*numpy.fft.rfftfreq(grid.nx)
+    ky = 2*numpy.pi*numpy.fft.fftfreq(grid.ny)
+    kx, ky = numpy.meshgrid(kx, ky)
 
-# Effective inverse wave number for finite size particles
-# TODO: Figure out how the exponential factor is actually derived
-k21_eff = k21*numpy.exp(-((kx*ax)**2 + (ky*ay)**2))
+    # Normalization constant
+    affp = grid.nx*grid.ny/np
 
-# Transform charge density to Fourier space
-qt = numpy.fft.rfft2(global_qe)
+    # Compute inverse wave number squared
+    k2 = kx**2 + ky**2
+    k2[0, 0] = 1.0
+    k21 = 1.0/k2
+    k21[0, 0] = 0.0
+    k2[0, 0] = 0.0
 
-# Solve Gauss' law in Fourier space and transform back to real space
-fx = affp*numpy.fft.irfft2(-1j*kx*k21_eff*qt)
-fy = affp*numpy.fft.irfft2(-1j*ky*k21_eff*qt)
+    # Effective inverse wave number for finite size particles
+    # TODO: Figure out how the exponential factor is actually derived
+    k21_eff = k21*numpy.exp(-((kx*ax)**2 + (ky*ay)**2))
 
-# Make sure the two solutions are close to each other
-assert numpy.allclose(fx, global_fxye["x"])
-assert numpy.allclose(fy, global_fxye["y"])
+    # Transform charge density to Fourier space
+    qt = numpy.fft.rfft2(global_qe)
 
-#############
-# Visualize #
-#############
+    # Solve Gauss' law in Fourier space and transform back to real space
+    fx = affp*numpy.fft.irfft2(-1j*kx*k21_eff*qt)
+    fy = affp*numpy.fft.irfft2(-1j*ky*k21_eff*qt)
 
-if comm.rank == 0:
+    # Make sure the two solutions are close to each other
+    assert numpy.allclose(fx, global_fxye["x"])
+    assert numpy.allclose(fy, global_fxye["y"])
 
-    plt.rc('image', origin='lower', interpolation='nearest')
-    plt.figure(1)
-    plt.clf()
-    ax1 = plt.subplot2grid((2, 4), (0, 1), colspan=2)
-    ax2 = plt.subplot2grid((2, 4), (1, 0), colspan=2)
-    ax3 = plt.subplot2grid((2, 4), (1, 2), colspan=2)
-    ax1.imshow(global_qe)
-    ax2.imshow(global_fxye["x"])
-    ax3.imshow(global_fxye["y"])
-    ax1.set_title(r'$\rho$')
-    ax2.set_title(r'$f_x$')
-    ax3.set_title(r'$f_y$')
-    for ax in (ax1, ax2, ax3):
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$y$')
-    plt.draw()
-    plt.show()
+    #############
+    # Visualize #
+    #############
+
+    if plot:
+        if comm.rank == 0:
+            plt.rc('image', origin='lower', interpolation='nearest')
+            plt.figure(1)
+            plt.clf()
+            ax1 = plt.subplot2grid((2, 4), (0, 1), colspan=2)
+            ax2 = plt.subplot2grid((2, 4), (1, 0), colspan=2)
+            ax3 = plt.subplot2grid((2, 4), (1, 2), colspan=2)
+            ax1.imshow(global_qe)
+            ax2.imshow(global_fxye["x"])
+            ax3.imshow(global_fxye["y"])
+            ax1.set_title(r'$\rho$')
+            ax2.set_title(r'$f_x$')
+            ax3.set_title(r'$f_y$')
+            for ax in (ax1, ax2, ax3):
+                ax.set_xlabel(r'$x$')
+                ax.set_ylabel(r'$y$')
+            plt.draw()
+            plt.show()
+
+
+if __name__ == "__main__":
+
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--plot', '-p', action='store_true')
+    args = parser.parse_args()
+
+    test_poisson(plot=args.plot)
