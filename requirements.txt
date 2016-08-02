@@ -3,3 +3,5 @@ ipython
 matplotlib
 mpi4py
 numpy
+scipy
+git+https://github.com/spectralDNS/mpiFFT4py.git
