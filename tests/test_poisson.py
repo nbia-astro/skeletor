@@ -4,7 +4,6 @@ from mpiFFT4py.line import R2C
 from mpi4py import MPI
 
 import numpy
-import matplotlib.pyplot as plt
 
 
 def test_poisson(plot=False):
@@ -156,6 +155,7 @@ def test_poisson(plot=False):
     #############
 
     if plot:
+        import matplotlib.pyplot as plt
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
