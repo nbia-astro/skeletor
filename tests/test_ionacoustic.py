@@ -52,7 +52,7 @@ def test_ionacoustic(plot=False):
 
     # Normal distribution of particle velocities
     vx = vdx*numpy.sin(kx*x) + vtx*numpy.random.normal(size=np).astype(Float)
-    vy = vdy*numpy.sin(kx*y) + vty*numpy.random.normal(size=np).astype(Float)
+    vy = vdy*numpy.sin(ky*y) + vty*numpy.random.normal(size=np).astype(Float)
 
     # Start parallel processing
     idproc, nvp = cppinit(comm)
