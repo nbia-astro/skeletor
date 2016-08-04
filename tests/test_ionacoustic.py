@@ -29,7 +29,7 @@ def test_ionacoustic(plot=False):
     # Timestep
     dt = 0.1
     # Number of timesteps to run for
-    nt = 500
+    nt = 50
 
     # Total number of particles in simulation
     np = npc*nx*ny
@@ -80,7 +80,11 @@ def test_ionacoustic(plot=False):
     # total number of particles
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
-    # Set the force to zero (this will of course change in the future).
+    # Set the electric field to zero
+    E = Field(grid, comm, dtype=Float2)
+    E.fill(0.0)
+
+    # Set force field to zero
     fxy = Field(grid, comm, dtype=Float2)
     fxy.fill(0.0)
 
@@ -102,13 +106,13 @@ def test_ionacoustic(plot=False):
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
-    # Calculate forces (Solve Ohm's law)
-    ohm(sources.rho, fxy, destroy_input=False)
+    # Calculate electric field (Solve Ohm's law)
+    ohm(sources.rho, E, destroy_input=False)
 
     # Make initial figure
     if plot:
         global_rho = concatenate(sources.rho.trim())
-        global_fxy = concatenate(fxy.trim())
+        global_E   = concatenate(E.trim())
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
@@ -117,8 +121,8 @@ def test_ionacoustic(plot=False):
             ax2 = plt.subplot2grid((2, 4), (1, 0), colspan=2)
             ax3 = plt.subplot2grid((2, 4), (1, 2), colspan=2)
             im1 = ax1.imshow(global_rho)
-            im2 = ax2.imshow(global_fxy["x"])
-            im3 = ax3.imshow(global_fxy["y"])
+            im2 = ax2.imshow(global_E["x"])
+            im3 = ax3.imshow(global_E["y"])
             ax1.set_title(r'$\rho$')
             ax2.set_title(r'$f_x$')
             ax3.set_title(r'$f_y$')
@@ -132,6 +136,8 @@ def test_ionacoustic(plot=False):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains. The
         # latter is the only non-trivial step in the entire code so far.
+        fxy['x'] = E['x']*charge
+        fxy['y'] = E['y']*charge
         ions.push(fxy, dt)
 
         # Deposit sources
@@ -146,16 +152,16 @@ def test_ionacoustic(plot=False):
         sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
         # Calculate forces (Solve Ohm's law)
-        ohm(sources.rho, fxy, destroy_input=False)
+        ohm(sources.rho, E, destroy_input=False)
 
         # Make figures
         if plot:
             global_rho = concatenate(sources.rho.trim())
-            global_fxy = concatenate(fxy.trim())
+            global_E = concatenate(E.trim())
             if comm.rank == 0:
                 im1.set_data(global_rho)
-                im2.set_data(global_fxy["x"])
-                im3.set_data(global_fxy["y"])
+                im2.set_data(global_E["x"])
+                im3.set_data(global_E["y"])
                 im1.autoscale()
                 im2.autoscale()
                 im3.autoscale()
