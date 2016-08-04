@@ -2,7 +2,6 @@ from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
 from skeletor import Ohm
 import numpy
 from mpi4py import MPI
-import matplotlib.pyplot as plt
 from mpi4py.MPI import COMM_WORLD as comm
 
 
@@ -111,6 +110,7 @@ def test_ionacoustic(plot=False):
 
     # Make initial figure
     if plot:
+        import matplotlib.pyplot as plt
         global_rho = concatenate(sources.rho.trim())
         global_E   = concatenate(E.trim())
         if comm.rank == 0:
@@ -156,6 +156,7 @@ def test_ionacoustic(plot=False):
 
         # Make figures
         if plot:
+            import matplotlib.pyplot as plt
             global_rho = concatenate(sources.rho.trim())
             global_E = concatenate(E.trim())
             if comm.rank == 0:
