@@ -8,6 +8,10 @@ cimport mpi4py.MPI as MPI
 import numpy
 
 
+# See https://bitbucket.org/mpi4py/mpi4py/issues/1/mpi4py-cython-openmpi
+cdef extern from 'mpi-compat.h': pass
+
+
 # Number of velocity coordinates
 cdef int ndim = 2
 # Number of partition boundaries

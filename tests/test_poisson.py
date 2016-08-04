@@ -4,7 +4,6 @@ from mpiFFT4py.line import R2C
 from mpi4py import MPI
 
 import numpy
-import matplotlib.pyplot as plt
 
 
 def test_poisson(plot=False):
@@ -97,9 +96,9 @@ def test_poisson(plot=False):
     ##############################################
 
     # Length vector
-    L = numpy.array([ny, nx],dtype=float)
+    L = numpy.array([ny, nx], dtype=float)
     # Grid size vector
-    N = numpy.array([ny, nx],dtype=int)
+    N = numpy.array([ny, nx], dtype=int)
 
     # Create FFT object
     FFT = R2C(N, L, MPI, "double")
@@ -120,7 +119,7 @@ def test_poisson(plot=False):
     # Local wavenumber squared
     k2 = numpy.sum(k*k, 0, dtype=float)
     # Inverse of the wavenumber squared
-    k21 = 1 / numpy.where(k2==0, 1, k2).astype(float)
+    k21 = 1 / numpy.where(k2 == 0, 1, k2).astype(float)
 
     # Initialize force field
     fxye = Field(grid, comm, dtype=Float2)
@@ -150,12 +149,12 @@ def test_poisson(plot=False):
     assert numpy.allclose(global_fx_mpi, global_fxye["x"])
     assert numpy.allclose(global_fy_mpi, global_fxye["y"])
 
-
     #############
     # Visualize #
     #############
 
     if plot:
+        import matplotlib.pyplot as plt
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)

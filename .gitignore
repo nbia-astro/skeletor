@@ -9,6 +9,9 @@
 # Python cache
 __pycache__
 
+# pytest cache
+/.cache
+
 # Vim swap files
 *.swp
 
