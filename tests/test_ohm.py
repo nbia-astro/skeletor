@@ -1,7 +1,6 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Ohm
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
-import matplotlib.pyplot as plt
 
 
 def test_ohm(plot=False):
@@ -83,6 +82,7 @@ def test_ohm(plot=False):
     #############
 
     if plot:
+        import matplotlib.pyplot as plt
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
