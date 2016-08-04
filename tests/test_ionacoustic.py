@@ -41,8 +41,8 @@ def test_ionacoustic(plot=False):
         # Uniform distribution of particle positions (quiet start)
         dx = 1/int(numpy.sqrt(npc))
         dy = dx
-        X = numpy.arange(0,nx,dx)
-        Y = numpy.arange(0,ny,dy)
+        X = numpy.arange(0, nx, dx)
+        Y = numpy.arange(0, ny, dy)
         x, y = numpy.meshgrid(X, Y)
         x = x.flatten()
         y = y.flatten()
@@ -112,7 +112,7 @@ def test_ionacoustic(plot=False):
     if plot:
         import matplotlib.pyplot as plt
         global_rho = concatenate(sources.rho.trim())
-        global_E   = concatenate(E.trim())
+        global_E = concatenate(E.trim())
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
@@ -149,7 +149,7 @@ def test_ionacoustic(plot=False):
         sources.rho.copy_guards()
 
         assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+            sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
         # Calculate forces (Solve Ohm's law)
         ohm(sources.rho, E, destroy_input=False)
@@ -179,5 +179,6 @@ if __name__ == "__main__":
 
     # Code produces a ton of png files (sorry! I really tried to get animation
     # to work but I failed...). Combine into a movie by running
-    # ffmpeg -framerate 20 -i test.%04d.png -c:v libx264 -r 30 -pix_fmt yuv420p out.mp4
+    # ffmpeg -framerate 20 -i test.%04d.png -c:v libx264 -r 30 \
+    #        -pix_fmt yuv420p out.mp4
     # rm *.png
