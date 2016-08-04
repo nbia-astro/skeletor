@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/nbia-astro/skeletor.svg?token=SrP7KstmwUSGLQustYFw&branch=master)](https://travis-ci.com/nbia-astro/skeletor)
+
 ![alt text](https://github.com/nbia-astro/skeletor/raw/master/images/logo.png)
 
 # Introduction
