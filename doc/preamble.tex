@@ -1,0 +1,30 @@
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+% \usepackage{mathtools}
+% \usepackage{graphicx}
+
+% \usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+
+\usepackage{bm}
+\let\vec\bm{}
+
+\usepackage{mleftright}
+\let\left\mleft{}
+\let\right\mright{}
+
+% Derivatives
+\newcommand{\pder}[2]{\frac{\partial#1}{\partial#2}}
+\newcommand{\pdder}[2]{\frac{\partial^2#1}{\partial#2^2}}
+\newcommand{\der}[2]{\frac{d#1}{d#2}}
+\newcommand{\dder}[2]{\frac{d^2#1}{d#2^2}}
+\newcommand{\pader}[2]{\partial{#1}/\partial{#2}}
+\newcommand{\pderc}[3]{\left.\frac{\partial#1}{\partial#2}\right|_{#3}}
+
+% Unit vectors
+\newcommand{\ex}{\vec{e}_x}
+\newcommand{\ey}{\vec{e}_y}
+\newcommand{\ez}{\vec{e}_z}
