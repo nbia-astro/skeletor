@@ -12,4 +12,8 @@ cflags = ["-Wno-unused-function", "-Wno-#warnings"]
 extensions = [Extension(
     "*", ["skeletor/cython/*.pyx"],
     include_dirs=[get_include()], extra_compile_args=cflags)]
-setup(ext_modules=cythonize(extensions))
+setup(
+    name='skeletor',
+    version='0.0.1',
+    packages=['skeletor'],
+    ext_modules=cythonize(extensions))
