@@ -54,8 +54,8 @@ def test_ohm(plot=False):
 
     # Calculate the force analytically
     factor = -ohm.charge*ohm.alpha/rho[:grid.nyp, :nx]
-    fx_an  = kx*A*numpy.cos(kx*xx + ky*yy)*factor
-    fy_an  = ky*A*numpy.cos(kx*xx + ky*yy)*factor
+    fx_an = kx*A*numpy.cos(kx*xx + ky*yy)*factor
+    fy_an = ky*A*numpy.cos(kx*xx + ky*yy)*factor
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -64,7 +64,7 @@ def test_ohm(plot=False):
 
     # Find global solution
     global_fxye = concatenate(fxye.trim())
-    global_rho  = concatenate(rho.trim())
+    global_rho = concatenate(rho.trim())
 
     global_fx_an = concatenate(fx_an)
     global_fy_an = concatenate(fy_an)

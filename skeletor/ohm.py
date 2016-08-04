@@ -16,9 +16,9 @@ class Ohm:
         assert grid.ny == 2**self.indy, "'ny' needs to be a power of two"
 
         # Grid dimensions
-        self.N  = array([grid.ny, grid.nx],dtype=int)
+        self.N = array([grid.ny, grid.nx], dtype=int)
         # Lenght array (TODO: Should not be hardcoded!)
-        self.L  = array([grid.ny, grid.nx],dtype=float)
+        self.L = array([grid.ny, grid.nx], dtype=float)
 
         # Create FFT object
         self.FFT = R2C(self.N, self.L, MPI, "double")
@@ -67,4 +67,3 @@ class Ohm:
 
         # Set boundary values
         fxye.copy_guards()
-
