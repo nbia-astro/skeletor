@@ -16,9 +16,9 @@ class Ohm:
         assert grid.ny == 2**self.indy, "'ny' needs to be a power of two"
 
         # Grid dimensions
-        self.N  = array([grid.ny, grid.nx],dtype=int)
+        self.N = array([grid.ny, grid.nx], dtype=int)
         # Lenght array (TODO: Should not be hardcoded!)
-        self.L  = array([grid.ny, grid.nx],dtype=float)
+        self.L = array([grid.ny, grid.nx], dtype=float)
 
         # Create FFT object
         self.FFT = R2C(self.N, self.L, MPI, "double")
@@ -47,31 +47,23 @@ class Ohm:
         # Resistivity
         self.eta = eta
 
-    def __call__(self, rho, fxye, destroy_input=True):
+    def __call__(self, rho, E, destroy_input=True):
         from numpy import log
-
-        grid = rho.grid
-
-        if destroy_input:
-            rho_ = rho
-        else:
-            rho_ = rho.copy()
 
         # Transform log of charge density to Fourier space
         self.rho_hat = self.FFT.fft2(log(rho.trim()), self.rho_hat)
 
         # Pressure term of Ohm's law
         # Notice that we multiply the charge to get the force
-        self.rho_hat_x = -self.charge*self.alpha*1j*self.kx*self.rho_hat
-        self.rho_hat_y = -self.charge*self.alpha*1j*self.ky*self.rho_hat
+        self.rho_hat_x = -self.alpha*1j*self.kx*self.rho_hat
+        self.rho_hat_y = -self.alpha*1j*self.ky*self.rho_hat
 
         # Transform back to real space
-        fxye["x"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_x, fxye["x"][:-1, :-2])
-        fxye["y"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_y, fxye["y"][:-1, :-2])
+        E["x"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_x, E["x"][:-1, :-2])
+        E["y"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_y, E["y"][:-1, :-2])
 
         # Add resitivity
         # TODO
 
         # Set boundary values
-        fxye.copy_guards()
-
+        E.copy_guards()
