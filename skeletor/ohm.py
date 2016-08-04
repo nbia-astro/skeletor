@@ -50,13 +50,6 @@ class Ohm:
     def __call__(self, rho, fxye, destroy_input=True):
         from numpy import log
 
-        grid = rho.grid
-
-        if destroy_input:
-            rho_ = rho
-        else:
-            rho_ = rho.copy()
-
         # Transform log of charge density to Fourier space
         self.rho_hat = self.FFT.fft2(log(rho.trim()), self.rho_hat)
 
