@@ -47,7 +47,7 @@ class Ohm:
         # Resistivity
         self.eta = eta
 
-    def __call__(self, rho, fxye, destroy_input=True):
+    def __call__(self, rho, E, destroy_input=True):
         from numpy import log
 
         # Transform log of charge density to Fourier space
@@ -55,15 +55,15 @@ class Ohm:
 
         # Pressure term of Ohm's law
         # Notice that we multiply the charge to get the force
-        self.rho_hat_x = -self.charge*self.alpha*1j*self.kx*self.rho_hat
-        self.rho_hat_y = -self.charge*self.alpha*1j*self.ky*self.rho_hat
+        self.rho_hat_x = -self.alpha*1j*self.kx*self.rho_hat
+        self.rho_hat_y = -self.alpha*1j*self.ky*self.rho_hat
 
         # Transform back to real space
-        fxye["x"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_x, fxye["x"][:-1, :-2])
-        fxye["y"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_y, fxye["y"][:-1, :-2])
+        E["x"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_x, E["x"][:-1, :-2])
+        E["y"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_y, E["y"][:-1, :-2])
 
         # Add resitivity
         # TODO
 
         # Set boundary values
-        fxye.copy_guards()
+        E.copy_guards()

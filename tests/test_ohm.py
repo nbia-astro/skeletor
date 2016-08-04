@@ -45,17 +45,17 @@ def test_ohm(plot=False):
     A = 0.2
     rho[:grid.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
 
-    # Initialize force field
-    fxye = Field(grid, comm, dtype=Float2)
-    fxye.fill((0.0, 0.0))
+    # Initialize electric field
+    E = Field(grid, comm, dtype=Float2)
+    E.fill((0.0, 0.0))
 
     # Solve Ohm's law
-    ohm(rho, fxye, destroy_input=False)
+    ohm(rho, E, destroy_input=False)
 
-    # Calculate the force analytically
-    factor = -ohm.charge*ohm.alpha/rho[:grid.nyp, :nx]
-    fx_an = kx*A*numpy.cos(kx*xx + ky*yy)*factor
-    fy_an = ky*A*numpy.cos(kx*xx + ky*yy)*factor
+    # Calculate the electric field analytically
+    factor = -ohm.alpha/rho[:grid.nyp, :nx]
+    Ex = kx*A*numpy.cos(kx*xx + ky*yy)*factor
+    Ey = ky*A*numpy.cos(kx*xx + ky*yy)*factor
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -63,11 +63,11 @@ def test_ohm(plot=False):
         return numpy.concatenate(comm.allgather(arr))
 
     # Find global solution
-    global_fxye = concatenate(fxye.trim())
+    global_E = concatenate(E.trim())
     global_rho = concatenate(rho.trim())
 
-    global_fx_an = concatenate(fx_an)
-    global_fy_an = concatenate(fy_an)
+    global_Ex = concatenate(Ex)
+    global_Ey = concatenate(Ey)
 
     # Make sure the two solutions are close to each other
     # This works to machine precision for indx, indy = 3, 4, implying that the
@@ -75,8 +75,8 @@ def test_ohm(plot=False):
     # increasing) the resolution of the grid (try indx, indy = 3, 4) leads to
     # failure. Manually expectecting the difference I find that they are at the
     # 1e-8 level.
-    assert numpy.allclose(global_fx_an, global_fxye["x"])
-    assert numpy.allclose(global_fy_an, global_fxye["y"])
+    assert numpy.allclose(global_Ex, global_E["x"])
+    assert numpy.allclose(global_Ey, global_E["y"])
 
     #############
     # Visualize #
@@ -91,8 +91,8 @@ def test_ohm(plot=False):
             ax2 = plt.subplot2grid((2, 4), (1, 0), colspan=2)
             ax3 = plt.subplot2grid((2, 4), (1, 2), colspan=2)
             ax1.imshow(global_rho)
-            ax2.imshow(global_fxye["x"])
-            ax3.imshow(global_fxye["y"])
+            ax2.imshow(global_E["x"])
+            ax3.imshow(global_E["y"])
 
             ax1.set_title(r'$\rho$')
             ax2.set_title(r'$f_x$')
