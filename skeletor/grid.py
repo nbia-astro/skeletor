@@ -3,13 +3,16 @@ from .cython.ppic2_wrapper import grid_t
 
 class Grid(grid_t):
 
-    def __init__(self, nx, ny, comm):
+    def __init__(self, nx, ny, Lx, Ly, comm):
 
         from .cython.ppic2_wrapper import cpdicomp
 
         # Number of grid points in x- and y-direction
         self.nx = nx
         self.ny = ny
+
+        self.Lx = Lx
+        self.Ly = Ly
 
         self.kstrt = comm.rank + 1
         self.nvp = comm.size
@@ -34,3 +37,12 @@ class Grid(grid_t):
         self.noff = noff
         self.nypmx = nypmx
         self.nypmn = nypmn
+
+    @property
+    def dx(self):
+        return self.Lx/self.nx
+
+    @property
+    def dy(self):
+        return self.Ly/self.ny
+
