@@ -36,7 +36,7 @@ numpy.random.set_state(comm.bcast(numpy.random.get_state()))
 
 # Uniform distribution of particle positions
 x = nx*numpy.random.uniform(size=np).astype(Float)
-y = nx*numpy.random.uniform(size=np).astype(Float)
+y = ny*numpy.random.uniform(size=np).astype(Float)
 # Normal distribution of particle velocities
 vx = numpy.empty(np, Float)
 vy = numpy.empty(np, Float)
