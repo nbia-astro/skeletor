@@ -105,9 +105,6 @@ def test_skeletor():
         sources.rho.add_guards()
         sources2.rho.add_guards_ppic2()
 
-        sources.rho.copy_guards()
-        sources2.rho.copy_guards_ppic2()
-
         assert numpy.allclose(sources.rho, sources2.rho)
         assert numpy.isclose(comm.allreduce(
             sources.rho.trim().sum(), op=MPI.SUM), np*charge)

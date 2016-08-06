@@ -1,5 +1,5 @@
-from numpy import ndarray, asarray, zeros
-from .cython.dtypes import Float
+from numpy import ndarray, asarray, zeros, dtype
+from .cython.dtypes import Float, Float2
 from .cython.ppic2_wrapper import cppaguard2xl, cppnaguard2l
 from .cython.ppic2_wrapper import cppcguard2xl, cppncguard2l
 
@@ -49,40 +49,51 @@ class Field(ndarray):
 
     def copy_guards(self):
 
+        # Copy data to guard cells from corresponding active cells
         self[:-1, -2] = self[:-1, 0]
         self[-1, :-2] = self.send_down(self[0, :-2])
         self[-1, -2] = self.send_down(self[0, 0])
 
     def add_guards(self):
 
+        # Add data from guard cells to corresponding active cells
         self[:-1, 0] += self[:-1, -2]
         self[0, :-2] += self.send_up(self[-1, :-2])
         self[0, 0] += self.send_up(self[-1, -2])
 
+        # Erase guard cells (TH: Not sure why PPIC2 does this, but it's OK)
+        self[:-1, -2] = 0.0
+        self[-1, :-2] = 0.0
+        self[-1, -2] = 0.0
+
     def copy_guards2(self):
 
+        # Copy data to guard cells from corresponding active cells
         self[:, -2] = self[:, 0]
         self[-1, :] = self.send_down(self[0, :])
 
     def add_guards2(self):
 
+        # Add data from guard cells to corresponding active cells
         self[:, 0] += self[:, -2]
         self[0, :] += self.send_up(self[-1, :])
 
+        # Erase guard cells (TH: Not sure why PPIC2 does this, but it's OK)
+        self[:, -2] = 0.0
+        self[-1, :] = 0.0
+
     def add_guards_ppic2(self):
+
+        # This routine *only* works for scalar fields
+        assert self.dtype == dtype(Float)
 
         cppaguard2xl(self, self.grid)
         cppnaguard2l(self, self.scr, self.grid)
 
     def copy_guards_ppic2(self):
 
-        from .field import Field
-        from .cython.dtypes import Float2
+        # This routine *only* works for scalar fields
+        assert self.dtype == dtype(Float2)
 
-        field = Field(self.grid, self.comm, dtype=Float2)
-        field["x"] = self
-
-        cppncguard2l(field, self.grid)
-        cppcguard2xl(field, self.grid)
-
-        self[...] = field["x"]
+        cppncguard2l(self, self.grid)
+        cppcguard2xl(self, self.grid)
