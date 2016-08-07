@@ -13,8 +13,8 @@ def test_ionacoustic(plot=False):
     # Number of grid points in x- and y-direction
     nx, ny = 32, 32
 
-    # x-grid
-    xg = numpy.arange(0,nx)
+    # x- and y-grid
+    xg, yg = numpy.meshgrid(numpy.arange(0,nx), numpy.arange(0,ny))
 
     # Average number of particles per cell
     npc = 256
@@ -23,30 +23,52 @@ def test_ionacoustic(plot=False):
     charge = 1.0
     mass = 1.0
 
+    # Electron temperature
+    Te = 1.0
+
+    # Sound speed
+    cs = numpy.sqrt(Te/mass)
+
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0.0, 0.0
-    # Velocity perturbation of ions in x- and y-direction
-    vdx, vdy = 1e-3, 1e-3
-
-    # Timestep
-    dt = 0.1
-    # Number of timesteps to run for
-    nt = 250
 
     # Total number of particles in simulation
     np = npc*nx*ny
 
     # Wavenumbers
-    kx = 2*numpy.pi/nx
-    ky = 0#2*numpy.pi/ny
+    ikx = 1
+    iky = 1
+    kx = ikx*2*numpy.pi/nx
+    ky = iky*2*numpy.pi/ny
     k  = numpy.sqrt((kx**2+ky**2))
 
-    # Frequency (TODO: Introduce cs and dependence on ky)
-    omega = kx
+    # Frequency
+    omega = k*cs
 
-    # Analytic density (TODO: Only works for ky = 0, write down 2D solution)
-    def rho_an(t):
-        return 1 - vdx*numpy.cos(kx*xg)*numpy.sin(omega*t)
+    # Simulation time
+    nperiods = 1
+    tend = nperiods*2*numpy.pi/omega
+
+    # Timestep
+    dt = 0.1
+
+    # Number of time steps
+    nt = int(tend/dt)
+
+    # Amplitude of perturbation
+    A = 0.001
+
+    def rho_an(x, y, t):
+        """Analytic density as function of x, y and t"""
+        return 1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t)
+
+    def ux_an(x, y, t):
+        """Analytic x-velocity as function of x, y and t"""
+        return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*kx/k
+
+    def uy_an(x, y, t):
+        """Analytic y-velocity as function of x, y and t"""
+        return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k
 
     if quiet:
         # Uniform distribution of particle positions (quiet start)
@@ -63,8 +85,8 @@ def test_ionacoustic(plot=False):
         y = ny*numpy.random.uniform(size=np).astype(Float)
 
     # Perturbation to particle velocities
-    vx = vdx*numpy.sin(kx*x + ky*y)*kx/k
-    vy = vdy*numpy.sin(kx*x + ky*y)*ky/k
+    vx = ux_an(x, y, t = 0)
+    vy = uy_an(x, y, t = 0)
 
     # Add thermal velocity
     vx += vtx*numpy.random.normal(size=np).astype(Float)
@@ -102,7 +124,7 @@ def test_ionacoustic(plot=False):
     sources = Sources(grid, comm, dtype=Float)
 
     # Initialize Ohm's law solver
-    ohm = Ohm(grid, temperature=1.0, charge=charge)
+    ohm = Ohm(grid, temperature=Te, charge=charge)
 
     # Calculate initial density and force
 
@@ -133,12 +155,14 @@ def test_ionacoustic(plot=False):
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
-            fig, (ax1, ax2) = plt.subplots (num=1, ncols=2)
-            im1 = ax1.imshow(global_rho,vmin=1-vdx,vmax=1+vdx)
-            im2 = ax2.plot(xg, global_rho[0,:],'b', xg, rho_an(0),'k--')
+            fig, (ax1, ax2, ax3) = plt.subplots (num=1, ncols=3)
+            im1 = ax1.imshow(rho_an(xg, yg, 0),vmin=1-A,vmax=1+A)
+            im2 = ax2.imshow(rho_an(xg, yg, 0),vmin=1-A,vmax=1+A)
+            im3 = ax3.plot(xg[0,:], global_rho[0,:],'b',\
+                           xg[0,:], rho_an(xg, yg, 0)[0,:],'k--')
             ax1.set_title(r'$\rho$')
-            ax2.set_ylim(1-vdx,1+vdx)
-            ax2.set_xlim(0,x[-1])
+            ax3.set_ylim(1-A,1+A)
+            ax3.set_xlim(0,x[-1])
 
     t = 0
     ##########################################################################
@@ -174,11 +198,11 @@ def test_ionacoustic(plot=False):
         if plot:
             if (it % 4 == 0):
                 global_rho = concatenate(sources.rho.trim())
-                global_E = concatenate(E.trim())
                 if comm.rank == 0:
                     im1.set_data(global_rho)
-                    im2[0].set_ydata(global_rho[0,:])
-                    im2[1].set_ydata(rho_an(t))
+                    im2.set_data(rho_an(xg, yg, t))
+                    im3[0].set_ydata(global_rho[0,:])
+                    im3[1].set_ydata(rho_an(xg, yg, t)[0,:])
                     plt.pause(1e-7)
 
 if __name__ == "__main__":
