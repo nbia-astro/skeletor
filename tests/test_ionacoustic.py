@@ -14,7 +14,7 @@ def test_ionacoustic(plot=False):
     # Average number of particles per cell
     npc = 256
     # Particle charge and mass
-    charge = 1.0
+    charge = 0.5
     mass = 1.0
     # Electron temperature
     Te = 1.0
@@ -55,7 +55,7 @@ def test_ionacoustic(plot=False):
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return 1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t)
+        return charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
@@ -111,10 +111,6 @@ def test_ionacoustic(plot=False):
     E = Field(grid, comm, dtype=Float2)
     E.fill((0.0, 0.0))
 
-    # Set force field to zero
-    fxy = Field(grid, comm, dtype=Float2)
-    fxy.fill((0.0, 0.0))
-
     # Initialize sources
     sources = Sources(grid, comm, dtype=Float)
 
@@ -152,12 +148,13 @@ def test_ionacoustic(plot=False):
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
-            im1 = ax1.imshow(rho_an(xg, yg, 0), vmin=1-A, vmax=1+A)
-            im2 = ax2.imshow(rho_an(xg, yg, 0), vmin=1-A, vmax=1+A)
+            vmin, vmax = charge*(1 - A), charge*(1 + A)
+            im1 = ax1.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
+            im2 = ax2.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
             im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
                            xg[0, :], rho_an(xg, yg, 0)[0, :], 'k--')
             ax1.set_title(r'$\rho$')
-            ax3.set_ylim(1-A, 1+A)
+            ax3.set_ylim(vmin, vmax)
             ax3.set_xlim(0, x[-1])
 
     t = 0
@@ -165,12 +162,9 @@ def test_ionacoustic(plot=False):
     # Main loop over time                                                    #
     ##########################################################################
     for it in range(nt):
-        # Calculate force from electric field
-        fxy['x'] = E['x']*charge
-        fxy['y'] = E['y']*charge
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        ions.push(fxy, dt)
+        ions.push(E, dt)
 
         # Update time
         t += dt
@@ -207,7 +201,8 @@ def test_ionacoustic(plot=False):
     # Check if test has passed
     global_rho = concatenate(sources.rho.trim())
     if comm.rank == 0:
-        assert numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho)) < 1e-4
+        tol = 1e-4*charge
+        assert numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho)) < tol
 
 if __name__ == "__main__":
     import argparse
