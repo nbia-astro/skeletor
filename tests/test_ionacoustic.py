@@ -205,6 +205,11 @@ def test_ionacoustic(plot=False):
                     im3[1].set_ydata(rho_an(xg, yg, t)[0,:])
                     plt.pause(1e-7)
 
+    # Check if test has passed
+    global_rho = concatenate(sources.rho.trim())
+    if comm.rank == 0:
+        assert(numpy.max(numpy.abs(rho_an(xg, yg, t)-global_rho)) < 1e-4)
+
 if __name__ == "__main__":
     import argparse
 
