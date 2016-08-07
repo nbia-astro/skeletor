@@ -50,6 +50,8 @@ def test_ohm(plot=False):
 
     # Solve Ohm's law
     ohm(rho, E, destroy_input=False)
+    # Set boundary condition
+    E.copy_guards()
 
     # Calculate the electric field analytically
     factor = -ohm.alpha/rho[:grid.nyp, :nx]

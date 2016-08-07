@@ -134,6 +134,8 @@ def test_ionacoustic(plot=False):
 
     # Calculate electric field (Solve Ohm's law)
     ohm(sources.rho, E, destroy_input=False)
+    # Set boundary condition
+    E.copy_guards()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -186,6 +188,8 @@ def test_ionacoustic(plot=False):
 
         # Calculate forces (Solve Ohm's law)
         ohm(sources.rho, E, destroy_input=False)
+        # Set boundary condition
+        E.copy_guards()
 
         # Make figures
         if plot:

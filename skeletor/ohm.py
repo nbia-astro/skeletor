@@ -64,6 +64,3 @@ class Ohm:
 
         # Add resitivity
         # TODO
-
-        # Set boundary values
-        E.copy_guards()
