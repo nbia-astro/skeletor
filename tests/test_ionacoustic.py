@@ -180,8 +180,8 @@ def test_ionacoustic(plot=False):
         sources.rho /= npc
         assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
         # Boundary calls
-        sources.rho.add_guards_ppic2()
-        sources.rho.copy_guards_ppic2()
+        sources.rho.add_guards()
+        sources.rho.copy_guards()
 
         assert numpy.isclose(comm.allreduce(
             sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
