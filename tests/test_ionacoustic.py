@@ -144,6 +144,8 @@ def test_ionacoustic(plot=False):
     # Make initial figure
     if plot:
         import matplotlib.pyplot as plt
+        from matplotlib.cbook import mplDeprecation
+        import warnings
         global_rho = concatenate(sources.rho.trim())
 
         if comm.rank == 0:
@@ -197,7 +199,10 @@ def test_ionacoustic(plot=False):
                     im2.set_data(rho_an(xg, yg, t))
                     im3[0].set_ydata(global_rho[0, :])
                     im3[1].set_ydata(rho_an(xg, yg, t)[0, :])
-                    plt.pause(1e-7)
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings(
+                                "ignore", category=mplDeprecation)
+                        plt.pause(1e-7)
 
     # Check if test has passed
     global_rho = concatenate(sources.rho.trim())
