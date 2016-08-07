@@ -1,4 +1,5 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
+from skeletor import Poisson
 import numpy
 from mpi4py import MPI
 
@@ -77,9 +78,13 @@ def test_skeletor():
         # total number of particles
         assert comm.allreduce(electrons.np, op=MPI.SUM) == np
 
+        #######################
+        # Test particle drift #
+        #######################
+
         # Set the force to zero (this will of course change in the future).
         fxy = Field(grid, comm, dtype=Float2)
-        fxy.fill(0.0)
+        fxy.fill((0.0, 0.0))
 
         for it in range(nt):
 
@@ -88,10 +93,13 @@ def test_skeletor():
             # latter is the only non-trivial step in the entire code so far.
             electrons.push(fxy, dt)
 
-        # Combine particles from all processes into a single array and make
-        # sure that the result agrees with the global particle array
-        global_electrons += [numpy.concatenate(comm.allgather(
-            electrons[:electrons.np]))]
+        # Combine particles from all processes into a single array
+        global_electrons.append(
+                numpy.concatenate(comm.allgather(electrons[:electrons.np])))
+
+        ##########################
+        # Test charge deposition #
+        ##########################
 
         sources = Sources(grid, comm, dtype=Float)
         sources2 = Sources(grid, comm, dtype=Float)
@@ -99,26 +107,57 @@ def test_skeletor():
         sources.deposit(electrons)
         sources2.deposit_ppic2(electrons)
 
+        # Make sure the two deposit routines give the same result
         assert numpy.allclose(sources.rho, sources2.rho)
+        # Make sure the charge deposited into *all* cells (active plus guard)
+        # equals the number of particles times the particle charge
         assert numpy.isclose(sources.rho.sum(), electrons.np*charge)
 
+        # Add charge from guard cells to corresponding active cells.
+        # Afterwards erases charge in guard cells.
         sources.rho.add_guards()
         sources2.rho.add_guards_ppic2()
 
-        sources.rho.copy_guards()
-        sources2.rho.copy_guards_ppic2()
-
+        # Make sure the two add_guards routines give the same result
         assert numpy.allclose(sources.rho, sources2.rho)
+        # Make sure the charge deposited into *active* cells (no guard cells)
+        # equals the number of particles times the particle charge
         assert numpy.isclose(comm.allreduce(
             sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
+        # Combine charge density from all processes into a single array
         global_rho += [numpy.concatenate(comm.allgather(sources.rho.trim()))]
 
+        ##########################
+        # Compute electric field #
+        ##########################
+
+        # Smoothed particle size
+        ax, ay = 0.912871, 0.912871
+
+        # Initialize Poisson solver
+        poisson = Poisson(grid, ax, ay, np)
+
+        # Solve Gauss's law
+        poisson(sources.rho, fxy)
+        fxy2 = fxy.copy()
+
+        # Copy data to guard cells from corresponding active cells
+        fxy.copy_guards()
+        fxy2.copy_guards_ppic2()
+
+        # Make sure the two copy_guards routines give the same result
+        assert numpy.allclose(fxy["x"], fxy2["x"])
+        assert numpy.allclose(fxy["y"], fxy2["y"])
+
+    # Make sure the the final particle phase space coordinates do not depend
+    # on how many processors have been used
     for component in ["x", "y", "vx", "vy"]:
         assert allclose_sorted(
             global_electrons[0][component],
             global_electrons[1][component])
 
+    # The same should be true for the charge density
     assert numpy.allclose(global_rho[0], global_rho[1])
 
 

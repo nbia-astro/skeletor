@@ -1,0 +1,47 @@
+\documentclass[aps,pre,notitlepage,amsmath,amssymb,amsfonts,nobibnotes,nofootinbib,superscriptaddress,onecolumn,a4paper,10pt]{revtex4-1}
+\setcitestyle{authoryear,round}
+\bibliographystyle{apsrev4-1}
+% Use the same section numbering as ApJ
+% See http://tex.stackexchange.com/questions/87131/numbering-sections
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+% Fix references
+\makeatletter
+\def\p@subsection{}
+\def\p@subsubsection{}
+\makeatother
+
+\input{preamble}
+
+\begin{document}
+
+\begin{align}
+  \pder{}{t}\delta n + n\nabla\cdot\delta\vec{u} &= 0 \\
+  \pder{}{t}\delta\vec{u} + \frac{e}{m}\delta\vec{E} &= 0 \\
+  \nabla\cdot\delta\vec{E} + e\delta n/\epsilon_0 &= 0
+\end{align}
+
+\begin{equation}
+  \omega_p^2 = \frac{e^2 n}{\epsilon_0 m}
+\end{equation}
+
+\begin{align}
+  \delta\vec{u} &= \hat{\vec{u}}\sin(\vec{k}\cdot\vec{r})\cos(\omega t) \\
+  \delta n &= \hat{n}\cos(\vec{k}\cdot\vec{r})\sin(\omega t) \\
+  \delta\vec{E} &= \hat{\vec{E}}\sin(\vec{k}\cdot\vec{r})\sin(\omega t)
+\end{align}
+
+\begin{align}
+  \omega\hat{n} + n\vec{k}\cdot\hat{\vec{u}} &= 0 \\
+  \vec{k}\cdot\hat{\vec{E}} + e\hat{n}/\epsilon_0 &= 0 \\
+  \omega\hat{\vec{u}} - \frac{e}{m}\hat{\vec{E}} &= 0
+\end{align}
+
+\begin{align}
+  \hat{\vec{u}} &= -\frac{\omega}{k}\frac{\hat{n}}{n}\frac{\vec{k}}{k} \\
+  \hat{\vec{E}} &= -\frac{en}{\epsilon_0 k}\frac{\hat{n}}{n}\frac{\vec{k}}{k}
+\end{align}
+
+
+\end{document}

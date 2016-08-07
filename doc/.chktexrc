@@ -1,0 +1,12 @@
+CmdLine
+{
+    -n3
+}
+
+WipeArg
+{
+    \documentclass:*[]{}
+    \bibliographystyle:{}
+    \label:[]{}
+    \phantom:{}
+}
