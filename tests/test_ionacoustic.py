@@ -25,8 +25,8 @@ def test_ionacoustic(plot=False):
     iky = 1
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0.0, 0.0
-    # Timestep
-    dt = 0.1
+    # CFL number
+    cfl = 0.5
     # Number of periods to run for
     nperiods = 1
 
@@ -35,6 +35,9 @@ def test_ionacoustic(plot=False):
 
     # Sound speed
     cs = numpy.sqrt(Te/mass)
+
+    # Time step
+    dt = cfl/cs
 
     # Total number of particles in simulation
     np = npc*nx*ny
@@ -186,7 +189,7 @@ def test_ionacoustic(plot=False):
 
         # Make figures
         if plot:
-            if (it % 4 == 0):
+            if (it % 1 == 0):
                 global_rho = concatenate(sources.rho.trim())
                 if comm.rank == 0:
                     im1.set_data(global_rho)
