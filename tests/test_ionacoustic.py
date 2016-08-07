@@ -67,12 +67,12 @@ def test_ionacoustic(plot=False):
 
     if quiet:
         # Uniform distribution of particle positions (quiet start)
-        assert numpy.sqrt(npc) % 1 == 0
-        dx = 1/int(numpy.sqrt(npc))
-        dy = dx
-        X = numpy.arange(0, nx, dx)
-        Y = numpy.arange(0, ny, dy)
-        x, y = numpy.meshgrid(X, Y)
+        sqrt_npc = int(numpy.sqrt(npc))
+        assert sqrt_npc**2 == npc
+        dx = dy = 1/sqrt_npc
+        x, y = numpy.meshgrid(
+                numpy.arange(0, nx, dx),
+                numpy.arange(0, ny, dy))
         x = x.flatten()
         y = y.flatten()
     else:
