@@ -127,15 +127,14 @@ def test_ionacoustic(plot=False):
     # Adjust density (we should do this somewhere else)
     sources.rho /= npc
     assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
-    sources.rho.add_guards()
-    sources.rho.copy_guards()
+    sources.rho.add_guards_ppic2()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
     # Calculate electric field (Solve Ohm's law)
     ohm(sources.rho, E, destroy_input=False)
     # Set boundary condition
-    E.copy_guards()
+    E.copy_guards_ppic2()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -180,8 +179,7 @@ def test_ionacoustic(plot=False):
         sources.rho /= npc
         assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
         # Boundary calls
-        sources.rho.add_guards()
-        sources.rho.copy_guards()
+        sources.rho.add_guards_ppic2()
 
         assert numpy.isclose(comm.allreduce(
             sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
@@ -189,7 +187,7 @@ def test_ionacoustic(plot=False):
         # Calculate forces (Solve Ohm's law)
         ohm(sources.rho, E, destroy_input=False)
         # Set boundary condition
-        E.copy_guards()
+        E.copy_guards_ppic2()
 
         # Make figures
         if plot:
