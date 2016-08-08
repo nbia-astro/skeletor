@@ -30,9 +30,6 @@ def test_ionacoustic(plot=False):
     # Number of periods to run for
     nperiods = 1
 
-    # x- and y-grid
-    xg, yg = numpy.meshgrid(numpy.arange(nx), numpy.arange(ny))
-
     # Sound speed
     cs = numpy.sqrt(Te/mass)
 
@@ -97,6 +94,10 @@ def test_ionacoustic(plot=False):
     # the subdomain assigned to each processor.
     grid = Grid(nx, ny, comm)
 
+    # x- and y-grid
+    xg, yg = numpy.meshgrid(
+            numpy.arange(nx), numpy.arange(grid.noff, grid.noff + grid.nyp))
+
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/nvp)
 
@@ -146,17 +147,19 @@ def test_ionacoustic(plot=False):
         import matplotlib.pyplot as plt
         from matplotlib.cbook import mplDeprecation
         import warnings
+
         global_rho = concatenate(sources.rho.trim())
+        global_rho_an = concatenate(rho_an(xg, yg, 0))
 
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
             vmin, vmax = charge*(1 - A), charge*(1 + A)
-            im1 = ax1.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
-            im2 = ax2.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
+            im1 = ax1.imshow(global_rho, vmin=vmin, vmax=vmax)
+            im2 = ax2.imshow(global_rho_an, vmin=vmin, vmax=vmax)
             im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
-                           xg[0, :], rho_an(xg, yg, 0)[0, :], 'k--')
+                           xg[0, :], global_rho_an[0, :], 'k--')
             ax1.set_title(r'$\rho$')
             ax3.set_ylim(vmin, vmax)
             ax3.set_xlim(0, x[-1])
@@ -193,11 +196,12 @@ def test_ionacoustic(plot=False):
         if plot:
             if (it % 1 == 0):
                 global_rho = concatenate(sources.rho.trim())
+                global_rho_an = concatenate(rho_an(xg, yg, t))
                 if comm.rank == 0:
                     im1.set_data(global_rho)
-                    im2.set_data(rho_an(xg, yg, t))
+                    im2.set_data(global_rho_an)
                     im3[0].set_ydata(global_rho[0, :])
-                    im3[1].set_ydata(rho_an(xg, yg, t)[0, :])
+                    im3[1].set_ydata(global_rho_an[0, :])
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
@@ -205,9 +209,10 @@ def test_ionacoustic(plot=False):
 
     # Check if test has passed
     global_rho = concatenate(sources.rho.trim())
+    global_rho_an = concatenate(rho_an(xg, yg, t))
     if comm.rank == 0:
         tol = 1e-4*charge
-        assert numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho)) < tol
+        assert numpy.max(numpy.abs(global_rho_an - global_rho)) < tol
 
 if __name__ == "__main__":
     import argparse
