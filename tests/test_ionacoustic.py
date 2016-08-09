@@ -165,6 +165,7 @@ def test_ionacoustic(plot=False):
             ax3.set_xlim(0, x[-1])
 
     t = 0
+    diff2 = 0
     ##########################################################################
     # Main loop over time                                                    #
     ##########################################################################
@@ -192,11 +193,16 @@ def test_ionacoustic(plot=False):
         # Set boundary condition
         E.copy_guards_ppic2()
 
+        # Difference between numerical and analytic solution
+        local_rho = sources.rho.trim()
+        local_rho_an = rho_an(xg, yg, t)
+        diff2 += ((local_rho_an - local_rho)**2).mean()
+
         # Make figures
         if plot:
             if (it % 1 == 0):
-                global_rho = concatenate(sources.rho.trim())
-                global_rho_an = concatenate(rho_an(xg, yg, t))
+                global_rho = concatenate(local_rho)
+                global_rho_an = concatenate(local_rho_an)
                 if comm.rank == 0:
                     im1.set_data(global_rho)
                     im2.set_data(global_rho_an)
@@ -208,11 +214,7 @@ def test_ionacoustic(plot=False):
                         plt.pause(1e-7)
 
     # Check if test has passed
-    global_rho = concatenate(sources.rho.trim())
-    global_rho_an = concatenate(rho_an(xg, yg, t))
-    if comm.rank == 0:
-        tol = 1e-4*charge
-        assert numpy.max(numpy.abs(global_rho_an - global_rho)) < tol
+    assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge
 
 if __name__ == "__main__":
     import argparse
