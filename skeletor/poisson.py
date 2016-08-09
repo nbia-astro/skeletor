@@ -106,7 +106,7 @@ class PoissonMpiFFT4py:
         self.affp = grid.nx*grid.ny/np
 
         # Length vector
-        self.L = array([grid.Ly, grid.Lx], dtype=float)
+        self.L = array([grid.ny, grid.nx], dtype=float)
         # Grid size vector
         self.N = array([grid.ny, grid.nx], dtype=int)
 

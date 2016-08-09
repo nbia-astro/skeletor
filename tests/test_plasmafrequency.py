@@ -5,7 +5,7 @@ from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
 
-def test_ionacoustic(plot=False):
+def test_plasmafrequency(plot=False):
 
     # Quiet start
     quiet = True
@@ -28,7 +28,7 @@ def test_ionacoustic(plot=False):
     # CFL number
     cfl = 0.5
     # Number of periods to run for
-    nperiods = 10
+    nperiods = 0.5
 
     # Smoothed particle size in x/y direction
     ax = 0.912871
@@ -208,8 +208,6 @@ def test_ionacoustic(plot=False):
                     im2.set_data(rho_an(xg, yg, t))
                     im3[0].set_ydata(global_rho[0, :])
                     im3[1].set_ydata(rho_an(xg, yg, t)[0, :])
-                    im1.autoscale()
-                    im2.autoscale()
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
@@ -228,4 +226,4 @@ if __name__ == "__main__":
     parser.add_argument('--plot', '-p', action='store_true')
     args = parser.parse_args()
 
-    test_ionacoustic(plot=args.plot)
+    test_plasmafrequency(plot=args.plot)
