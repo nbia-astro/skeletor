@@ -182,12 +182,8 @@ def test_ionacoustic(plot=False):
         sources.deposit_ppic2(ions)
         # Adjust density (TODO: we should do this somewhere else)
         sources.rho /= npc
-        assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
         # Boundary calls
         sources.rho.add_guards_ppic2()
-
-        assert numpy.isclose(comm.allreduce(
-            sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
         # Calculate forces (Solve Ohm's law)
         ohm(sources.rho, E, destroy_input=False)
