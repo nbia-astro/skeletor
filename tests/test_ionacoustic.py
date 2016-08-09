@@ -95,8 +95,7 @@ def test_ionacoustic(plot=False):
     grid = Grid(nx, ny, comm)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(
-            numpy.arange(nx), numpy.arange(grid.noff, grid.noff + grid.nyp))
+    xg, yg = numpy.meshgrid(grid.x, grid.y)
 
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/nvp)
