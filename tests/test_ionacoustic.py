@@ -154,6 +154,7 @@ def test_ionacoustic(plot=False):
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
+            plt.clf()
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
             vmin, vmax = charge*(1 - A), charge*(1 + A)
             im1 = ax1.imshow(global_rho, vmin=vmin, vmax=vmax)
