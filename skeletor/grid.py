@@ -34,3 +34,13 @@ class Grid(grid_t):
         self.noff = noff
         self.nypmx = nypmx
         self.nypmn = nypmn
+
+    @property
+    def x(self):
+        from numpy import arange
+        return arange(self.nx)
+
+    @property
+    def y(self):
+        from numpy import arange
+        return arange(self.noff, self.noff + self.nyp)

@@ -30,9 +30,6 @@ def test_ionacoustic(plot=False):
     # Number of periods to run for
     nperiods = 1
 
-    # x- and y-grid
-    xg, yg = numpy.meshgrid(numpy.arange(nx), numpy.arange(ny))
-
     # Sound speed
     cs = numpy.sqrt(Te/mass)
 
@@ -97,6 +94,9 @@ def test_ionacoustic(plot=False):
     # the subdomain assigned to each processor.
     grid = Grid(nx, ny, comm)
 
+    # x- and y-grid
+    xg, yg = numpy.meshgrid(grid.x, grid.y)
+
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/nvp)
 
@@ -146,22 +146,26 @@ def test_ionacoustic(plot=False):
         import matplotlib.pyplot as plt
         from matplotlib.cbook import mplDeprecation
         import warnings
+
         global_rho = concatenate(sources.rho.trim())
+        global_rho_an = concatenate(rho_an(xg, yg, 0))
 
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
+            plt.clf()
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
             vmin, vmax = charge*(1 - A), charge*(1 + A)
-            im1 = ax1.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
-            im2 = ax2.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
+            im1 = ax1.imshow(global_rho, vmin=vmin, vmax=vmax)
+            im2 = ax2.imshow(global_rho_an, vmin=vmin, vmax=vmax)
             im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
-                           xg[0, :], rho_an(xg, yg, 0)[0, :], 'k--')
+                           xg[0, :], global_rho_an[0, :], 'k--')
             ax1.set_title(r'$\rho$')
             ax3.set_ylim(vmin, vmax)
             ax3.set_xlim(0, x[-1])
 
     t = 0
+    diff2 = 0
     ##########################################################################
     # Main loop over time                                                    #
     ##########################################################################
@@ -177,37 +181,36 @@ def test_ionacoustic(plot=False):
         sources.deposit_ppic2(ions)
         # Adjust density (TODO: we should do this somewhere else)
         sources.rho /= npc
-        assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
         # Boundary calls
         sources.rho.add_guards_ppic2()
-
-        assert numpy.isclose(comm.allreduce(
-            sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
         # Calculate forces (Solve Ohm's law)
         ohm(sources.rho, E, destroy_input=False)
         # Set boundary condition
         E.copy_guards_ppic2()
 
+        # Difference between numerical and analytic solution
+        local_rho = sources.rho.trim()
+        local_rho_an = rho_an(xg, yg, t)
+        diff2 += ((local_rho_an - local_rho)**2).mean()
+
         # Make figures
         if plot:
             if (it % 1 == 0):
-                global_rho = concatenate(sources.rho.trim())
+                global_rho = concatenate(local_rho)
+                global_rho_an = concatenate(local_rho_an)
                 if comm.rank == 0:
                     im1.set_data(global_rho)
-                    im2.set_data(rho_an(xg, yg, t))
+                    im2.set_data(global_rho_an)
                     im3[0].set_ydata(global_rho[0, :])
-                    im3[1].set_ydata(rho_an(xg, yg, t)[0, :])
+                    im3[1].set_ydata(global_rho_an[0, :])
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
 
     # Check if test has passed
-    global_rho = concatenate(sources.rho.trim())
-    if comm.rank == 0:
-        tol = 1e-4*charge
-        assert numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho)) < tol
+    assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge
 
 if __name__ == "__main__":
     import argparse
