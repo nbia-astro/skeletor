@@ -22,13 +22,13 @@ def test_plasmafrequency(plot=False):
     A = 0.001
     # Wavenumbers
     ikx = 1
-    iky = 0
+    iky = 1
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0.0, 0.0
     # CFL number
     cfl = 0.5
     # Number of periods to run for
-    nperiods = 0.5
+    nperiods = 1
 
     # Smoothed particle size in x/y direction
     ax = 0.912871
@@ -43,11 +43,14 @@ def test_plasmafrequency(plot=False):
     # Normalization constant
     affp = nx*ny/np
 
+    # Epsilon 0
+    eps0 = 1
+
     # Plasma frequency
-    omega = 2*numpy.pi/100
+    omega = numpy.sqrt(charge**2*n0/(mass*eps0))
 
     # Time step
-    dt = cfl
+    dt = 0.1
 
     # Wave vector and its modulus
     kx = 2*numpy.pi*ikx/nx
@@ -216,8 +219,9 @@ def test_plasmafrequency(plot=False):
     # Check if test has passed
     global_rho = concatenate(sources.rho.trim())
     if comm.rank == 0:
-        tol = 1e-4*charge
-        # assert numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho)) < tol
+        tol = 1e-4
+        err = numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho))
+        assert (err < tol)
 
 if __name__ == "__main__":
     import argparse
