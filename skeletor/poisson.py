@@ -140,8 +140,8 @@ class PoissonMpiFFT4py:
        self.qe_hat = self.FFT.fft2(qe.trim(), self.qe_hat)
 
        # Solve Gauss' law in Fourier space and transform back to real space
-       self.Ex_hat = -1j*self.kx*self.k21_eff*self.qe_hat
-       self.Ey_hat = -1j*self.ky*self.k21_eff*self.qe_hat
+       self.Ex_hat = -1j*self.kx*self.k21*self.qe_hat
+       self.Ey_hat = -1j*self.ky*self.k21*self.qe_hat
 
        E['x'][:-1, :-2] = self.affp*self.FFT.ifft2(self.Ex_hat, E['x'][:-1, :-2])
        E['y'][:-1, :-2] = self.affp*self.FFT.ifft2(self.Ey_hat, E['y'][:-1, :-2])
