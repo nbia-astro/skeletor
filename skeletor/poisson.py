@@ -143,5 +143,5 @@ class PoissonMpiFFT4py:
        self.Ex_hat = -1j*self.kx*self.k21*self.qe_hat
        self.Ey_hat = -1j*self.ky*self.k21*self.qe_hat
 
-       E['x'][:-1, :-2] = self.FFT.ifft2(self.Ex_hat, E['x'][:-1, :-2])
-       E['y'][:-1, :-2] = self.FFT.ifft2(self.Ey_hat, E['y'][:-1, :-2])
+       E['x'][:-1, :-2] = self.affp*self.FFT.ifft2(self.Ex_hat, E['x'][:-1, :-2])
+       E['y'][:-1, :-2] = self.affp*self.FFT.ifft2(self.Ey_hat, E['y'][:-1, :-2])
