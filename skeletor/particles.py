@@ -55,7 +55,7 @@ class Particles(numpy.ndarray):
         from numpy import logical_and, sum
         from warnings import warn
 
-        ind = logical_and(y >= grid.edges[0], y < grid.edges[1])
+        ind = logical_and(y >= grid.edges[0]*grid.dy, y < grid.edges[1]*grid.dx)
 
         # Number of particles in subdomain
         self.np = sum(ind)
@@ -67,10 +67,10 @@ class Particles(numpy.ndarray):
             warn(msg + " (np={}, npmax={})".format(self.np, self.size))
 
         # Fill structured array
-        self["x"][:self.np] = x[ind]
-        self["y"][:self.np] = y[ind]
-        self["vx"][:self.np] = vx[ind]
-        self["vy"][:self.np] = vy[ind]
+        self["x"][:self.np] = x[ind]/grid.dx
+        self["y"][:self.np] = y[ind]/grid.dy
+        self["vx"][:self.np] = vx[ind]/grid.dx
+        self["vy"][:self.np] = vy[ind]/grid.dy
 
     def initialize_ppic2(self, vtx, vty, vdx, vdy, npx, npy, grid):
 
