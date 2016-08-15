@@ -55,7 +55,7 @@ def test_ionacoustic(plot=False):
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+        return npc*charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
@@ -118,18 +118,16 @@ def test_ionacoustic(plot=False):
     sources = Sources(grid, comm, dtype=Float)
 
     # Initialize Ohm's law solver
-    ohm = Ohm(grid, temperature=Te, charge=charge)
+    ohm = Ohm(grid, npc, temperature=Te, charge=charge)
 
     # Calculate initial density and force
 
     # Deposit sources
     sources.deposit(ions)
-    # Adjust density (we should do this somewhere else)
-    sources.rho /= npc
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
     sources.rho.add_guards_ppic2()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     # Calculate electric field (Solve Ohm's law)
     ohm(sources.rho, E, destroy_input=False)
@@ -155,7 +153,7 @@ def test_ionacoustic(plot=False):
             plt.figure(1)
             plt.clf()
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
-            vmin, vmax = charge*(1 - A), charge*(1 + A)
+            vmin, vmax = npc*charge*(1 - A), npc*charge*(1 + A)
             im1 = ax1.imshow(global_rho, vmin=vmin, vmax=vmax)
             im2 = ax2.imshow(global_rho_an, vmin=vmin, vmax=vmax)
             im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
@@ -179,8 +177,7 @@ def test_ionacoustic(plot=False):
 
         # Deposit sources
         sources.deposit_ppic2(ions)
-        # Adjust density (TODO: we should do this somewhere else)
-        sources.rho /= npc
+
         # Boundary calls
         sources.rho.add_guards_ppic2()
 
@@ -210,7 +207,7 @@ def test_ionacoustic(plot=False):
                         plt.pause(1e-7)
 
     # Check if test has passed
-    assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge
+    assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge*npc
 
 if __name__ == "__main__":
     import argparse

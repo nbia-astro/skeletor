@@ -2,7 +2,7 @@ class Ohm:
 
     """Solve Ohm's law via a discrete Fourier transform."""
 
-    def __init__(self, grid, charge=1.0, temperature=0.0, eta=0.0):
+    def __init__(self, grid, npc, charge=1.0, temperature=0.0, eta=0.0):
 
         from numpy import zeros, zeros_like, array
         from math import log2
@@ -14,6 +14,9 @@ class Ohm:
 
         assert grid.nx == 2**self.indx, "'nx' needs to be a power of two"
         assert grid.ny == 2**self.indy, "'ny' needs to be a power of two"
+
+        # Normalization constant
+        self.affp = 1/npc
 
         # Grid dimensions
         self.N = array([grid.ny, grid.nx], dtype=int)

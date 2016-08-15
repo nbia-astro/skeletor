@@ -24,7 +24,7 @@ def test_ohm(plot=False):
     grid = Grid(nx, ny, comm)
 
     # Initialize Ohm's law solver
-    ohm = Ohm(grid, temperature=1.0, charge=1.0)
+    ohm = Ohm(grid, npc=1, temperature=1.0, charge=1.0)
 
     # Coordinate arrays
     x = numpy.arange(grid.nx, dtype=Float)
