@@ -106,7 +106,7 @@ class PoissonMpiFFT4py:
         self.affp = grid.nx*grid.ny/np
 
         # Length vector
-        self.L = array([grid.ny, grid.nx], dtype=float)
+        self.L = array([grid.Ly, grid.Lx], dtype=float)
         # Grid size vector
         self.N = array([grid.ny, grid.nx], dtype=int)
 
@@ -133,6 +133,11 @@ class PoissonMpiFFT4py:
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
+        self.dx = grid.dx
+        self.dy = grid.dy
+
+
+
 
     def __call__(self, qe, E, destroy_input=True):
 
@@ -143,5 +148,5 @@ class PoissonMpiFFT4py:
        self.Ex_hat = -1j*self.kx*self.k21*self.qe_hat
        self.Ey_hat = -1j*self.ky*self.k21*self.qe_hat
 
-       E['x'][:-1, :-2] = self.FFT.ifft2(self.Ex_hat, E['x'][:-1, :-2])
-       E['y'][:-1, :-2] = self.FFT.ifft2(self.Ey_hat, E['y'][:-1, :-2])
+       E['x'][:-1, :-2] = self.FFT.ifft2(self.Ex_hat, E['x'][:-1, :-2])/self.dx
+       E['y'][:-1, :-2] = self.FFT.ifft2(self.Ey_hat, E['y'][:-1, :-2])/self.dy
