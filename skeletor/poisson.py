@@ -114,10 +114,10 @@ class PoissonMpiFFT4py:
         self.FFT = R2C(self.N, self.L, MPI, "double")
 
         # Pre-allocate array for Fourier transform and force
-        self.qe_hat = zeros(self.FFT.complex_shape(), dtype=self.FFT.complex)
-
-        self.Ex_hat = zeros_like(self.qe_hat)
-        self.Ey_hat = zeros_like(self.qe_hat)
+        self.rho_hat = zeros(
+                self.FFT.complex_shape(), dtype=self.FFT.complex)
+        self.Ex_hat = zeros_like(self.rho_hat)
+        self.Ey_hat = zeros_like(self.rho_hat)
 
         # Scaled local wavevector
         k = self.FFT.get_scaled_local_wavenumbermesh()
@@ -134,14 +134,14 @@ class PoissonMpiFFT4py:
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
 
-    def __call__(self, qe, E, destroy_input=True):
+    def __call__(self, rho, E, destroy_input=True):
 
        # Transform charge density to Fourier space
-       self.qe_hat = self.FFT.fft2(qe.trim(), self.qe_hat)
+       self.rho_hat[:] = self.affp*self.FFT.fft2(rho.trim(), self.rho_hat)
 
        # Solve Gauss' law in Fourier space and transform back to real space
-       self.Ex_hat = -1j*self.kx*self.k21_eff*self.qe_hat
-       self.Ey_hat = -1j*self.ky*self.k21_eff*self.qe_hat
+       self.Ex_hat[:] = -1j*self.kx*self.k21_eff*self.rho_hat
+       self.Ey_hat[:] = -1j*self.ky*self.k21_eff*self.rho_hat
 
-       E['x'][:-1, :-2] = self.affp*self.FFT.ifft2(self.Ex_hat, E['x'][:-1, :-2])
-       E['y'][:-1, :-2] = self.affp*self.FFT.ifft2(self.Ey_hat, E['y'][:-1, :-2])
+       E['x'][:-1, :-2] = self.FFT.ifft2(self.Ex_hat, E['x'][:-1, :-2])
+       E['y'][:-1, :-2] = self.FFT.ifft2(self.Ey_hat, E['y'][:-1, :-2])
