@@ -31,8 +31,8 @@ def test_plasmafrequency(plot=False):
     nperiods = 1
 
     # Smoothed particle size in x/y direction
-    ax = 0.912871
-    ay = 0.912871
+    ax = 0
+    ay = 0
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(numpy.arange(nx), numpy.arange(ny))
@@ -65,7 +65,7 @@ def test_plasmafrequency(plot=False):
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return charge*A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t)
+        return npc*charge*A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t)
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
@@ -134,10 +134,10 @@ def test_plasmafrequency(plot=False):
     # Deposit sources
     sources.deposit(electrons)
     # Adjust density (we should do this somewhere else)
-    sources.rho /= npc
+    # sources.rho /= npc
     # assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
     sources.rho.add_guards_ppic2()
-    sources.rho += n0
+    sources.rho += n0*npc
     # assert numpy.isclose(comm.allreduce(
         # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
@@ -162,7 +162,7 @@ def test_plasmafrequency(plot=False):
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
-            vmin, vmax = charge*A, -charge*A
+            vmin, vmax = npc*charge*A, -npc*charge*A
             im1 = ax1.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
             im2 = ax2.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
             im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
@@ -186,11 +186,11 @@ def test_plasmafrequency(plot=False):
         # Deposit sources
         sources.deposit_ppic2(electrons)
         # Adjust density (TODO: we should do this somewhere else)
-        sources.rho /= npc
+        # sources.rho /= npc
         # assert numpy.isclose(sources.rho.sum(),electrons.np*charge/npc)
         # Boundary calls
         sources.rho.add_guards_ppic2()
-        sources.rho += n0
+        sources.rho += n0*npc
 
         # assert numpy.isclose(comm.allreduce(
         #     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
@@ -219,7 +219,7 @@ def test_plasmafrequency(plot=False):
     # Check if test has passed
     global_rho = concatenate(sources.rho.trim())
     if comm.rank == 0:
-        tol = 1e-4
+        tol = 1e-4*npc
         err = numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho))
         assert (err < tol)
 
