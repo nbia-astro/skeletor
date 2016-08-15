@@ -5,7 +5,7 @@ import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
-plot = True
+plot = False
 
 quiet = True
 
@@ -18,7 +18,7 @@ nx, ny = 64, 1
 npc = 32
 
 # Number of time steps
-nt = 5000
+nt = 2000
 
 # Background ion density
 n0 = 1.0
@@ -38,16 +38,15 @@ ay = 0.912871
 # Total number of particles in simulation
 npar = npc*nx*ny
 
-nmode = 3
+nmode = 1
 
-Lx = 3*2*numpy.pi/(numpy.sqrt(3.0/2)/2.)
+Lx = 1
 Ly = Lx*ny/nx
 
 kx = 2*numpy.pi/Lx
 
-# Mean velocity
 # Mean velocity of electrons in x- and y-direction
-vdx = 1#numpy.sqrt(3/2)/2/kx
+vdx = 1/10
 vdy = 0
 
 # Thermal velocity of electrons in x- and y-direction
@@ -140,7 +139,7 @@ def concatenate(arr):
 global_E = concatenate(E.trim())
 
 #
-E2   = numpy.ones(nt)*1e-16
+E_pot   = numpy.ones(nt)*1e-16
 time = numpy.arange(0,dt*nt, dt)
 
 # Make initial figure
@@ -165,8 +164,10 @@ if plot:
         ax3.set_title(r'$E_y$')
         plt.figure(2)
         fig2, ax = plt.subplots(num=2)
-        line, = ax.semilogy(time, E2)
-        ax.set_ylim(1e-16,1e2)
+        line, = ax.semilogy(time, E_pot)
+        ax.semilogy(time, 1e-6*numpy.exp(0.353553390593*time))
+        ax.semilogy(time, 1e-6*numpy.exp(0.454025*time))
+        ax.set_ylim(1e-12,1e2)
         ax.set_xlim(0,nt*dt)
         # ax3.set_ylim(vmin, vmax)
         # ax3.set_xlim(0, x[-1])
@@ -202,7 +203,7 @@ for it in range(nt):
     # Set boundary condition
     E.copy_guards_ppic2()
 
-    E2[it] = comm.allreduce(((E['x']*grid.dx)**2 + (E['y']*grid.dy)**2).sum(), op=MPI.SUM)
+    E_pot[it] = comm.allreduce((numpy.sqrt((E['x']*grid.dx)**2 + (E['y']*grid.dy)**2)).sum(), op=MPI.SUM)
 
     # Make figures
     if plot:
@@ -216,7 +217,7 @@ for it in range(nt):
                 im1.autoscale()
                 im2.autoscale()
                 im3.autoscale()
-                line.set_ydata(E2)  # update the data
+                line.set_ydata(E_pot)  # update the data
                 plt.draw()
                 # im2.set_data(rho_an(xg, yg, t))
                 # im3[0].set_ydata(global_rho[0, :])
@@ -225,3 +226,47 @@ for it in range(nt):
                     warnings.filterwarnings(
                             "ignore", category=mplDeprecation)
                     plt.pause(1e-7)
+
+# Test if growth rate is correct
+if comm.rank == 0:
+  from scipy.optimize import curve_fit
+  import matplotlib.pyplot as plt
+  # Exponential growth function
+  def func(x,a,b):
+      return a*numpy.exp(b*x)
+
+  def lin_func(x,a,b):
+      return a + b*x
+
+  # Fit exponential to the evolution of sqrt(mean(B_x**2))
+  # Disregard first half of data
+  first = int(0.35*nt);
+  last  = int(nt*0.55)
+  popt, pcov = curve_fit(lin_func, time[first:last], numpy.log(E_pot[first:last]))
+
+  # Theoretical gamma (TODO: Solve dispersion relation here)
+  gamma_t = 0.353282
+  # Gamma from the fit
+  gamma_f = popt[1]
+
+  # Relative error
+  err = abs((gamma_f-gamma_t))/gamma_t
+  # Tolerance
+  tol = 2e-2
+
+  # Did it work?
+  assert (err < tol)
+
+if plot:
+  # Create figure
+  plt.figure (2)
+  plt.clf ()
+  plt.semilogy(time,E_pot,'b')
+  plt.semilogy(time[first:last],func(time[first:last],numpy.exp(popt[0]),popt[1]),
+      'r--',label=r"Fit: $\gamma = %.5f$" %popt[1])
+  plt.semilogy(time,func(time,5e-3,gamma),
+      'k-',label=r"Theory: $\gamma = %.5f$" % gamma)
+  plt.xlabel("time")
+  plt.legend(loc=2)
+  plt.ylim(1e-6, 1e2)
+  plt.show()
