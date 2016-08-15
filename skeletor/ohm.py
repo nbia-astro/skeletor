@@ -27,9 +27,10 @@ class Ohm:
         self.FFT = R2C(self.N, self.L, MPI, "double")
 
         # Pre-allocate array for Fourier transform and force
-        self.rho_hat = zeros(self.FFT.complex_shape(), dtype=self.FFT.complex)
-        self.rho_hat_x = zeros_like(self.rho_hat)
-        self.rho_hat_y = zeros_like(self.rho_hat)
+        self.lnrho_hat = zeros(
+                self.FFT.complex_shape(), dtype=self.FFT.complex)
+        self.Ex_hat = zeros_like(self.lnrho_hat)
+        self.Ey_hat = zeros_like(self.lnrho_hat)
 
         # Scaled local wavevector
         k = self.FFT.get_scaled_local_wavenumbermesh()
@@ -54,16 +55,16 @@ class Ohm:
         from numpy import log
 
         # Transform log of charge density to Fourier space
-        self.rho_hat = self.FFT.fft2(log(rho.trim()), self.rho_hat)
+        self.lnrho_hat[:] = self.FFT.fft2(log(rho.trim()), self.lnrho_hat)
 
         # Pressure term of Ohm's law
         # Notice that we multiply the charge to get the force
-        self.rho_hat_x = -self.alpha*1j*self.kx*self.rho_hat
-        self.rho_hat_y = -self.alpha*1j*self.ky*self.rho_hat
+        self.Ex_hat[:] = -self.alpha*1j*self.kx*self.lnrho_hat
+        self.Ey_hat[:] = -self.alpha*1j*self.ky*self.lnrho_hat
 
         # Transform back to real space
-        E["x"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_x, E["x"][:-1, :-2])
-        E["y"][:-1, :-2] = self.FFT.ifft2(self.rho_hat_y, E["y"][:-1, :-2])
+        E["x"][:-1, :-2] = self.FFT.ifft2(self.Ex_hat, E["x"][:-1, :-2])
+        E["y"][:-1, :-2] = self.FFT.ifft2(self.Ey_hat, E["y"][:-1, :-2])
 
         # Add resitivity
         # TODO
