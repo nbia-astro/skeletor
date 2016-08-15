@@ -1,6 +1,6 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-from skeletor import Poisson as Poisson
-# from skeletor import PoissonMpiFFT4py as Poisson
+# from skeletor import Poisson as Poisson
+from skeletor import PoissonMpiFFT4py as Poisson
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -13,9 +13,9 @@ quiet = True
 A = 0.01
 
 # Number of grid points in x- and y-direction
-nx, ny = 128, 16
+nx, ny = 64, 1
 # Average number of particles per cell
-npc = 128
+npc = 32
 
 # Number of time steps
 nt = 5000
@@ -29,7 +29,7 @@ charge = -1.0
 mass = 1.0
 
 # Timestep
-dt = 0.04
+dt = 0.02
 
 # Smoothed particle size in x/y direction
 ax = 0.912871
@@ -38,35 +38,32 @@ ay = 0.912871
 # Total number of particles in simulation
 npar = npc*nx*ny
 
-nmode = 1
+nmode = 3
 
-Lx = nx
-Ly = ny
+Lx = 3*2*numpy.pi/(numpy.sqrt(3.0/2)/2.)
+Ly = Lx*ny/nx
 
 kx = 2*numpy.pi/Lx
 
 # Mean velocity
 # Mean velocity of electrons in x- and y-direction
-vdx = 10#numpy.sqrt(3/2)/2/kx
+vdx = 1#numpy.sqrt(3/2)/2/kx
 vdy = 0
 
 # Thermal velocity of electrons in x- and y-direction
-vtx, vty = vdx/1e3, vdx/1e3
+vtx, vty = 1e-8, 0
+
+dx = Lx/nx
+dy = Ly/ny
 
 # Uniform distribution of particle positions (quiet start)
-if quiet:
-    # Uniform distribution of particle positions (quiet start)
-    sqrt_npc = int(numpy.sqrt(npc/2))
-    assert sqrt_npc**2 == npc/2
-    dx = dy = 1/sqrt_npc
-    x, y = numpy.meshgrid(
-            numpy.arange(0, nx, dx),
-            numpy.arange(0, ny, dy))
-    x = x.flatten()
-    y = y.flatten()
-else:
-    x = nx*numpy.random.uniform(size=np).astype(Float)
-    y = ny*numpy.random.uniform(size=np).astype(Float)
+dx1 = dx/int(numpy.sqrt(npc/2))
+dy1 = dx1
+X = numpy.arange(0,Lx,dx1)
+Y = numpy.arange(0,Ly,dy1)
+x, y = numpy.meshgrid(X, Y)
+x = x.flatten()
+y = y.flatten()
 
 # Normal distribution of particle velocities
 vx = vdx*numpy.ones_like(x)
@@ -76,7 +73,7 @@ vy = vdy*numpy.ones_like(y)
 x = numpy.concatenate([x,x])
 y = numpy.concatenate([y,y])
 
-x -= 1e-4*numpy.sin(2*kx*x)
+x += 1e-4*numpy.cos(nmode*kx*x)
 
 # Make counterpropagating in x
 vx = numpy.concatenate([vx,-vx])
@@ -93,7 +90,7 @@ idproc, nvp = cppinit(comm)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-grid = Grid(nx, ny, comm)
+grid = Grid(nx, ny, Lx, Ly, comm)
 
 # Maximum number of electrons in each partition
 npmax = int(1.5*npar/nvp)
@@ -205,7 +202,7 @@ for it in range(nt):
     # Set boundary condition
     E.copy_guards_ppic2()
 
-    E2[it] = comm.allreduce((E['x']**2 + E['y']**2).sum(), op=MPI.SUM)
+    E2[it] = comm.allreduce(((E['x']*grid.dx)**2 + (E['y']*grid.dy)**2).sum(), op=MPI.SUM)
 
     # Make figures
     if plot:
