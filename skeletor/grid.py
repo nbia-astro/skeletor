@@ -36,6 +36,14 @@ class Grid(grid_t):
         self.nypmn = nypmn
 
     @property
+    def Lx(self):
+        return self.nx
+
+    @property
+    def Ly(self):
+        return self.ny
+
+    @property
     def x(self):
         from numpy import arange
         return arange(self.nx)
