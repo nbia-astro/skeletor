@@ -15,15 +15,19 @@ class Ohm:
         assert grid.nx == 2**self.indx, "'nx' needs to be a power of two"
         assert grid.ny == 2**self.indy, "'ny' needs to be a power of two"
 
-        # Normalization constant
-        self.affp = 1/npc
+        # Charge
+        self.charge = charge
+        # Temperature
+        self.temperature = temperature
+        # Resistivity
+        self.eta = eta
 
         # Grid dimensions
-        self.N = array([grid.ny, grid.nx], dtype=int)
-        self.L = array([grid.Ly, grid.Lx], dtype=float)
+        N = array([grid.ny, grid.nx], dtype=int)
+        L = array([grid.Ly, grid.Lx], dtype=float)
 
         # Create FFT object
-        self.FFT = R2C(self.N, self.L, MPI, "double")
+        self.FFT = R2C(N, L, MPI, "double")
 
         # Pre-allocate array for Fourier transform and force
         self.lnrho_hat = zeros(
@@ -31,24 +35,11 @@ class Ohm:
         self.Ex_hat = zeros_like(self.lnrho_hat)
         self.Ey_hat = zeros_like(self.lnrho_hat)
 
-        # Scaled local wavevector
-        k = self.FFT.get_scaled_local_wavenumbermesh()
-
         # Define kx and ky (notice swapping due to the grid ordering)
-        self.kx = k[1]
-        self.ky = k[0]
-
-        # Charge
-        self.charge = charge
-
-        # Temperature
-        self.temperature = temperature
+        self.ky, self.kx = self.FFT.get_scaled_local_wavenumbermesh()
 
         # Ratio of temperature to charge
         self.alpha = self.temperature/self.charge
-
-        # Resistivity
-        self.eta = eta
 
     def __call__(self, rho, E, destroy_input=True):
         from numpy import log
