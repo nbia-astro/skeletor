@@ -153,6 +153,7 @@ def landau_ions(plot=False, fitplot=False):
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest',aspect='auto')
             plt.figure(1)
+            plt.clf()
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, nrows=3)
             im1 = ax1.imshow(global_rho)
             im2 = ax2.imshow(global_E['x'])
@@ -256,8 +257,8 @@ def landau_ions(plot=False, fitplot=False):
         if plot or fitplot:
             import matplotlib.pyplot as plt
             # Create figure
-            plt.figure (3)
-            plt.clf ()
+            plt.figure(2)
+            plt.clf()
             plt.semilogy(time, drho_k, 'b')
             plt.semilogy(tmax, ymax,   'r*')
             plt.semilogy(tmax,func(tmax,numpy.exp(popt[0]),popt[1]),
