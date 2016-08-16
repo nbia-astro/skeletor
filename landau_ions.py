@@ -28,7 +28,7 @@ def landau_ions(plot=False, fitplot=False):
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = numpy.sqrt(Ti/mass), 0.0
     # CFL number
-    cfl = 0.1
+    cfl = 0.5
     # Number of periods to run for
     nperiods = 0.5
 
@@ -36,7 +36,7 @@ def landau_ions(plot=False, fitplot=False):
     cs = numpy.sqrt(Te/mass)
 
     # Time step
-    dt = 0.5
+    dt = cfl/cs
 
     # Total number of particles in simulation
     np = npc*nx*ny
