@@ -20,8 +20,7 @@ class Ohm:
 
         # Grid dimensions
         self.N = array([grid.ny, grid.nx], dtype=int)
-        # Lenght array (TODO: Should not be hardcoded!)
-        self.L = array([grid.ny, grid.nx], dtype=float)
+        self.L = array([grid.Ly, grid.Lx], dtype=float)
 
         # Create FFT object
         self.FFT = R2C(self.N, self.L, MPI, "double")
