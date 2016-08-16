@@ -11,8 +11,14 @@ def test_twostream(plot=False, fitplot=False):
   # Get rid of this one
   A = 0.01
 
+  quiet = True
+
   # Number of grid points in x- and y-direction
   nx, ny = 64, 8
+
+  # Size of box
+  Lx, Ly = nx, ny
+
   # Average number of particles per cell
   npc = 32
 
@@ -31,37 +37,37 @@ def test_twostream(plot=False, fitplot=False):
   dt = 0.02
 
   # Smoothed particle size in x/y direction
-  ax = 0.912871
-  ay = 0.912871
+  ax = 0
+  ay = 0
 
   # Total number of particles in simulation
   npar = npc*nx*ny
 
   nmode = 1
 
-  Lx = 1
-  Ly = Lx*ny/nx
-
   kx = 2*numpy.pi/Lx
 
   # Mean velocity of electrons in x- and y-direction
-  vdx = 1/10
+  vdx = 6
   vdy = 0
 
   # Thermal velocity of electrons in x- and y-direction
   vtx, vty = 1e-8, 0
 
-  dx = Lx/nx
-  dy = Ly/ny
 
-  # Uniform distribution of particle positions (quiet start)
-  dx1 = dx/int(numpy.sqrt(npc/2))
-  dy1 = dx1
-  X = numpy.arange(0,Lx,dx1)
-  Y = numpy.arange(0,Ly,dy1)
-  x, y = numpy.meshgrid(X, Y)
-  x = x.flatten()
-  y = y.flatten()
+  if quiet:
+      # Uniform distribution of particle positions (quiet start)
+      sqrt_npc = int(numpy.sqrt(npc/2))
+      assert sqrt_npc**2 == npc/2
+      dx = dy = 1/sqrt_npc
+      x, y = numpy.meshgrid(
+              numpy.arange(0, nx, dx),
+              numpy.arange(0, ny, dy))
+      x = x.flatten()
+      y = y.flatten()
+  else:
+      x = nx*numpy.random.uniform(size=np).astype(Float)
+      y = ny*numpy.random.uniform(size=np).astype(Float)
 
   # Normal distribution of particle velocities
   vx = vdx*numpy.ones_like(x)
@@ -88,7 +94,7 @@ def test_twostream(plot=False, fitplot=False):
 
   # Create numerical grid. This contains information about the extent of
   # the subdomain assigned to each processor.
-  grid = Grid(nx, ny, Lx, Ly, comm)
+  grid = Grid(nx, ny, comm)
 
   # Maximum number of electrons in each partition
   npmax = int(1.5*npar/nvp)
@@ -117,13 +123,8 @@ def test_twostream(plot=False, fitplot=False):
 
   # Deposit sources
   sources.deposit_ppic2(electrons)
-  # Adjust density (we should do this somewhere else)
-  sources.rho /= npc
-  # assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
   sources.rho.add_guards_ppic2()
-  sources.rho += n0
-  # assert numpy.isclose(comm.allreduce(
-      # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+  sources.rho += n0*npc
 
   # Solve Gauss' law
   poisson(sources.rho, E, destroy_input=False)
@@ -152,12 +153,9 @@ def test_twostream(plot=False, fitplot=False):
           plt.rc('image', origin='lower', interpolation='nearest',aspect='auto')
           plt.figure(1)
           fig, (ax1, ax2, ax3) = plt.subplots(num=1, nrows=3)
-          vmin, vmax = charge*A, -charge*A
-          im1 = ax1.imshow(global_rho, vmin=vmin, vmax=vmax)
-          im2 = ax2.imshow(global_E['x'], vmin=vmin, vmax=vmax)
-          im3 = ax3.imshow(global_E['y'], vmin=vmin, vmax=vmax)
-          # im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
-          #                xg[0, :], rho_an(xg, yg, 0)[0, :], 'k--')
+          im1 = ax1.imshow(global_rho)
+          im2 = ax2.imshow(global_E['x'])
+          im3 = ax3.imshow(global_E['y'])
           ax1.set_title(r'$\rho$')
           ax2.set_title(r'$E_x$')
           ax3.set_title(r'$E_y$')
@@ -177,15 +175,10 @@ def test_twostream(plot=False, fitplot=False):
 
       # Deposit sources
       sources.deposit_ppic2(electrons)
-      # Adjust density (TODO: we should do this somewhere else)
-      sources.rho /= npc
-      # assert numpy.isclose(sources.rho.sum(),electrons.np*charge/npc)
+
       # Boundary calls
       sources.rho.add_guards_ppic2()
       sources.rho += n0
-
-      # assert numpy.isclose(comm.allreduce(
-      #     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
       # Solve Gauss' law
       poisson(sources.rho, E, destroy_input=False)
@@ -193,7 +186,11 @@ def test_twostream(plot=False, fitplot=False):
       # Set boundary condition
       E.copy_guards_ppic2()
 
-      E_pot[it] = comm.allreduce((numpy.sqrt((E['x']*grid.dx)**2 + (E['y']*grid.dy)**2)).sum(), op=MPI.SUM)
+      # sum(|E|) on each processor
+      E_pot_id = (numpy.sqrt(E['x']**2 + E['y']**2)).sum()
+
+      # Add contribution from each processor
+      E_pot[it] = comm.allreduce(E_pot_id, op=MPI.SUM)
 
       # Make figures
       if plot:
@@ -231,7 +228,7 @@ def test_twostream(plot=False, fitplot=False):
       popt, pcov = curve_fit(lin_func, time[first:last], numpy.log(E_pot[first:last]))
 
       # Theoretical gamma (TODO: Solve dispersion relation here)
-      gamma_t = 0.353282
+      gamma_t = 0.352982
 
       # Gamma from the fit
       gamma_f = popt[1]
@@ -256,7 +253,7 @@ def test_twostream(plot=False, fitplot=False):
               'k-',label=r"Theory: $\gamma = %.5f$" % gamma_t)
           plt.xlabel("time")
           plt.legend(loc=2)
-          plt.ylim(1e-6, 1e2)
+          plt.ylim(1e-4, 1e3)
           plt.show()
 
 if __name__ == "__main__":
