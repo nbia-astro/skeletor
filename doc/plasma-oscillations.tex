@@ -16,6 +16,8 @@
 
 \begin{document}
 
+\section{Plasma oscillations}
+
 \begin{align}
   \pder{}{t}\delta n + n\nabla\cdot\delta\vec{u} &= 0 \\
   \pder{}{t}\delta\vec{u} + \frac{e}{m}\delta\vec{E} &= 0 \\
@@ -43,5 +45,16 @@
   \hat{\vec{E}} &= -\frac{en}{\epsilon_0 k}\frac{\hat{n}}{n}\frac{\vec{k}}{k}
 \end{align}
 
+\section{Two-stream instability}
+
+The dispersion relation for the two-stream instability is
+\begin{equation}
+  1 = \frac{\omega_p^2}{2}
+  \left(\frac{1}{(\omega - k v_0)^2} + \frac{1}{(\omega + k v_0)^2}\right)
+\end{equation}
+for two counter-propagating electron beams with velocities $\pm v_0$ and
+number density $n_0 = n/2$ where $n_0$ is the background (immobile) ion number
+density. The plasma frequency is given by $\omega_p^2 = e^2 n_0/m\epsilon_0$
+where $m$ is the electron mass.
 
 \end{document}
