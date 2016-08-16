@@ -14,7 +14,7 @@ def landau_ions(plot=False, fitplot=False):
     # Average number of particles per cell
     npc = 2**16
     # Particle charge and mass
-    charge = 1
+    charge = 1.0
     mass = 1.0
     # Electron temperature
     Te = 1.0
@@ -23,14 +23,13 @@ def landau_ions(plot=False, fitplot=False):
     # Dimensionless amplitude of perturbation
     A = 0.01
     # Wavenumbers
-    ikx = 1
-    iky = 0
+    ikx, iky = 1, 0
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = numpy.sqrt(Ti/mass), 0.0
     # CFL number
     cfl = 0.5
     # Number of periods to run for
-    nperiods = 0.5
+    nperiods = 3.0
 
     # Sound speed
     cs = numpy.sqrt(Te/mass)
@@ -53,7 +52,7 @@ def landau_ions(plot=False, fitplot=False):
     tend = 2*numpy.pi*nperiods/omega
 
     # Number of time steps
-    nt = 190#int(tend/dt)
+    nt = int(tend/dt)
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
@@ -98,6 +97,12 @@ def landau_ions(plot=False, fitplot=False):
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(grid.x, grid.y)
+
+    # Pair of Fourier basis functions with the specified wave numbers.
+    # The basis functions are normalized so that the Fourier amplitude can be
+    # computed by summing rather than averaging.
+    S = numpy.sin(kx*xg + ky*yg)/(nx*ny)
+    C = numpy.cos(kx*xg + ky*yg)/(nx*ny)
 
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/nvp)
@@ -151,7 +156,8 @@ def landau_ions(plot=False, fitplot=False):
         global_rho = concatenate(sources.rho.trim())
 
         if comm.rank == 0:
-            plt.rc('image', origin='lower', interpolation='nearest',aspect='auto')
+            plt.rc('image', origin='lower', interpolation='nearest')
+            plt.rc('image', aspect='auto')
             plt.figure(1)
             plt.clf()
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, nrows=3)
@@ -162,12 +168,13 @@ def landau_ions(plot=False, fitplot=False):
             ax2.set_title(r'$E_x$')
             ax3.set_title(r'$E_y$')
 
-    #
-    drho    = numpy.ones(nt)*1e-16
-    drho_k  = numpy.ones(nt)*1e-16
-    time    = numpy.arange(0,dt*nt, dt)
+    # Compute square of Fourier amplitude by projecting the local density
+    ampl2 = []
+    time = []
 
+    # Initial time
     t = 0
+
     ##########################################################################
     # Main loop over time                                                    #
     ##########################################################################
@@ -178,6 +185,7 @@ def landau_ions(plot=False, fitplot=False):
 
         # Update time
         t += dt
+        time += [t]
 
         # Deposit sources
         sources.deposit_ppic2(ions)
@@ -190,14 +198,10 @@ def landau_ions(plot=False, fitplot=False):
         # Set boundary condition
         E.copy_guards_ppic2()
 
-        # sum(|drho|) on each processor
-        drho_i = (numpy.sqrt((sources.rho.trim()-rho_an(xg, yg, 0))**2)).sum()
-
-        drho_k_i = (abs (numpy.fft.rfft (sources.rho.trim (), axis=1)[0,ikx])/nx).mean()
-
-        # Add contribution from each processor
-        drho[it]   = comm.allreduce(drho_i, op=MPI.SUM)
-        drho_k[it] = comm.allreduce(drho_k_i, op=MPI.SUM)
+        # Compute square of Fourier amplitude by projecting the local density
+        # onto the local Fourier basis
+        rho = sources.rho.trim()
+        ampl2 += [(S*rho).sum()**2 + (C*rho).sum()**2]
 
         # Make figures
         if plot:
@@ -217,57 +221,32 @@ def landau_ions(plot=False, fitplot=False):
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
 
+    # Sum squared amplitude over processor, then take the square root
+    ampl = numpy.sqrt(comm.allreduce(ampl2, op=MPI.SUM))
+    # Convert list of times into NumPy array
+    time = numpy.array(time)
 
     # Test if growth rate is correct
     if comm.rank == 0:
-        from scipy.optimize import curve_fit
         from scipy.signal import argrelextrema
 
-        # Find local maxima
-        index = argrelextrema(drho_k, numpy.greater)
-        tmax = time[index]
-        ymax = drho_k[index]
-
-        # Exponential growth function
-        def func(x,a,b):
-            return a*numpy.exp(b*x)
-
-        def lin_func(x,a,b):
-            return a + b*x
-
-        # Fit the local maxima
-        popt, pcov = curve_fit(lin_func, tmax, numpy.log(ymax))
+        # Find first local maximum
+        index = argrelextrema(ampl, numpy.greater)
+        tmax = time[index][0]
+        ymax = ampl[index][0]
 
         # Theoretical gamma (TODO: Solve dispersion relation here)
         gamma_t = -0.0203927225606
-
-        # Gamma from the fit
-        gamma_f = popt[1]
-
-        # Relative error
-        err = abs((gamma_f-gamma_t))/gamma_t
-
-        # Tolerance
-        tol = 2e-2
-
-        # Did it work?
-        print (err)
-        # assert (err < tol)
 
         if plot or fitplot:
             import matplotlib.pyplot as plt
             # Create figure
             plt.figure(2)
             plt.clf()
-            plt.semilogy(time, drho_k, 'b')
-            plt.semilogy(tmax, ymax,   'r*')
-            plt.semilogy(tmax,func(tmax,numpy.exp(popt[0]),popt[1]),
-              'r--',label=r"Fit: $\gamma_f = %.5f$" %popt[1])
-            plt.semilogy(time,func(time,ymax[0]*numpy.exp(-tmax[0]*gamma_t)
-                ,gamma_t),'k-',label=r"Theory: $\gamma_t = %.5f$" %gamma_t)
+            plt.semilogy(time, ampl, 'b')
+            plt.semilogy(time, ymax*numpy.exp(gamma_t*(time - tmax)), 'k-')
 
-            plt.title (r'$|\hat{\rho}(k=2\pi/L)|$')
-            plt.legend(loc=3)
+            plt.title(r'$|\hat{\rho}(ikx=%d, iky=%d)|$' % (ikx, iky))
             plt.xlabel("time")
             # plt.savefig("landau-damping.pdf")
             plt.show()
