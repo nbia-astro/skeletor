@@ -52,7 +52,7 @@ def test_twostream(plot=False, fitplot=False):
   vdy = 0
 
   # Thermal velocity of electrons in x- and y-direction
-  vtx, vty = 1e-8, 0
+  vtx, vty = 1e-8, 1e-8
 
 
   if quiet:
@@ -77,8 +77,6 @@ def test_twostream(plot=False, fitplot=False):
   x = numpy.concatenate([x,x])
   y = numpy.concatenate([y,y])
 
-  x += 1e-4*numpy.cos(nmode*kx*x)
-
   # Make counterpropagating in x
   vx = numpy.concatenate([vx,-vx])
   vy = numpy.concatenate([vy,vy])
@@ -86,8 +84,6 @@ def test_twostream(plot=False, fitplot=False):
   # Add thermal component
   vx += vtx*numpy.random.normal(size=npar).astype(Float)
   vy += vty*numpy.random.normal(size=npar).astype(Float)
-  # vx += vtx*numpy.sin(kx*x)
-
 
   # Start parallel processing
   idproc, nvp = cppinit(comm)
@@ -235,6 +231,7 @@ def test_twostream(plot=False, fitplot=False):
 
       # Relative error
       err = abs((gamma_f-gamma_t))/gamma_t
+
       # Tolerance
       tol = 2e-2
 
