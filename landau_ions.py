@@ -5,30 +5,31 @@ from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
 
-def test_ionacoustic(plot=False):
+def landau_ions(plot=False, fitplot=False):
 
     # Quiet start
     quiet = True
     # Number of grid points in x- and y-direction
-    nx, ny = 32, 32
+    nx, ny = 32, 1
     # Average number of particles per cell
-    npc = 256
+    npc = 2**16
     # Particle charge and mass
-    charge = 0.5
+    charge = 1.0
     mass = 1.0
     # Electron temperature
     Te = 1.0
+    # Ion temperature
+    Ti = 1/5
     # Dimensionless amplitude of perturbation
-    A = 0.001
+    A = 0.01
     # Wavenumbers
-    ikx = 1
-    iky = 1
+    ikx, iky = 1, 0
     # Thermal velocity of electrons in x- and y-direction
-    vtx, vty = 0.0, 0.0
+    vtx, vty = numpy.sqrt(Ti/mass), 0.0
     # CFL number
     cfl = 0.5
     # Number of periods to run for
-    nperiods = 1
+    nperiods = 3.0
 
     # Sound speed
     cs = numpy.sqrt(Te/mass)
@@ -97,6 +98,12 @@ def test_ionacoustic(plot=False):
     # x- and y-grid
     xg, yg = numpy.meshgrid(grid.x, grid.y)
 
+    # Pair of Fourier basis functions with the specified wave numbers.
+    # The basis functions are normalized so that the Fourier amplitude can be
+    # computed by summing rather than averaging.
+    S = numpy.sin(kx*xg + ky*yg)/(nx*ny)
+    C = numpy.cos(kx*xg + ky*yg)/(nx*ny)
+
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/nvp)
 
@@ -139,31 +146,35 @@ def test_ionacoustic(plot=False):
     def concatenate(arr):
         return numpy.concatenate(comm.allgather(arr))
 
+    global_E = concatenate(E.trim())
+
     # Make initial figure
     if plot:
         import matplotlib.pyplot as plt
         from matplotlib.cbook import mplDeprecation
         import warnings
-
         global_rho = concatenate(sources.rho.trim())
-        global_rho_an = concatenate(rho_an(xg, yg, 0))
 
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest')
+            plt.rc('image', aspect='auto')
             plt.figure(1)
             plt.clf()
-            fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
-            vmin, vmax = npc*charge*(1 - A), npc*charge*(1 + A)
-            im1 = ax1.imshow(global_rho, vmin=vmin, vmax=vmax)
-            im2 = ax2.imshow(global_rho_an, vmin=vmin, vmax=vmax)
-            im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
-                           xg[0, :], global_rho_an[0, :], 'k--')
+            fig, (ax1, ax2, ax3) = plt.subplots(num=1, nrows=3)
+            im1 = ax1.imshow(global_rho)
+            im2 = ax2.imshow(global_E['x'])
+            im3 = ax3.imshow(global_E['y'])
             ax1.set_title(r'$\rho$')
-            ax3.set_ylim(vmin, vmax)
-            ax3.set_xlim(0, x[-1])
+            ax2.set_title(r'$E_x$')
+            ax3.set_title(r'$E_y$')
 
+    # Compute square of Fourier amplitude by projecting the local density
+    ampl2 = []
+    time = []
+
+    # Initial time
     t = 0
-    diff2 = 0
+
     ##########################################################################
     # Main loop over time                                                    #
     ##########################################################################
@@ -174,6 +185,7 @@ def test_ionacoustic(plot=False):
 
         # Update time
         t += dt
+        time += [t]
 
         # Deposit sources
         sources.deposit_ppic2(ions)
@@ -186,34 +198,65 @@ def test_ionacoustic(plot=False):
         # Set boundary condition
         E.copy_guards_ppic2()
 
-        # Difference between numerical and analytic solution
-        local_rho = sources.rho.trim()
-        local_rho_an = rho_an(xg, yg, t)
-        diff2 += ((local_rho_an - local_rho)**2).mean()
+        # Compute square of Fourier amplitude by projecting the local density
+        # onto the local Fourier basis
+        rho = sources.rho.trim()
+        ampl2 += [(S*rho).sum()**2 + (C*rho).sum()**2]
 
         # Make figures
         if plot:
             if (it % 1 == 0):
-                global_rho = concatenate(local_rho)
-                global_rho_an = concatenate(local_rho_an)
+                global_rho = concatenate(sources.rho.trim())
+                global_E = concatenate(E.trim())
                 if comm.rank == 0:
                     im1.set_data(global_rho)
-                    im2.set_data(global_rho_an)
-                    im3[0].set_ydata(global_rho[0, :])
-                    im3[1].set_ydata(global_rho_an[0, :])
+                    im2.set_data(global_E['x'])
+                    im3.set_data(global_E['y'])
+                    im1.autoscale()
+                    im2.autoscale()
+                    im3.autoscale()
+                    plt.draw()
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
 
-    # Check if test has passed
-    assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge*npc
+    # Sum squared amplitude over processor, then take the square root
+    ampl = numpy.sqrt(comm.allreduce(ampl2, op=MPI.SUM))
+    # Convert list of times into NumPy array
+    time = numpy.array(time)
+
+    # Test if growth rate is correct
+    if comm.rank == 0:
+        from scipy.signal import argrelextrema
+
+        # Find first local maximum
+        index = argrelextrema(ampl, numpy.greater)
+        tmax = time[index][0]
+        ymax = ampl[index][0]
+
+        # Theoretical gamma (TODO: Solve dispersion relation here)
+        gamma_t = -0.0203927225606
+
+        if plot or fitplot:
+            import matplotlib.pyplot as plt
+            # Create figure
+            plt.figure(2)
+            plt.clf()
+            plt.semilogy(time, ampl, 'b')
+            plt.semilogy(time, ymax*numpy.exp(gamma_t*(time - tmax)), 'k-')
+
+            plt.title(r'$|\hat{\rho}(ikx=%d, iky=%d)|$' % (ikx, iky))
+            plt.xlabel("time")
+            # plt.savefig("landau-damping.pdf")
+            plt.show()
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--plot', '-p', action='store_true')
+    parser.add_argument('--fitplot', '-fp', action='store_true')
     args = parser.parse_args()
 
-    test_ionacoustic(plot=args.plot)
+    landau_ions(plot=args.plot, fitplot=args.fitplot)
