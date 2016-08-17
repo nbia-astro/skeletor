@@ -107,12 +107,12 @@ class PoissonMpiFFT4py:
         self.affp = grid.nx*grid.ny/np
 
         # Length vector
-        self.L = array([grid.ny, grid.nx], dtype=float)
+        L = array([grid.Ly, grid.Lx], dtype=float)
         # Grid size vector
-        self.N = array([grid.ny, grid.nx], dtype=int)
+        N = array([grid.ny, grid.nx], dtype=int)
 
         # Create FFT object
-        self.FFT = R2C(self.N, self.L, MPI, "double")
+        self.FFT = R2C(N, L, MPI, "double")
 
         # Pre-allocate array for Fourier transform and force
         self.rho_hat = zeros(
