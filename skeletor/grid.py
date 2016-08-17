@@ -34,3 +34,29 @@ class Grid(grid_t):
         self.noff = noff
         self.nypmx = nypmx
         self.nypmn = nypmn
+
+    @property
+    def Lx(self):
+        "Domain size in x"
+        # This is defined as a property because right now,
+        # Lx must be equal to nx.
+        return self.nx
+
+    @property
+    def Ly(self):
+        "Domain size in y"
+        # This is defined as a property because right now,
+        # Ly must be equal to ny.
+        return self.ny
+
+    @property
+    def x(self):
+        "One-dimensional x-coordinate array"
+        from numpy import arange
+        return arange(self.nx)
+
+    @property
+    def y(self):
+        "One-dimensional y-coordinate array"
+        from numpy import arange
+        return arange(self.noff, self.noff + self.nyp)
