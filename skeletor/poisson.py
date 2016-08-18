@@ -65,12 +65,16 @@ class Poisson:
                 qe_, self.qt, self.bs, self.br, isign, self.mixup, self.sct,
                 self.indx, self.indy, grid)
 
+        qt = self.qt.copy()
+
         # Calculate force/charge in fourier space with standard procedure:
         # updates fxyt, we
         isign = -1
         we = cppois22(
                 self.qt, self.fxyt, isign, self.ffc,
                 self.ax, self.ay, self.affp, grid)
+
+        fxyt = self.fxyt.copy()
 
         # Transform force to real space with standard procedure:
         # updates fxye, modifies fxyt
@@ -79,7 +83,7 @@ class Poisson:
                 fxye, self.fxyt, self.bs, self.br, isign,
                 self.mixup, self.sct, self.indx, self.indy, grid)
 
-        return ttp, we
+        return ttp, we, qt, fxyt
 
 
 class PoissonMpiFFT4py:
