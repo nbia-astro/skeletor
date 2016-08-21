@@ -41,8 +41,8 @@ class IonacousticDispersion:
     def miD(self, kx):
         """Derivative factor -i\hat{D}"""
         from numpy import sin
-        if self.b == 1: y = (sin(kx*self.dx)/(self.dx))
-        if self.b == 2: y = kx
+        if self.b == 0: y = sin(kx*self.dx)/(self.dx)
+        if self.b == 1: y = kx
         return y
 
     def det(self, vph, kx, alpha):
@@ -79,7 +79,7 @@ class IonacousticDispersion:
         p = self.p
         b = self.b
         dx= self.dx
-        if b == 2:
+        if b == 1:
             if p == 1 or p == 2:
                 omega = sqrt((2-2*cos(kx*dx))/dx**2)
             if p == 3:
@@ -87,7 +87,7 @@ class IonacousticDispersion:
             if p == 4:
                 omega = sqrt((33 + 26*cos(kx*dx) + cos(2*kx*dx))\
                     *sin(kx*dx/2)**2/(15*dx**2))
-        if b == 1:
+        if b == 0:
             if p == 1 or p == 2:
                 omega = sin(kx*dx)/dx
             if p == 3:
@@ -157,13 +157,18 @@ class IonacousticDispersion:
 if __name__ == "__main__":
     import numpy as np
     import matplotlib.pyplot as plt
-    solve = IonacousticDispersion(Ti=10, Te=1)
+    solve = IonacousticDispersion(Ti=1/5, Te=1)
 
     # Fine-grained kx
     kx = np.linspace(1e-4, 9*np.pi/10, 100)
     vph = solve(kx)
     plt.figure(1)
-    plt.plot(kx, vph.imag)
+    plt.plot(kx, vph.imag, 'b')
+    # Ignore numerical effects
+    solve2 = solve
+    solve2.numerical = False
+    vph = solve2(kx)
+    plt.plot(kx, vph.imag, 'r--')
 
     # Course-grained kx (as in simulations)
     Nx = 64
@@ -181,8 +186,7 @@ if __name__ == "__main__":
     plt.figure(3)
     plt.plot(solve.alpha_vec**2, vph.imag, 'b-')
     # Ignore numerical effects
-    solve.numerical = False
-    vph = solve.omega_vs_alpha(2*np.pi/Lx)
+    vph = solve2.omega_vs_alpha(2*np.pi/Lx)
     plt.plot(solve.alpha_vec**2, vph.imag, 'r--')
     plt.show()
 
