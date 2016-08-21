@@ -2,7 +2,7 @@ class IonacousticDispersion:
     """Class for solving the ionacoustic dispersion relation"""
 
     def __init__ (self, Ti, Te, b=1, p=2, dx=1, tol=1e-8,
-                  maxterms=1000, N=100):
+                  maxterms=1000, N=100, numerical=True):
         from numpy import sqrt, log10, logspace
         # Grid spacing
         self.dx = dx
@@ -23,7 +23,9 @@ class IonacousticDispersion:
         # Number of points used to iterate in temperature
         self.N = N
         # Vector used to iterate alpha up to the target value
-        self.alpha_vec = logspace(-4, log10(self.alpha), self.N)
+        self.alpha_vec = logspace(-2, log10(self.alpha), self.N)
+        # Numerical
+        self.numerical = numerical
 
     def W(self, z):
         """Plasma response function"""
@@ -31,26 +33,43 @@ class IonacousticDispersion:
         from numpy import pi, sqrt
         return (1. + 1j*sqrt (0.5*pi)*z*wofz (sqrt (0.5)*z))
 
+    def Wk(self, kx):
+        """Shape factor for particles, times k**(2p)"""
+        from numpy import sin
+        return (sin(kx*self.dx/2)/(self.dx/2))**(2*self.p)
+
+    def miD(self, kx):
+        """Derivative factor -i\hat{D}. Set b to 1 for energy-conserving
+           scheme or fft?"""
+        from numpy import sin
+        return (sin(kx*self.dx)/(self.dx))**(2-self.b)
+
     def det(self, vph, kx, alpha):
         """Returns the dispersion relation (that needs to be zero)"""
         from numpy import arange, sin, pi
         p = self.p
         b = self.b
         kdx = kx*self.dx
-        # The n = 0 term
-        A = 1/kdx**(2*p-b+2)*self.W(vph/alpha)
+        dx = self.dx
 
-        for j in range(1, self.maxterms):
-            B = 0
-            for n in (j, -j):
-                kn = kdx - 2*pi*n
-                B += 1/kn**(2*p-b+2)*self.W(vph/alpha/abs(1-2*pi*n/kdx))
-            A += B
-            if abs((B/A)) < self.tol:
-                A *=  sin(kdx)**(2-b)*(sin(kdx/2)/0.5)**(2*p)
-                return A + alpha**2
-        raise RuntimeError ("Exceeded maxterms={} aliasing terms!".\
-            format (self.maxterms))
+        if self.numerical:
+            # The n = 0 term
+            A = 1/kdx**(2*p-b+2)*self.W(vph/alpha)
+
+            for j in range(1, self.maxterms):
+                B = 0
+                for n in (j, -j):
+                    kn = kx - 2*pi*n/dx
+                    B += 1/kn**(2*p-b+2)*self.W(kx*vph/(alpha*abs(kn)))
+                A += B
+                if abs((B/A)) < self.tol:
+                    A *=  self.miD(kx)*self.Wk(kx)
+                    return alpha**2 + A
+            raise RuntimeError ("Exceeded maxterms={} aliasing terms!".\
+                format (self.maxterms))
+        else:
+            # Ignore all numerical effects from particle shape and grid
+            return alpha**2 + self.W(vph/alpha)
 
     def cold(self, kx):
         """Cold limit of the numerical dispersion relation. Returns the phase
@@ -137,7 +156,7 @@ class IonacousticDispersion:
 if __name__ == "__main__":
     import numpy as np
     import matplotlib.pyplot as plt
-    solve = IonacousticDispersion(Ti=1, Te=1)
+    solve = IonacousticDispersion(Ti=10, Te=1)
 
     # Fine-grained kx
     kx = np.linspace(1e-4, 9*np.pi/10, 100)
@@ -157,10 +176,13 @@ if __name__ == "__main__":
     plt.plot(kxvec, vph.imag)
 
     # Gamma vs Ti/Te for a fixed k
-    vph = solve.omega_vs_alpha(2*np.pi/Lx)
+    vph = solve.omega_vs_alpha(10*2*np.pi/Lx)
     plt.figure(3)
-    plt.plot(solve.alpha_vec**2, vph.imag)
-
+    plt.plot(solve.alpha_vec**2, vph.imag, 'b-')
+    # Ignore numerical effects
+    solve.numerical = False
+    vph = solve.omega_vs_alpha(2*np.pi/Lx)
+    plt.plot(solve.alpha_vec**2, vph.imag, 'r--')
     plt.show()
 
 
