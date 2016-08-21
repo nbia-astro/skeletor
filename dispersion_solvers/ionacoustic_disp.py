@@ -3,7 +3,7 @@ class IonacousticDispersion:
 
     def __init__ (self, Ti, Te, b=1, p=2, dx=1, tol=1e-8,
                   maxterms=1000, N=100, numerical=True):
-        from numpy import sqrt, log10, logspace
+        from numpy import sqrt
         # Grid spacing
         self.dx = dx
         # Ion temperature
@@ -12,9 +12,9 @@ class IonacousticDispersion:
         self.Te = Te
         # Alpha parameter
         self.alpha = sqrt(Ti/Te)
-        # Order of interpolation
+        # Order of interpolation: p=1 (NGP), p=2 (CIC), p=3 (TSC)
         self.p = p
-        # Energy () or momentum conserving scheme
+        # Energy (b=1) or momentum conserving (b=0) scheme
         self.b = b
         # Tolerance for solutions
         self.tol = tol
@@ -22,8 +22,6 @@ class IonacousticDispersion:
         self.maxterms = maxterms
         # Number of points used to iterate in temperature
         self.N = N
-        # Vector used to iterate alpha up to the target value
-        self.alpha_vec = logspace(-2, log10(self.alpha), self.N)
         # Numerical dispersion or standard dispersion relation?
         self.numerical = numerical
 
@@ -41,8 +39,8 @@ class IonacousticDispersion:
     def miD(self, kx):
         """Derivative factor -i\hat{D}"""
         from numpy import sin
-        if self.b == 1: y = (sin(kx*self.dx)/(self.dx))
-        if self.b == 2: y = kx
+        if self.b == 0: y = sin(kx*self.dx)/(self.dx)
+        if self.b == 1: y = kx
         return y
 
     def det(self, vph, kx, alpha):
@@ -79,7 +77,7 @@ class IonacousticDispersion:
         p = self.p
         b = self.b
         dx= self.dx
-        if b == 2:
+        if b == 1:
             if p == 1 or p == 2:
                 omega = sqrt((2-2*cos(kx*dx))/dx**2)
             if p == 3:
@@ -87,7 +85,7 @@ class IonacousticDispersion:
             if p == 4:
                 omega = sqrt((33 + 26*cos(kx*dx) + cos(2*kx*dx))\
                     *sin(kx*dx/2)**2/(15*dx**2))
-        if b == 1:
+        if b == 0:
             if p == 1 or p == 2:
                 omega = sin(kx*dx)/dx
             if p == 3:
@@ -104,11 +102,13 @@ class IonacousticDispersion:
            is a vector of length N with alpha[-1] = sqrt(Ti/Te). The value of
            N can be set at object instantiation."""
         from scipy.optimize import newton
-        from numpy import empty, complex128
+        from numpy import empty, complex128, logspace, log10
+        assert(self.alpha != 0), "This method only makes sense for finite Ti."
 
         det = self.det
 
-        alpha = self.alpha_vec
+        # Vector used to iterate alpha up to the target value
+        alpha = logspace(-4, log10(self.alpha), self.N)
 
         # Array for the complex phase-velocity
         vph = empty (len (alpha), dtype = complex128)
@@ -121,6 +121,8 @@ class IonacousticDispersion:
             assert(abs(det(vph[i], kx, alpha[i])) < self.tol), \
             'Guess is not within the tolerance!'
 
+        # Store alpha_vec (useful for plotting)
+        self.alpha_vec = alpha
         return vph
 
 
@@ -157,13 +159,18 @@ class IonacousticDispersion:
 if __name__ == "__main__":
     import numpy as np
     import matplotlib.pyplot as plt
-    solve = IonacousticDispersion(Ti=10, Te=1)
+    solve = IonacousticDispersion(Ti=1/5, Te=1)
 
     # Fine-grained kx
     kx = np.linspace(1e-4, 9*np.pi/10, 100)
     vph = solve(kx)
     plt.figure(1)
-    plt.plot(kx, vph.imag)
+    plt.plot(kx, vph.imag, 'b')
+    # Ignore numerical effects
+    solve2 = solve
+    solve2.numerical = False
+    vph = solve2(kx)
+    plt.plot(kx, vph.imag, 'r--')
 
     # Course-grained kx (as in simulations)
     Nx = 64
@@ -181,8 +188,7 @@ if __name__ == "__main__":
     plt.figure(3)
     plt.plot(solve.alpha_vec**2, vph.imag, 'b-')
     # Ignore numerical effects
-    solve.numerical = False
-    vph = solve.omega_vs_alpha(2*np.pi/Lx)
+    vph = solve2.omega_vs_alpha(2*np.pi/Lx)
     plt.plot(solve.alpha_vec**2, vph.imag, 'r--')
     plt.show()
 
