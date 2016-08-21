@@ -24,7 +24,7 @@ class IonacousticDispersion:
         self.N = N
         # Vector used to iterate alpha up to the target value
         self.alpha_vec = logspace(-2, log10(self.alpha), self.N)
-        # Numerical
+        # Numerical dispersion or standard dispersion relation?
         self.numerical = numerical
 
     def W(self, z):
@@ -34,15 +34,16 @@ class IonacousticDispersion:
         return (1. + 1j*sqrt (0.5*pi)*z*wofz (sqrt (0.5)*z))
 
     def Wk(self, kx):
-        """Shape factor for particles, times k**(2p)"""
+        """Shape factor for particles"""
         from numpy import sin
-        return (sin(kx*self.dx/2)/(self.dx/2))**(2*self.p)
+        return (sin(kx*self.dx/2)/(kx*self.dx/2))**(2*self.p)
 
     def miD(self, kx):
-        """Derivative factor -i\hat{D}. Set b to 1 for energy-conserving
-           scheme or fft?"""
+        """Derivative factor -i\hat{D}"""
         from numpy import sin
-        return (sin(kx*self.dx)/(self.dx))**(2-self.b)
+        if self.b == 1: y = (sin(kx*self.dx)/(self.dx))
+        if self.b == 2: y = kx
+        return y
 
     def det(self, vph, kx, alpha):
         """Returns the dispersion relation (that needs to be zero)"""
@@ -54,16 +55,16 @@ class IonacousticDispersion:
 
         if self.numerical:
             # The n = 0 term
-            A = 1/kdx**(2*p-b+2)*self.W(vph/alpha)
+            A = self.miD(kx)*self.Wk(kx)/kx*self.W(vph/alpha)
 
             for j in range(1, self.maxterms):
                 B = 0
                 for n in (j, -j):
                     kn = kx - 2*pi*n/dx
-                    B += 1/kn**(2*p-b+2)*self.W(kx*vph/(alpha*abs(kn)))
+                    B += self.miD(kn)*self.Wk(kn)/kn*\
+                         self.W(kx*vph/(alpha*abs(kn)))
                 A += B
                 if abs((B/A)) < self.tol:
-                    A *=  self.miD(kx)*self.Wk(kx)
                     return alpha**2 + A
             raise RuntimeError ("Exceeded maxterms={} aliasing terms!".\
                 format (self.maxterms))
