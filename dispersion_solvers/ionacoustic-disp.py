@@ -54,7 +54,7 @@ class IonacousticDispersion:
 
     def cold(self, kx):
         """Cold limit of the numerical dispersion relation. Returns the phase
-        velocity."""
+           velocity. Input: Single kx. Output: Real phase velocity"""
         from numpy import sin, cos, sqrt
         p = self.p
         b = self.b
@@ -78,9 +78,11 @@ class IonacousticDispersion:
         return omega/kx
 
     def omega_vs_alpha(self, kx):
-        """Solve warm dispersion relation using Newton's method. Returns the
-           complex phase-velocity vph(alpha) where alpha = sqrt(Ti/Te).
-           Note that omega = kx*vph."""
+        """Solve warm dispersion relation using Newton's method.
+           Input: Single kx value.
+           Output: The complex phase-velocity vph(alpha) where alpha
+           is a vector of length N with alpha[-1] = sqrt(Ti/Te). The value of
+           N can be set at object instantiation."""
         from scipy.optimize import newton
         from numpy import empty, complex128
 
@@ -103,8 +105,12 @@ class IonacousticDispersion:
 
 
     def __call__ (self, kx):
-        """Solve warm dispersion relation using Newton's method. Returns the
-        complex phase-velocity vph(kx). Note that omega = kx*vph."""
+        """Solve warm dispersion relation using Newton's method.
+        Input: vector of kx values.
+        Output: The complex phase-velocity vph(kx). Note that omega = kx*vph.
+        The vector kx needs to be relatively finegrained. If this is not the
+        case, please use the method omega_vs_alpha instead.
+        """
         from scipy.optimize import newton
         from numpy import empty, complex128
 
@@ -121,10 +127,40 @@ class IonacousticDispersion:
 
         # Loop over kx
         for i in range (1, len (kx)):
-          vph[i] = newton (det, vph[i-1], args = (kx[i], alpha,))
-          # Check numerical solution is correct
-          assert(abs(det(vph[i], kx[i], alpha)) < self.tol), \
-          'Solution is not within the tolerance!'
+            vph[i] = newton (det, vph[i-1], args = (kx[i], alpha,))
+            # Check numerical solution is correct
+            assert(abs(det(vph[i], kx[i], alpha)) < self.tol), \
+            'Solution is not within the tolerance!'
 
         return vph
+
+if __name__ == "__main__":
+    import numpy as np
+    import matplotlib.pyplot as plt
+    solve = IonacousticDispersion(Ti=1, Te=1)
+
+    # Fine-grained kx
+    kx = np.linspace(1e-4, 9*np.pi/10, 100)
+    vph = solve(kx)
+    plt.figure(1)
+    plt.plot(kx, vph.imag)
+
+    # Course-grained kx (as in simulations)
+    Nx = 64
+    Lx = Nx
+    vph = []
+    kxvec = np.arange(1, Nx//4)*2*np.pi/Lx
+    for kx in kxvec:
+        vph.append(solve.omega_vs_alpha(kx)[-1])
+    vph = np.array(vph)
+    plt.figure(2)
+    plt.plot(kxvec, vph.imag)
+
+    # Gamma vs Ti/Te for a fixed k
+    vph = solve.omega_vs_alpha(2*np.pi/Lx)
+    plt.figure(3)
+    plt.plot(solve.alpha_vec**2, vph.imag)
+
+    plt.show()
+
 
