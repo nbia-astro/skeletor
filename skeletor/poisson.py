@@ -47,9 +47,10 @@ class Poisson:
                 self.qt, self.fxyt, isign, self.ffc,
                 self.ax, self.ay, self.affp, grid)
 
-    def __call__(self, qe, fxye, destroy_input=True):
+    def __call__(self, qe, fxye, destroy_input=True, custom_cppois22=False):
 
         from .cython.ppic2_wrapper import cppois22, cwppfft2r, cwppfft2r2
+        from .cython.operators import grad_inv_del
 
         grid = qe.grid
 
@@ -67,10 +68,15 @@ class Poisson:
 
         # Calculate force/charge in fourier space with standard procedure:
         # updates fxyt, we
-        isign = -1
-        we = cppois22(
-                self.qt, self.fxyt, isign, self.ffc,
-                self.ax, self.ay, self.affp, grid)
+        if custom_cppois22:
+            we = grad_inv_del(
+                    self.qt, self.fxyt, self.ffc, self.ax, self.ay,
+                    self.affp, grid.nx, grid.ny, grid.kstrt)
+        else:
+            isign = -1
+            we = cppois22(
+                    self.qt, self.fxyt, isign, self.ffc,
+                    self.ax, self.ay, self.affp, grid)
 
         # Transform force to real space with standard procedure:
         # updates fxye, modifies fxyt

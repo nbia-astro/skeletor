@@ -54,6 +54,19 @@ def test_poisson(plot=False):
     # Solve Gauss' law
     poisson(qe, fxye, destroy_input=False)
 
+    #######################################################
+    # Check that custom cppois22() yields the same result #
+    #######################################################
+
+    # Initialize force field
+    fxye_custom = Field(grid, comm, dtype=Float2)
+    fxye_custom.fill((0.0, 0.0))
+
+    # Solve Gauss' law
+    poisson(qe, fxye_custom, destroy_input=False, custom_cppois22=True)
+
+    assert numpy.all(fxye == fxye_custom)
+
     ##############################################
     # Solve Gauss' law with Numpy's built-in FFT #
     ##############################################
