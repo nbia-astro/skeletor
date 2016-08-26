@@ -39,7 +39,7 @@ cpdef float_t grad_inv_del(
     kxps = kxp if kxp < kxps else kxps
     dnx = 2.0*M_PI/<float_t> nx
     dny = 2.0*M_PI/<float_t> ny
-    zero = 0.0 + 0.0*_Complex_I
+    zero = 0.0
 
     if kstrt > nxh:
         return 0.0
@@ -49,10 +49,11 @@ cpdef float_t grad_inv_del(
         dkx = dnx*<float_t> (j + joff)
         if j + joff > 0:
             for k in range(1, nyh):
+                dky = dny*<float_t> k
                 k1 = ny - k
                 at1 = crealf(ffc[j, k])*cimagf(ffc[j, k])
                 at2 = dkx*at1
-                at3 = dny*at1*<float_t> k
+                at3 = dky*at1
                 zt1 = cimagf(qt[j, k]) - crealf(qt[j, k])*_Complex_I
                 zt2 = cimagf(qt[j, k1]) - crealf(qt[j, k1])*_Complex_I
                 fxyt[j, k].x = at2*zt1
@@ -63,9 +64,9 @@ cpdef float_t grad_inv_del(
                                + qt[j, k1]*conjf(qt[j, k1]))
             # mode numbers ky = 0, ny/2
             at1 = crealf(ffc[j, 0])*cimagf(ffc[j, 0])
-            at3 = dkx*at1
+            at2 = dkx*at1
             zt1 = cimagf(qt[j, 0]) - crealf(qt[j, 0])*_Complex_I
-            fxyt[j, 0].x = at3*zt1
+            fxyt[j, 0].x = at2*zt1
             fxyt[j, 0].y = zero
             fxyt[j, nyh].x = zero
             fxyt[j, nyh].y = zero
@@ -73,12 +74,13 @@ cpdef float_t grad_inv_del(
     # mode numbers kx = 0, nx/2
     if ks == 0:
         for k in range(1, nyh):
+            dky = dny*<float_t> k
             k1 = ny - k
             at1 = crealf(ffc[0, k])*cimagf(ffc[0, k])
-            at2 = dny*at1*<float_t> k
+            at3 = dky*at1
             zt1 = cimagf(qt[0, k]) - crealf(qt[0, k])*_Complex_I
             fxyt[0, k].x = zero
-            fxyt[0, k].y = at2*zt1
+            fxyt[0, k].y = at3*zt1
             fxyt[0, k1].x = zero
             fxyt[0, k1].y = zero
             wp += at1*crealf(qt[0, k]*conjf(qt[0, k]))
