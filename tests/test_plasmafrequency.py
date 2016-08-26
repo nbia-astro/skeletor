@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-from skeletor import PoissonMpiFFT4py as Poisson
+from skeletor import OperatorsMpiFFT4py as Operators
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -126,8 +126,8 @@ def test_plasmafrequency(plot=False):
     # Initialize sources
     sources = Sources(grid, comm, dtype=Float)
 
-    # Initialize Poisson solver
-    poisson = Poisson(grid, ax, ay, np)
+    # Initialize integro-differential operators
+    operators = Operators(grid, ax, ay, np)
 
     # Calculate initial density and force
 
@@ -142,7 +142,7 @@ def test_plasmafrequency(plot=False):
         # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
     # Solve Gauss' law
-    poisson(sources.rho, E, destroy_input=False)
+    operators.poisson(sources.rho, E, destroy_input=False)
     # Set boundary condition
     E.copy_guards_ppic2()
 
@@ -196,7 +196,7 @@ def test_plasmafrequency(plot=False):
         #     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
         # Solve Gauss' law
-        poisson(sources.rho, E, destroy_input=False)
+        operators.poisson(sources.rho, E, destroy_input=False)
 
         # Set boundary condition
         E.copy_guards_ppic2()

@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-from skeletor import Poisson
+from skeletor import Operators
 import numpy
 from mpi4py import MPI
 
@@ -135,11 +135,11 @@ def test_skeletor():
         # Smoothed particle size
         ax, ay = 0.912871, 0.912871
 
-        # Initialize Poisson solver
-        poisson = Poisson(grid, ax, ay, np)
+        # Initialize various integro-differential operators
+        operators = Operators(grid, ax, ay, np)
 
         # Solve Gauss's law
-        poisson(sources.rho, fxy)
+        operators.poisson(sources.rho, fxy)
         fxy2 = fxy.copy()
 
         # Copy data to guard cells from corresponding active cells

@@ -1,4 +1,4 @@
-class Poisson:
+class Operators:
 
     """Solve Gauss' law ∇·E = ρ/ε0 via a discrete fourier transform."""
 
@@ -47,7 +47,7 @@ class Poisson:
                 self.qt, self.fxyt, isign, self.ffc,
                 self.ax, self.ay, self.affp, grid)
 
-    def __call__(self, qe, fxye, destroy_input=True, custom_cppois22=False):
+    def poisson(self, qe, fxye, destroy_input=True, custom_cppois22=False):
 
         from .cython.ppic2_wrapper import cppois22, cwppfft2r, cwppfft2r2
         from .cython.operators import grad_inv_del
@@ -87,7 +87,7 @@ class Poisson:
         return ttp, we
 
 
-class PoissonMpiFFT4py:
+class OperatorsMpiFFT4py:
 
     """Solve Gauss' law ∇·E = ρ/ε0 via a discrete fourier transform."""
 
@@ -140,7 +140,7 @@ class PoissonMpiFFT4py:
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
-    def __call__(self, rho, E, destroy_input=True):
+    def poisson(self, rho, E, destroy_input=True):
 
         # Transform charge density to Fourier space
         self.rho_hat[:] = self.affp*self.FFT.fft2(rho.trim(), self.rho_hat)

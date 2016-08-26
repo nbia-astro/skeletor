@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-from skeletor import ParticleSort, Poisson
+from skeletor import ParticleSort, Operators
 
 from mpi4py.MPI import COMM_WORLD as comm, SUM
 import numpy
@@ -38,8 +38,8 @@ idproc, nvp = cppinit(comm)
 # Create numerical grid
 grid = Grid(nx, ny, comm)
 
-# Initialize Poisson solver
-poisson = Poisson(grid, ax, ay, np)
+# Initialize integro-differential operators
+operators = Operators(grid, ax, ay, np)
 
 # Initialize particle sort
 sort = ParticleSort(grid)
@@ -86,7 +86,7 @@ for it in range(nt):
         sources.rho.trim().sum(), op=SUM), np*charge)
 
     # Solve Gauss' law
-    poisson(sources.rho, fxy)
+    operators.poisson(sources.rho, fxy)
     # Apply boundary condition
     fxy.copy_guards_ppic2()
 
