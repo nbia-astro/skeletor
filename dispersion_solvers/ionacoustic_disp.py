@@ -3,7 +3,7 @@ class IonacousticDispersion:
 
     def __init__ (self, Ti, Te, b=1, p=2, dx=1, tol=1e-8,
                   maxterms=1000, N=100, numerical=True):
-        from numpy import sqrt, log10, logspace
+        from numpy import sqrt
         # Grid spacing
         self.dx = dx
         # Ion temperature
@@ -22,8 +22,6 @@ class IonacousticDispersion:
         self.maxterms = maxterms
         # Number of points used to iterate in temperature
         self.N = N
-        # Vector used to iterate alpha up to the target value
-        self.alpha_vec = logspace(-2, log10(self.alpha), self.N)
         # Numerical dispersion or standard dispersion relation?
         self.numerical = numerical
 
@@ -104,11 +102,13 @@ class IonacousticDispersion:
            is a vector of length N with alpha[-1] = sqrt(Ti/Te). The value of
            N can be set at object instantiation."""
         from scipy.optimize import newton
-        from numpy import empty, complex128
+        from numpy import empty, complex128, logspace, log10
+        assert(self.alpha != 0), "This method only makes sense for finite Ti."
 
         det = self.det
 
-        alpha = self.alpha_vec
+        # Vector used to iterate alpha up to the target value
+        alpha = logspace(-4, log10(self.alpha), self.N)
 
         # Array for the complex phase-velocity
         vph = empty (len (alpha), dtype = complex128)
@@ -121,6 +121,8 @@ class IonacousticDispersion:
             assert(abs(det(vph[i], kx, alpha[i])) < self.tol), \
             'Guess is not within the tolerance!'
 
+        # Store alpha_vec (useful for plotting)
+        self.alpha_vec = alpha
         return vph
 
 
