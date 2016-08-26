@@ -11,8 +11,7 @@ cdef extern from "complex.h":
 @cython.cdivision(True)
 @cython.boundscheck(False)
 cpdef float_t grad_inv_del(
-        complex_t[:,:] qt, complex2_t[:,:] fxyt,
-        complex_t[:,:] ffc, float_t ax, float_t ay, float_t affp,
+        complex_t[:,:] qt, complex2_t[:,:] fxyt, complex_t[:,:] ffc,
         int nx, int ny, int kstrt) nogil:
     """
     This function computes E=∇(∇⁻²ρ), where ∇⁻² is the inverse Laplacian.

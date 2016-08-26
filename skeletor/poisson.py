@@ -70,8 +70,7 @@ class Poisson:
         # updates fxyt, we
         if custom_cppois22:
             we = grad_inv_del(
-                    self.qt, self.fxyt, self.ffc, self.ax, self.ay,
-                    self.affp, grid.nx, grid.ny, grid.kstrt)
+                    self.qt, self.fxyt, self.ffc, grid.nx, grid.ny, grid.kstrt)
         else:
             isign = -1
             we = cppois22(
