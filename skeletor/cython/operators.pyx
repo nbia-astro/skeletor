@@ -90,3 +90,74 @@ cpdef float_t grad_inv_del(
         fxyt[0, nyh].y = zero
 
     return wp*(<float_t> nx)*(<float_t> ny)
+
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+cpdef void grad(
+        complex_t[:,:] qt, complex2_t[:,:] fxyt, complex_t[:,:] ffc,
+        float_t affp, int nx, int ny, int kstrt) nogil:
+    """
+    This function computes the gradient in Fourier space.
+    """
+
+    cdef int kxp = qt.shape[0]
+
+    cdef int nxh, nyh, ks, joff, kxps, j, k, k1
+    cdef float_t dnx, dny, dkx, dky, at1, at2, at3
+    cdef complex_t zero, zt1, zt2
+
+    nxh = nx/2
+    nyh = 1 if 1 > ny/2 else ny/2
+    ks = kstrt - 1
+    joff = kxp*ks
+    kxps = nxh - joff
+    kxps = 0 if 0 > kxps else kxps
+    kxps = kxp if kxp < kxps else kxps
+    dnx = 2.0*M_PI/<float_t> nx
+    dny = 2.0*M_PI/<float_t> ny
+    zero = 0.0
+
+    if kstrt > nxh:
+        return
+
+    # mode numbers 0 < kx < nx/2 and 0 < ky < ny/2
+    for j in range(kxps):
+        dkx = dnx*<float_t> (j + joff)
+        if j + joff > 0:
+            for k in range(1, nyh):
+                dky = dny*<float_t> k
+                k1 = ny - k
+                at1 = affp*cimagf(ffc[j, k])
+                at2 = dkx*at1
+                at3 = dky*at1
+                zt1 = -cimagf(qt[j, k]) + crealf(qt[j, k])*_Complex_I
+                zt2 = -cimagf(qt[j, k1]) + crealf(qt[j, k1])*_Complex_I
+                fxyt[j, k].x = at2*zt1
+                fxyt[j, k].y = at3*zt1
+                fxyt[j, k1].x = at2*zt2
+                fxyt[j, k1].y = -at3*zt2
+            # mode numbers ky = 0, ny/2
+            at1 = affp*cimagf(ffc[j, 0])
+            at2 = dkx*at1
+            zt1 = -cimagf(qt[j, 0]) + crealf(qt[j, 0])*_Complex_I
+            fxyt[j, 0].x = at2*zt1
+            fxyt[j, 0].y = zero
+            fxyt[j, nyh].x = zero
+            fxyt[j, nyh].y = zero
+    # mode numbers kx = 0, nx/2
+    if ks == 0:
+        for k in range(1, nyh):
+            dky = dny*<float_t> k
+            k1 = ny - k
+            at1 = affp*cimagf(ffc[0, k])
+            at3 = dky*at1
+            zt1 = -cimagf(qt[0, k]) + crealf(qt[0, k])*_Complex_I
+            fxyt[0, k].x = zero
+            fxyt[0, k].y = at3*zt1
+            fxyt[0, k1].x = zero
+            fxyt[0, k1].y = zero
+        fxyt[0, 0].x = zero
+        fxyt[0, 0].y = zero
+        fxyt[0, nyh].x = zero
+        fxyt[0, nyh].y = zero
