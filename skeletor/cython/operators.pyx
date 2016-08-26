@@ -46,7 +46,7 @@ cpdef float_t grad_inv_del(
 
     # mode numbers 0 < kx < nx/2 and 0 < ky < ny/2
     for j in range(kxps):
-        dkx = dnx*(j + joff)
+        dkx = dnx*<float_t> (j + joff)
         if j + joff > 0:
             for k in range(1, nyh):
                 k1 = ny - k
@@ -75,7 +75,7 @@ cpdef float_t grad_inv_del(
         for k in range(1, nyh):
             k1 = ny - k
             at1 = crealf(ffc[0, k])*cimagf(ffc[0, k])
-            at2 = dny*at1*<float> k
+            at2 = dny*at1*<float_t> k
             zt1 = cimagf(qt[0, k]) - crealf(qt[0, k])*_Complex_I
             fxyt[0, k].x = zero
             fxyt[0, k].y = at2*zt1
