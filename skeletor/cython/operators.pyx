@@ -6,7 +6,7 @@ cdef extern from "complex.h":
     float_t crealf(complex_t) nogil
     float_t cimagf(complex_t) nogil
     complex_t conjf(complex_t) nogil
-    complex_t CMPLXF(float_t, float_t) nogil
+    complex_t _Complex_I
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
@@ -40,7 +40,7 @@ cpdef float_t grad_inv_del(
     kxps = kxp if kxp < kxps else kxps
     dnx = 2.0*M_PI/<float_t> nx
     dny = 2.0*M_PI/<float_t> ny
-    zero = CMPLXF(0.0, 0.0)
+    zero = 0.0 + 0.0*_Complex_I
 
     if kstrt > nxh:
         return 0.0
@@ -54,8 +54,8 @@ cpdef float_t grad_inv_del(
                 at1 = crealf(ffc[j, k])*cimagf(ffc[j, k])
                 at2 = dkx*at1
                 at3 = dny*at1*<float_t> k
-                zt1 = CMPLXF(cimagf(qt[j, k]), -crealf(qt[j, k]))
-                zt2 = CMPLXF(cimagf(qt[j, k1]), -crealf(qt[j, k1]))
+                zt1 = cimagf(qt[j, k]) - crealf(qt[j, k])*_Complex_I
+                zt2 = cimagf(qt[j, k1]) - crealf(qt[j, k1])*_Complex_I
                 fxyt[j, k].x = at2*zt1
                 fxyt[j, k].y = at3*zt1
                 fxyt[j, k1].x = at2*zt2
@@ -65,7 +65,7 @@ cpdef float_t grad_inv_del(
             # mode numbers ky = 0, ny/2
             at1 = crealf(ffc[j, 0])*cimagf(ffc[j, 0])
             at3 = dkx*at1
-            zt1 = CMPLXF(cimagf(qt[j, 0]), -crealf(qt[j, 0]))
+            zt1 = cimagf(qt[j, 0]) - crealf(qt[j, 0])*_Complex_I
             fxyt[j, 0].x = at3*zt1
             fxyt[j, 0].y = zero
             fxyt[j, nyh].x = zero
@@ -77,7 +77,7 @@ cpdef float_t grad_inv_del(
             k1 = ny - k
             at1 = crealf(ffc[0, k])*cimagf(ffc[0, k])
             at2 = dny*at1*<float> k
-            zt1 = CMPLXF(cimagf(qt[0, k]), -crealf(qt[0, k]))
+            zt1 = cimagf(qt[0, k]) - crealf(qt[0, k])*_Complex_I
             fxyt[0, k].x = zero
             fxyt[0, k].y = at2*zt1
             fxyt[0, k1].x = zero
