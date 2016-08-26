@@ -84,9 +84,9 @@ cpdef float_t grad_inv_del(
             fxyt[0, k1].x = zero
             fxyt[0, k1].y = zero
             wp += at1*crealf(qt[0, k]*conjf(qt[0, k]))
-        fxyt[0, 0].x = zero;
-        fxyt[0, 0].y = zero;
-        fxyt[0, nyh].x = zero;
-        fxyt[0, nyh].y = zero;
+        fxyt[0, 0].x = zero
+        fxyt[0, 0].y = zero
+        fxyt[0, nyh].x = zero
+        fxyt[0, nyh].y = zero
 
     return wp*(<float_t> nx)*(<float_t> ny)
