@@ -2,7 +2,7 @@ language: python
 python:
     - 3.5
 
-install:
+before_install:
     # Install Anaconda
     - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
     - bash Miniconda-latest-Linux-x86_64.sh -b -p $HOME/miniconda
@@ -16,7 +16,26 @@ install:
 
     # Install mpiFFT4py
     - pip install git+https://github.com/spectralDNS/mpiFFT4py.git
-    - CC=mpicc LDFLAGS="-lmpich -lopa -lmpl -lrt -lpthread" python setup.py install
+
+    # Install python-mpi-bcast
+    - git clone https://github.com/rainwoodman/python-mpi-bcast.git
+    - (cd python-mpi-bcast && make)
+
+    # Create tarball of Anaconda environment
+    - bash python-mpi-bcast/tar-anaconda.sh anaconda.tar.gz $HOME/miniconda/envs/skeletor
+
+    # This resets Python prefix and defines the shell function bcast()
+    - source python-mpi-bcast/activate.sh /tmp/skeletor "mpiexec -n 4"
+
+    # Broadcast the Anaconda packages as well as the code itself
+    - bcast -v anaconda.tar.gz
+    - git archive --format=tar.gz --prefix=skeletor/ HEAD > skeletor.tar.gz
+    - bcast -v skeletor.tar.gz
+    # Give highest prority to executables in scratch dir
+    - export PATH="/tmp/skeletor/bin:$PATH"
+
+install:
+    - CC=mpicc LDFLAGS="-L/tmp/skeletor/lib -Wl,-rpath,/tmp/skeletor/lib -lmpich -lopa -lmpl -lrt -lpthread" python setup.py install
 
 script:
-    - mpiexec -n 4 py.test tests/
+    - mpiexec -n 4 py.test /tmp/skeletor/skeletor/tests/
