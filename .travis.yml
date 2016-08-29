@@ -3,16 +3,18 @@ python:
     - 3.5
 
 install:
-    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    - bash miniconda.sh -b -p $HOME/miniconda
+    # Install Anaconda
+    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    - bash Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
     - hash -r
-    - conda config --set always_yes yes --set changeps1 no
+    - conda config --set always_yes true --set changeps1 false
     - conda update -q conda
-    # Useful for debugging any issues with conda
     - conda info -a
-    - conda create -q -n test-environment mpi4py scipy pytest Cython
-    - source activate test-environment
+    - conda create -n skeletor -q mpi4py scipy pytest Cython
+    - source activate skeletor
+
+    # Install mpiFFT4py
     - pip install git+https://github.com/spectralDNS/mpiFFT4py.git
     - CC=mpicc LDFLAGS="-lmpich -lopa -lmpl -lrt -lpthread" python setup.py install
 
