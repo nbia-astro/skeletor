@@ -1,12 +1,16 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
 # from skeletor import Poisson as Poisson
-from skeletor import PoissonMpiFFT4py as Poisson
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
-def test_twostream(ny = 8):
+def test_twostream(mpifft= False, ny = 8):
   """Test of twostream instability."""
+
+  if mpifft:
+    from skeletor import PoissonMpiFFT4py as Poisson
+  else:
+    from skeletor import Poisson as Poisson
 
   # Get rid of this one
   A = 0.01
@@ -23,7 +27,7 @@ def test_twostream(ny = 8):
   npc = 32
 
   # Number of time steps
-  nt = 2000
+  nt = 20
 
   # Background ion density
   n0 = 1.0
@@ -158,12 +162,15 @@ def test_twostream(ny = 8):
   # Get elapsed time
   elapsed_time = MPI.Wtime() - tstart
   if comm.rank == 0:
-    print(comm.Get_size(), elapsed_time)
+    f = open('scaling.txt','a')
+    f.write('{}\t{}\n'.format(comm.Get_size(), elapsed_time))
+    f.close()
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--mpifft', '-mpifft', action='store_true')
     parser.add_argument('ny', type=int)
     args = parser.parse_args()
 
