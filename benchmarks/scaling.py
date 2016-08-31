@@ -1,7 +1,7 @@
 import subprocess
 
 # Number of processors on machine
-N = 2
+N = 32
 
 def scaling(N, strong=False, mpifft=False):
     # Write header to file
@@ -17,9 +17,9 @@ def scaling(N, strong=False, mpifft=False):
 
         # Grid points along y
         if strong:
-            ny = 8*N
+            ny = 32*N
         else:
-            ny = 8*j
+            ny = 32*j
 
         # Execution command
         command = "mpirun -np {} python twostream.py {}".format(j, ny)
@@ -44,13 +44,13 @@ import matplotlib.pyplot as plt
 # Weak scaling test
 plt.figure(1)
 (n_procs, time) = scaling(N, strong=False, mpifft=False)
-plt.loglog(n_procs, time, 'x-', label='PPIC2')
+plt.loglog(n_procs, time/n_procs, 'x-', label='PPIC2')
 (n_procs, time) = scaling(N, strong=False, mpifft=True)
-plt.loglog(n_procs, time, 'x-', label='mpiFFT4py')
-plt.loglog(n_procs, time[0]*np.ones(len(n_procs)), 'k', label='Ideal')
+plt.loglog(n_procs, time/n_procs, 'x-', label='mpiFFT4py')
+plt.loglog(n_procs, time[0]/n_procs, 'k', label='Ideal')
 plt.legend(frameon=False)
 plt.xlabel('# processors')
-plt.ylabel('time')
+plt.ylabel('time/(# processors)')
 plt.savefig('weak_scaling.pdf')
 
 
