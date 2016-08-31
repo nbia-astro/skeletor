@@ -1,3 +1,5 @@
+SHELL=bash
+
 python:
 	CC=mpicc python setup.py build_ext --inplace
 
