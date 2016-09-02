@@ -130,6 +130,8 @@ def test_twostream(mpifft= False, ny = 8):
   poisson(sources.rho, E, destroy_input=False)
   # Set boundary condition
   E.copy_guards_ppic2()
+  
+  print('Process {} saying hi!'.format(comm.rank))
 
   t = 0
   ##########################################################################
@@ -163,8 +165,9 @@ def test_twostream(mpifft= False, ny = 8):
   elapsed_time = MPI.Wtime() - tstart
   if comm.rank == 0:
     f = open('scaling.txt','a')
-    f.write('{}\t{}\n'.format(comm.Get_size(), elapsed_time))
+    f.write('{}\t{:.2f}\t{}\n'.format(comm.Get_size(), elapsed_time, ny))
     f.close()
+    print('Simulation succesfully finished')
 
 if __name__ == "__main__":
     import argparse
