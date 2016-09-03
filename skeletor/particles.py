@@ -74,7 +74,7 @@ class Particles(numpy.ndarray):
 
     def initialize_ppic2(self, vtx, vty, vdx, vdy, npx, npy, grid):
 
-        from ppic2_wrapper import cpdistr2
+        from .cython.ppic2_wrapper import cpdistr2
 
         npp, ierr = cpdistr2(self, vtx, vty, vdx, vdy, npx, npy, grid)
         if ierr != 0:
