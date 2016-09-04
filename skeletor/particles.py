@@ -103,7 +103,7 @@ class Particles(numpy.ndarray):
                 self.rbufr, self.ihole, self.info, grid)
 
         # Make sure particles actually reside in the local subdomain
-        # assert all(self["y"][:self.np] >= grid.edges[0])
-        # assert all(self["y"][:self.np] < grid.edges[1])
+        assert all(self["y"][:self.np] >= grid.edges[0])
+        assert all(self["y"][:self.np] < grid.edges[1])
 
         return ek
