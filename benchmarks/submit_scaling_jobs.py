@@ -25,7 +25,7 @@ def replace(file_path, pattern, subst):
 def scaling(N, strong=False, mpifft=False):
     # Write header to file
     f = open('scaling.txt','w')
-    f.write('#procs\ttime\tny\n')
+    f.write('#procs\tny\tTotal\tPush\tDeposit\tC_guard\tA_guard\tGauss\n')
     f.close()
 
     kmax = int(np.log2(N))
@@ -36,13 +36,13 @@ def scaling(N, strong=False, mpifft=False):
 
         # Grid points along y
         if strong:
-            ny = 64*N
+            indy = 9
         else:
-            ny = 64*j
+            indy = 9+k
         submitfile = 'submit'
         subprocess.call('cp submit_template.sh ' + submitfile, shell=True)
         # Execution command
-        command = "mpirun python twostream.py {}".format(ny)
+        command = "mpirun python -O ppic2.py {}".format(ny)
         # Add flag if mpiFFT is used
         if mpifft: command + ' -mpifft'
 
