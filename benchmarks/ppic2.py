@@ -22,8 +22,8 @@ def ppic2(mpifft= False, indy = 9):
   # the subdomain assigned to each processor.
   grid = Grid(nx, ny, comm)
 
-  npx = 3072
-  npy = 3072
+  npx = 6*nx
+  npy = 6*ny
 
   npar = npx*npy
 
@@ -122,12 +122,23 @@ def ppic2(mpifft= False, indy = 9):
   # Get elapsed time
   elapsed_time = MPI.Wtime() - tstart
   if comm.rank == 0:
-    print("Push time {}".format(t_push))
-    print("Deposit time {}".format(t_deposit))
-    print("Add guard time {}".format(t_add_guard))
-    print("Copy guard time {}".format(t_copy_guard))
-    print("Solve Gauss time {}".format(t_solve))
-    print("Total time {}".format(elapsed_time))
+    if False:
+      print("Push time {:.4f}".format(t_push))
+      print("Deposit time {:.4f}".format(t_deposit))
+      print("Add guard time {:.4f}".format(t_add_guard))
+      print("Copy guard time {:.4f}".format(t_copy_guard))
+      print("Solve Gauss time {:.4f}".format(t_solve))
+      print("Total time {}".format(elapsed_time))
+
+    f = open('scaling.txt', 'a')
+    results = '{}\t{}\t'.format(comm.Get_size(), ny)
+    times = ()
+    results +='{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'      \
+                .format(elapsed_time, t_push, t_deposit, t_add_guard, \
+                t_copy_guard, t_solve)
+
+    f.write(results)
+    f.close()
 
 if __name__ == "__main__":
     import argparse
