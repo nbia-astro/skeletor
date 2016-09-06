@@ -82,15 +82,15 @@ class Particles(numpy.ndarray):
             raise RuntimeError(msg.format(ierr))
         self.np = npp
 
-    def push(self, fxy, dt):
+    def push(self, fxy, dt, bz=0):
 
-        from .cython.ppic2_wrapper import cppgpush2l, cppmove2
+        from .cython.ppic2_wrapper import cppgbpush2l, cppmove2
 
         grid = fxy.grid
 
         qm = self.charge/self.mass
 
-        ek = cppgpush2l(self, fxy, self.np, self.ihole, qm, dt, grid)
+        ek = cppgbpush2l(self, fxy, bz, self.np, self.ihole, qm, dt, grid)
 
         # Check for ihole overflow error
         if self.ihole[0] < 0:
