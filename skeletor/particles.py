@@ -11,7 +11,7 @@ class Particles(numpy.ndarray):
         from .cython.dtypes import Int, Particle
 
         # Size of buffer for passing particles between processors
-        nbmax = int(0.1*npmax)
+        nbmax = int(max(0.1*npmax, 1))
         # Size of ihole buffer for particles leaving processor
         ntmax = 2*nbmax
 
