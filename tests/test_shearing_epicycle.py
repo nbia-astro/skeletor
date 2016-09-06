@@ -48,7 +48,7 @@ def test_shearing_epicycle(plot=False):
     phi = 0
 
     # Amplitude of perturbation
-    ampl = 5
+    ampl = 20
 
     # Number of grid points in x- and y-direction
     nx, ny = 32, 64
