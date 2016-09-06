@@ -72,6 +72,9 @@ class Particles(numpy.ndarray):
         self["vx"][:self.np] = vx[ind]
         self["vy"][:self.np] = vy[ind]
 
+        # Probably not where we want this
+        self.t = 0.0
+
     def initialize_ppic2(self, vtx, vty, vdx, vdy, npx, npy, grid):
 
         from ppic2_wrapper import cpdistr2
@@ -81,6 +84,76 @@ class Particles(numpy.ndarray):
             msg = "Particle initialization error: ierr={}"
             raise RuntimeError(msg.format(ierr))
         self.np = npp
+
+    def periodic_x(self, grid):
+        """Periodic boundaries in x"""
+        from numpy import where
+
+        ind = numpy.where(self["x"]  < 0)
+        self["x"][ind] += grid.Lx
+        ind = numpy.where(self["x"] >= grid.Lx)
+        self["x"][ind] -= grid.Lx
+
+    def periodic_y(self, grid):
+        """Periodic boundaries in y
+
+        This function modifies ihole such that ppic2 can take care of the
+        boundary.
+        """
+        from numpy import where
+        from numpy import logical_and
+
+        ih = 0
+        nh = 0
+        ntmax = self.ihole.shape[0] - 1
+
+        for j in range(self.np):
+            if (self["y"][j]<grid.edges[0] or self["y"][j]>=grid.edges[1]):
+                if ih < ntmax:
+                    self.ihole[ih+1] = j+1
+                else:
+                    nh = 1
+                ih += 1
+        if nh > 0:
+            ih = -ih
+            self.ihole[0] = ih
+
+    def periodic_y_simple(self, grid):
+        """Periodic boundaries in y
+
+        This function will not work with MPI.
+        """
+        from numpy import mod
+        self["y"] = mod(self["y"], grid.ny)
+
+
+    def shear_periodic_x(self, grid):
+        """ """
+        from numpy import where
+
+        # @TH: These parameters need to be passed. /TB
+        # time
+        t = self.t
+        # Shear parameter
+        S = -3/2;
+
+        # Left
+        ind1 = numpy.where(self["x"]  < 0)
+        # Right
+        ind2 = numpy.where(self["x"] >= grid.Lx)
+
+        # Left
+        self["x"] [ind1] += grid.Lx
+        self["y"] [ind1] += S*grid.Lx*t
+        self["vy"][ind1] += S*grid.Lx
+
+        # Right
+        self["x"] [ind2] -= grid.Lx
+        self["y"] [ind2] -= S*grid.Lx*t
+        self["vy"][ind2] -= S*grid.Lx
+
+        # Apply periodicity in y
+        self.periodic_y_simple(grid)
 
     def push(self, fxy, dt, bz=0):
 
@@ -92,6 +165,8 @@ class Particles(numpy.ndarray):
 
         ek = cppgbpush2l(self, fxy, bz, self.np, self.ihole, qm, dt, grid)
 
+        self.shear_periodic_x(grid)
+
         # Check for ihole overflow error
         if self.ihole[0] < 0:
             ierr = -self.ihole[0]
@@ -101,6 +176,9 @@ class Particles(numpy.ndarray):
         self.np = cppmove2(
                 self, self.np, self.sbufl, self.sbufr, self.rbufl,
                 self.rbufr, self.ihole, self.info, grid)
+
+        # Increment time
+        self.t += dt
 
         # Make sure particles actually reside in the local subdomain
         assert all(self["y"][:self.np] >= grid.edges[0])

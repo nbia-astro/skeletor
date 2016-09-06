@@ -19,7 +19,7 @@ cdef int idps = 2
 # Number of particle phase space coordinates
 cdef int idimp = 4
 # Particle boundary condition: 1 = periodic
-cdef int ipbc = 1
+cdef int ipbc = 0
 # Not sure what this is for
 cdef int ntpose = 1
 
