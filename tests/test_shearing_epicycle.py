@@ -108,7 +108,7 @@ def test_shearing_epicycle(plot=False):
     # Electric field in x-direction
     E_star = Field(grid, comm, dtype=Float2)
     E_star.fill((0.0, 0.0))
-    E_star['x'][:-1, :-2] = -2*S*(xg-nx/2)*mass/charge*Omega
+    # E_star['x'][:-1, :-2] = -2*S*(xg-nx/2)*mass/charge*Omega
     E_star.copy_guards_ppic2()
 
     # Make initial figure
@@ -159,7 +159,7 @@ def test_shearing_epicycle(plot=False):
 
         # Make figures
         if plot:
-            if (it % 200 == 0):
+            if (it % 20 == 0):
                 if comm.rank == 0:
                     lines1[0].set_data(ions['x'], ions['y'])
                     lines1[1].set_data(x_an(t), numpy.mod(y_an(t), ny))
