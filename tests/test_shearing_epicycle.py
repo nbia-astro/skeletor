@@ -48,7 +48,7 @@ def test_shearing_epicycle(plot=False):
     phi = 0
 
     # Amplitude of perturbation
-    ampl = 10
+    ampl = 20
 
     # Number of grid points in x- and y-direction
     nx, ny = 64, 32
@@ -56,7 +56,7 @@ def test_shearing_epicycle(plot=False):
     # Total number of particles in simulation
     np = 1
 
-    y0 = 16.
+    y0 = 8.
     x0 = 32.
 
     x0 = numpy.array(x0)

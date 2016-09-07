@@ -86,13 +86,12 @@ class Particles(numpy.ndarray):
         self.np = npp
 
     def periodic_x(self, grid):
-        """Periodic boundaries in x"""
-        from numpy import where
+        """Periodic boundaries in x
 
-        ind = numpy.where(self["x"]  < 0)
-        self["x"][ind] += grid.Lx
-        ind = numpy.where(self["x"] >= grid.Lx)
-        self["x"][ind] -= grid.Lx
+        This function will not work with MPI along x.
+        """
+        from numpy import mod
+        self["x"] = mod(self["x"], grid.nx)
 
     def periodic_y(self, grid):
         """Periodic boundaries in y
@@ -118,16 +117,7 @@ class Particles(numpy.ndarray):
             ih = -ih
             self.ihole[0] = ih
 
-    def periodic_y_simple(self, grid):
-        """Periodic boundaries in y
-
-        This function will not work with MPI.
-        """
-        from numpy import mod
-        self["y"] = mod(self["y"], grid.ny)
-
-
-    def shear_periodic_x(self, grid):
+    def shear_periodic_y(self, grid):
         """ """
         from numpy import where
 
@@ -138,22 +128,23 @@ class Particles(numpy.ndarray):
         S = -3/2;
 
         # Left
-        ind1 = numpy.where(self["x"]  < 0)
+        ind1 = numpy.where(self["y"]  < 0)
         # Right
-        ind2 = numpy.where(self["x"] >= grid.Lx)
+        ind2 = numpy.where(self["y"] >= grid.Ly)
 
         # Left
-        self["x"] [ind1] += grid.Lx
-        self["y"] [ind1] += S*grid.Lx*t
-        self["vy"][ind1] += S*grid.Lx
+        self["x"] [ind1] += S*grid.Ly*t
+        self["vx"][ind1] += S*grid.Ly
 
         # Right
-        self["x"] [ind2] -= grid.Lx
-        self["y"] [ind2] -= S*grid.Lx*t
-        self["vy"][ind2] -= S*grid.Lx
+        self["x"] [ind2] -= S*grid.Ly*t
+        self["vx"][ind2] -= S*grid.Ly
 
-        # Apply periodicity in y
-        self.periodic_y_simple(grid)
+        # Apply periodicity in x
+        self.periodic_x(grid)
+
+        # Apply periodicity in y (using ppic2)
+        self.periodic_y(grid)
 
     def push(self, fxy, dt, bz=0):
 
@@ -165,7 +156,7 @@ class Particles(numpy.ndarray):
 
         ek = cppgbpush2l(self, fxy, bz, self.np, self.ihole, qm, dt, grid)
 
-        self.shear_periodic_x(grid)
+        self.shear_periodic_y(grid)
 
         # Check for ihole overflow error
         if self.ihole[0] < 0:
