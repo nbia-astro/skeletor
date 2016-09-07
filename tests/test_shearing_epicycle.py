@@ -125,6 +125,14 @@ def test_shearing_epicycle(plot=False):
             lines2 = ax2.plot(ions['vx'], ions['vy'], 'b.',  vx_an(0), vy_an(0), 'rx')
             ax1.set_xlim(-1, nx+1)
             ax1.set_ylim(-1, ny+1)
+            dat = numpy.load("pos.npz", encoding='bytes')
+            for (r, v) in zip (dat['pos'], dat['vel']):
+                x, y, z = zip (*r)
+                x = numpy.array(x) + nx/2
+                y = numpy.array(y) + ny/2
+                ax1.plot (x, y, 'k--')
+                vx, vy, vz = zip (*v)
+                ax2.plot (vx, vy, 'k--')
             ax2.set_xlim(-1.1*og*ampl, 1.1*og*ampl)
             ax2.set_ylim((-Sz*ampl+S*(x0-nx/2)), (Sz*ampl+S*(x0-nx/2)))
             ax1.set_xlabel('x')
