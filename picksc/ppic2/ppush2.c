@@ -460,7 +460,7 @@ local data                                                            */
       dy = dyp*(dxp*fxy[1+np+mp] + amx*fxy[1+nn+mp])
          + amy*(dxp*fxy[1+np+mm] + amx*fxy[1+nn+mm]);
 
-      dx -= 2.0*qbm*(-3./2.)*(part[idimp*j] - 16.);
+      dy -= 2.0*qbm*(-3./2.)*(part[1+idimp*j] - 16.);
 /* calculate half impulse */
       dx *= qtmh;
       dy *= qtmh;
