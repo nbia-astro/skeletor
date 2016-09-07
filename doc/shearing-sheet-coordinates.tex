@@ -1,0 +1,130 @@
+\documentclass[aps,pre,notitlepage,amsmath,amssymb,amsfonts,nobibnotes,nofootinbib,superscriptaddress,onecolumn,a4paper,10pt]{revtex4-1}
+\setcitestyle{authoryear,round}
+\bibliographystyle{apsrev4-1}
+% Use the same section numbering as ApJ
+% See http://tex.stackexchange.com/questions/87131/numbering-sections
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+% Fix references
+\makeatletter
+\def\p@subsection{}
+\def\p@subsubsection{}
+\makeatother
+
+\input{preamble}
+
+\begin{document}
+
+\section{Standard coordinates}
+We start by a simple rederivation of the equation of motion.
+The equation of motion is
+\begin{equation}
+  \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} + \nabla\psi =
+  \frac{e}{m}(\vec{E} + \vec{v}\times\vec{B}),
+\end{equation}
+where
+\begin{equation}
+  \label{eq:tidal-potential}
+  \psi = -q\Omega^2 x^2 + \frac{1}{2}\nu^2 z^2
+\end{equation}
+Assuming
+\begin{equation}
+  2\vec{\Omega}\times\vec{u}_s + \nabla\psi = 0.
+\end{equation}
+we find that
+\begin{equation}
+  \label{eq:common-shear-flow}
+  \vec{u}_s = Sx\ey,
+\end{equation}
+where
+\begin{equation}
+  S = -q\Omega.
+\end{equation}
+Plugging
+\begin{equation}
+   \nabla\psi = -2\vec{\Omega}\times\vec{u}_s =
+   -2Sx\vec{\Omega}\times \ey
+\end{equation}
+into the equation of motion and rearranging we find that
+\begin{equation}
+  \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} -2Sx\vec{\Omega}\times \ey =
+  \frac{e}{m}\vec{E} + \frac{e}{m}\vec{v}\times\vec{B},
+\end{equation}
+\begin{equation}
+  \dot{\vec{v}} =
+  \frac{e}{m}\vec{E} + 2Sx\vec{\Omega}\times \ey
++ \frac{e}{m}\vec{v}\times\vec{B} + 2\vec{v}\times\vec{\Omega} ,
+\end{equation}
+\begin{equation}
+  \dot{\vec{v}} =
+  \frac{e}{m}\left(\vec{E} + \frac{2Sxm}{e}\vec{\Omega}\times \ey\right)
++ \frac{e}{m}\vec{v}\times \left( \vec{B} + \frac{2m}{e}\vec{\Omega} \right)
+\end{equation}
+Defining effective electromagnetic fields $\vec{E}_\ast$ and $\vec{B}_\ast$
+\begin{equation}
+  \vec{E}_\ast = \vec{E} - Sx \ey\times2m\vec{\Omega}/e
+\end{equation}
+\begin{equation}
+  \vec{B}_\ast =  \vec{B} + 2m\vec{\Omega}/e
+\end{equation}
+gives us a standard Lorentz force equation.
+\begin{equation}
+  \dot{\vec{v}} =
+  \frac{e}{m}(\vec{E}_\ast + \vec{v}\times\vec{B}_\ast),
+\end{equation}
+
+\section{Shear along $y$}
+We use the same equation of motion but the tidal potential is taken to be
+given by (replacing $x$ by $y$)
+\begin{equation}
+  \psi = -q\Omega^2 y^2 + \frac{1}{2}\nu^2 z^2  \ .
+\end{equation}
+In this case,
+\begin{equation}
+  2 \vec{\Omega} \times \vec{u}_s = -\nabla \psi
+  \ .
+\end{equation}
+\begin{equation}
+  2 \Omega (\ey u_x - \ex u_y) = 2q\Omega^2 y \ey -\nu^2 z \ez
+  \ .
+\end{equation}
+so that
+\begin{equation}
+\vec{u}_s = q \Omega y \ex = -Sy\ex
+\end{equation}
+We now plug
+\begin{equation}
+-\nabla \psi = 2 \vec{\Omega} \times \vec{u}_s
+= -2Sy\vec{\Omega} \times \ex
+\end{equation}
+into the equation of motion
+\begin{equation}
+  \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} + Sy\vec{\Omega} \times \ex =
+  \frac{e}{m}\vec{E} + \frac{e}{m}\vec{v}\times\vec{B},
+\end{equation}
+and rewrite
+\begin{equation}
+  \dot{\vec{v}} =
+  \frac{e}{m}\left(\vec{E} + Sy \ex \times 2m\vec{\Omega}/e\right) +
+  \frac{e}{m}\vec{v}\times \left( \vec{B} + 2m\vec{\Omega}/e \right)
+\end{equation}
+We conclude that $\vec{B}_\ast$ is the same as in the standard case and that
+$\vec{E}_\ast$ is given by
+\begin{equation}
+  \vec{E}_\ast = \vec{E} + Sy \ex \times 2m\vec{\Omega}/e
+\end{equation}
+
+\section{Implementation notes}
+In the code we have (so far) $\vec{\Omega} = \Omega \ez$. In this case
+\begin{equation}
+  \vec{E}_\ast = \vec{E} - Sx \frac{2m\Omega}{e} \ex
+\end{equation}
+for the standard case and
+\begin{equation}
+  \vec{E}_\ast = \vec{E} - Sy \frac{2m\Omega}{e} \ey
+\end{equation}
+for the shear along $y$ case.
+
+
+\end{document}
