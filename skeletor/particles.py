@@ -132,13 +132,13 @@ class Particles(numpy.ndarray):
         # Right
         ind2 = numpy.where(self["y"] >= grid.Ly)
 
-        # Left
-        self["x"] [ind1] += S*grid.Ly*t
-        self["vx"][ind1] += S*grid.Ly
+        # Left to right
+        self["x"] [ind1] -= S*grid.Ly*t
+        self["vx"][ind1] -= S*grid.Ly
 
-        # Right
-        self["x"] [ind2] -= S*grid.Ly*t
-        self["vx"][ind2] -= S*grid.Ly
+        # Right to left
+        self["x"] [ind2] += S*grid.Ly*t
+        self["vx"][ind2] += S*grid.Ly
 
         # Apply periodicity in x
         self.periodic_x(grid)
