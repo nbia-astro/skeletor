@@ -93,6 +93,14 @@ class Particles(numpy.ndarray):
         from numpy import mod
         self["x"] = mod(self["x"], grid.nx)
 
+    def periodic_y_simple(self, grid):
+        """Periodic boundaries in x
+
+        This function will not work with MPI.
+        """
+        from numpy import mod
+        self["y"] = mod(self["y"], grid.ny)
+
     def periodic_y(self, grid):
         """Periodic boundaries in y
 
@@ -144,7 +152,7 @@ class Particles(numpy.ndarray):
         self.periodic_x(grid)
 
         # Apply periodicity in y (using ppic2)
-        self.periodic_y(grid)
+        self.periodic_y_simple(grid)
 
     def push(self, fxy, dt, bz=0):
 
