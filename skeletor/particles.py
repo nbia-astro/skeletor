@@ -93,40 +93,15 @@ class Particles(numpy.ndarray):
         from numpy import mod
         self["x"] = mod(self["x"], grid.nx)
 
-    def periodic_y_simple(self, grid):
-        """Periodic boundaries in x
-
-        This function will not work with MPI.
-        """
-        from numpy import mod
-        self["y"] = mod(self["y"], grid.ny)
-
-    def periodic_y(self, grid):
-        """Periodic boundaries in y
-
-        This function modifies ihole such that ppic2 can take care of the
-        boundary.
-        """
-        from numpy import where
-        from numpy import logical_and
-
-        ih = 0
-        nh = 0
-        ntmax = self.ihole.shape[0] - 1
-
-        for j in range(self.np):
-            if (self["y"][j]<grid.edges[0] or self["y"][j]>=grid.edges[1]):
-                if ih < ntmax:
-                    self.ihole[ih+1] = j+1
-                else:
-                    nh = 1
-                ih += 1
-        if nh > 0:
-            ih = -ih
-            self.ihole[0] = ih
-
     def shear_periodic_y(self, grid):
-        """ """
+        """Shearing periodic boundaries along y.
+
+           This function modifies x and vx and subsequently applies periodic
+           boundaries on x.
+
+           The periodic boundaries on y are handled by ppic2 *after* we have
+           used the values of y to update x and vx.
+        """
         from numpy import where
 
         # @TH: These parameters need to be passed. /TB
@@ -150,9 +125,6 @@ class Particles(numpy.ndarray):
 
         # Apply periodicity in x
         self.periodic_x(grid)
-
-        # Apply periodicity in y (using ppic2)
-        self.periodic_y_simple(grid)
 
     def push(self, fxy, dt, bz=0):
 
