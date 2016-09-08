@@ -502,21 +502,21 @@ local data                                                            */
          }
       }
 /* find particles out of bounds */
-      if ((dy < edges[0]) || (dy >= edges[1])) {
-         if (ih < ntmax)
-            ihole[ih+1] = j + 1;
-         else
-            nh = 1;
-         ih += 1;
-      }
+      // if ((dy < edges[0]) || (dy >= edges[1])) {
+      //    if (ih < ntmax)
+      //       ihole[ih+1] = j + 1;
+      //    else
+      //       nh = 1;
+      //    ih += 1;
+      // }
 /* set new position */
       part[idimp*j] = dx;
       part[1+idimp*j] = dy;
    }
 /* set end of file flag */
-      if (nh > 0)
-         ih = -ih;
-      ihole[0] = ih;
+      // if (nh > 0)
+      //    ih = -ih;
+      // ihole[0] = ih;
 /* normalize kinetic energy */
    *ek += 0.125*sum1;
    return;
