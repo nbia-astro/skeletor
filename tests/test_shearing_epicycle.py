@@ -45,10 +45,10 @@ og = numpy.sqrt (Sz*(Sz + S))
 # og = numpy.arcsin (numpy.sqrt ((og*dt/2)**2/(1.0 + (Sz*dt/2)**2)))/(dt/2)
 
 # Phase
-phi = 0
+phi = numpy.pi/2
 
 # Amplitude of perturbation
-ampl = 10
+ampl = 20
 
 # Number of grid points in x- and y-direction
 nx, ny = 64, 32
@@ -124,16 +124,23 @@ if plot:
         plt.rc('image', origin='upper', interpolation='nearest')
         plt.figure(1);plt.clf()
         fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
-        lines1 = ax1.plot(ions['x'], ions['y'], 'b.', x_an(0), y_an(0), 'rx')
+        lines1 = ax1.plot(ions['y'], ions['y'], 'b.', x_an(0), y_an(0), 'rx')
         lines2 = ax2.plot(ions['vx'], ions['vy'], 'b.',  vx_an(0), vy_an(0), 'rx')
-        ax1.set_xlim(-1, nx+1)
-        ax1.set_ylim(-1, ny+1)
+        ax1.set_xlim(-1, ny+1)
+        ax1.set_ylim(-1, nx+1)
         ax2.set_ylim(-1.1*og*ampl, 1.1*og*ampl)
         ax2.set_xlim((-Sz*ampl+S*(y0-ny/2)), (Sz*ampl+S*(y0-ny/2)))
-        ax1.set_xlabel('x')
-        ax1.set_ylabel('y')
+        ax1.set_xlabel('y')
+        ax1.set_ylabel('x')
         ax2.set_xlabel('vx')
         ax2.set_ylabel('vy')
+        dat = numpy.load("pos.npz", encoding='bytes')
+        for (r, v) in zip (dat['pos'], dat['vel']):
+            x, y, z = zip (*r)
+            x = numpy.array(x) + ny/2
+            y = numpy.array(y) + nx/2
+            ax1.plot (x, y, 'k--')
+        ax1.invert_yaxis()
 
 t = 0
 ##########################################################################
@@ -154,10 +161,10 @@ for it in range(nt):
 
     # Make figures
     if plot:
-        if (it % 200 == 0):
+        if (it % 100 == 0):
             if comm.rank == 0:
-                lines1[0].set_data(ions['x'], ions['y'])
-                lines1[1].set_data(x_an(t), numpy.mod(y_an(t), ny))
+                lines1[0].set_data(ions['y'], ions['x'])
+                lines1[1].set_data(numpy.mod(y_an(t), ny), x_an(t))
                 lines2[0].set_data(ions['vx'], ions['vy'])
                 lines2[1].set_data(vx_an(t), vy_an(t))
                 with warnings.catch_warnings():
