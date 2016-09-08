@@ -93,14 +93,16 @@ so that
 \begin{equation}
 \vec{u}_s = q \Omega y \ex = -Sy\ex
 \end{equation}
-We now plug
+Note that our $x$-coordinate is oriented in the opposite direction to the
+standard $x$-coordinate. So the physical background motion is in the same
+direction regardless of the coordinate system. We now plug
 \begin{equation}
--\nabla \psi = 2 \vec{\Omega} \times \vec{u}_s
-= -2Sy\vec{\Omega} \times \ex
+\nabla \psi = - 2 \vec{\Omega} \times \vec{u}_s
+= 2Sy\vec{\Omega} \times \ex
 \end{equation}
 into the equation of motion
 \begin{equation}
-  \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} + Sy\vec{\Omega} \times \ex =
+  \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} + 2Sy\vec{\Omega} \times \ex =
   \frac{e}{m}\vec{E} + \frac{e}{m}\vec{v}\times\vec{B},
 \end{equation}
 and rewrite
@@ -126,5 +128,42 @@ for the standard case and
 \end{equation}
 for the shear along $y$ case.
 
+\section{Epicycles}
+\begin{equation}
+  \ddot{\vec{r}} + 2\vec{\Omega}\times\dot{\vec{r}} + \nabla\psi = 0.
+\end{equation}
+Assuming $\vec{\Omega} = \Omega \ez$
+For the standard case
+\begin{equation}
+\nabla \psi = -2Sx\vec{\Omega}\times \ey = 2Sx\Omega \ex
+\end{equation}
 
+\begin{align}
+  \ddot{x} - 2 \Omega \dot{y} + 2 S \Omega x = 0 \\
+  \ddot{y} + 2 \Omega \dot{x} = 0 \ ,
+\end{align}
+The analytical solution in our other set of notes is reproduced here for
+convenience
+\begin{align}
+  x(t) &= A\cos(\kappa t + \phi) + x_0, \\
+  y(t) &= -\frac{2\Omega}{\kappa} A\sin(\kappa t + \phi) + y_0 + S t x_0,
+\end{align}
+where
+\begin{equation}
+  \kappa = \sqrt{2\Omega(2\Omega + S)} \ .
+\end{equation}
+For the new coordinate system the equations are instead
+\begin{equation}
+\nabla \psi = 2Sy\vec{\Omega} \times \ex = 2Sy \Omega\ey
+\end{equation}
+
+\begin{align}
+  \ddot{x} - 2 \Omega \dot{y} = 0 \\
+  \ddot{y} + 2 \Omega \dot{x} + 2 S \Omega y = 0 \ ,
+\end{align}
+We find that the analytical solution in this case is
+\begin{align}
+  x(t) &= +\frac{2\Omega}{\kappa} A\sin(\kappa t + \phi) + x_0 - S t y_0 \\
+  y(t) &= A\cos(\kappa t + \phi) + y_0.
+\end{align}
 \end{document}
