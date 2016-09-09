@@ -65,6 +65,7 @@ Given this, solving \cref{eq:gravito-centrifugal-balance} for $\vec{u}$ yields
 \end{equation}
 where
 \begin{equation}
+  \label{eq:rate-of-shear}
   S = -q\Omega
 \end{equation}
 is the rate of shear (note also that $\nabla\times\vec{u}=S\ez$).
@@ -75,42 +76,28 @@ given by (replacing $x$ by $y$)
 \begin{equation}
   \psi = -q\Omega^2 y^2 + \frac{1}{2}\nu^2 z^2  \ .
 \end{equation}
-In this case,
+In this case, the horizontal gradient of the tidal potential is given by
 \begin{equation}
-  2 \vec{\Omega} \times \vec{u}_s = -\nabla \psi
-  \ .
+   \nabla_\perp\psi = -2q\Omega^2 y\ey.
 \end{equation}
+Given this, \cref{eq:gravito-centrifugal-balance} is satisfied provided that
 \begin{equation}
-  2 \Omega (\ey u_x - \ex u_y) = 2q\Omega^2 y \ey -\nu^2 z \ez
-  \ .
+  \label{eq:common-shear-flow-2}
+  \vec{u} = -Sy\ex.
 \end{equation}
-so that
+where the rate of shear is now given by
 \begin{equation}
-\vec{u}_s = q \Omega y \ex = -Sy\ex
+  \label{eq:rate-of-shear-2}
+  S = q\Omega.
 \end{equation}
-Note that our $x$-coordinate is oriented in the opposite direction to the
-standard $x$-coordinate. So the physical background motion is in the same
-direction regardless of the coordinate system. We now plug
+Note the sign changes \cref{eq:common-shear-flow-2,eq:rate-of-shear-2}
+compared to \cref{eq:common-shear-flow,eq:rate-of-shear}. Note also, however,
+that we still have
 \begin{equation}
-\nabla \psi = - 2 \vec{\Omega} \times \vec{u}_s
-= 2Sy\vec{\Omega} \times \ex
+  \nabla\times\vec{u} = S\ez,
 \end{equation}
-into the equation of motion
-\begin{equation}
-  \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} + 2Sy\vec{\Omega} \times \ex =
-  \frac{e}{m}\vec{E} + \frac{e}{m}\vec{v}\times\vec{B},
-\end{equation}
-and rewrite
-\begin{equation}
-  \dot{\vec{v}} =
-  \frac{e}{m}\left(\vec{E} + Sy \ex \times 2m\vec{\Omega}/e\right) +
-  \frac{e}{m}\vec{v}\times \left( \vec{B} + 2m\vec{\Omega}/e \right)
-\end{equation}
-We conclude that $\vec{B}_\ast$ is the same as in the standard case and that
-$\vec{E}_\ast$ is given by
-\begin{equation}
-  \vec{E}_\ast = \vec{E} + Sy \ex \times 2m\vec{\Omega}/e
-\end{equation}
+so that the rate of shear $S$ is the $z$-component of the background vorticity
+in both coordinate systems.
 
 \section{Implementation notes}
 In the code we have (so far) $\vec{\Omega} = \Omega \ez$. In this case
