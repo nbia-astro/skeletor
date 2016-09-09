@@ -16,15 +16,31 @@
 
 \begin{document}
 
-\section{Standard coordinates}
+\section{Effective electromagnetic fields}
 We start by a simple rederivation of the equation of motion.
 The equation of motion is
 \begin{equation}
   \label{eq:eom}
   \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} + \nabla\psi =
-  \frac{e}{m}(\vec{E} + \vec{v}\times\vec{B}),
+  \frac{e}{m}(\vec{E} + \vec{v}\times\vec{B}).
 \end{equation}
-where the effective (gravito-centrifugal) potential is given by
+Note that by introducing the ``effective'' electromagnetic fields
+$\vec{E}_\ast$ and $\vec{B}_\ast$ via
+\begin{equation}
+  \frac{e}{m}\vec{E}_\ast = \frac{e}{m}\vec{E} - \nabla\psi
+\end{equation}
+and
+\begin{equation}
+  \frac{e}{m}\vec{B}_\ast = \frac{e}{m}\vec{B} + 2\vec{\Omega},
+\end{equation}
+we can rewrite \cref{eq:eom} as
+\begin{equation}
+  \dot{\vec{v}} =
+  \frac{e}{m}(\vec{E}_\ast + \vec{v}\times\vec{B}_\ast).
+\end{equation}
+
+\section{Standard coordinates}
+In standard coordinates the tidal potential is given by
 \begin{equation}
   \label{eq:tidal-potential}
   \psi = -q\Omega^2 x^2 + \frac{1}{2}\nu^2 z^2.
@@ -34,9 +50,15 @@ the plasma is rotationally supported against gravity and the magnetic field is
 frozen into the bulk flow $\vec{u}=\int\!f\vec{v}\,d^3v$ (and hence
 $\vec{E}+\vec{u}\times\vec{B}=0$), we must have
 \begin{equation}
-  2\vec{\Omega}\times\vec{u} + \nabla\psi = 0.
+  \label{eq:gravito-centrifugal-balance}
+  2\vec{\Omega}\times\vec{u} + \nabla_\perp\psi = 0.
 \end{equation}
-Solving this for $\vec{u}$ yields
+From \cref{eq:tidal-potential} it follows that the horizontal gradient of
+$\psi$ is
+\begin{equation}
+   \nabla_\perp\psi = -2q\Omega^2 x\ex.
+\end{equation}
+Given this, solving \cref{eq:gravito-centrifugal-balance} for $\vec{u}$ yields
 \begin{equation}
   \label{eq:common-shear-flow}
   \vec{u} = Sx\ey,
@@ -45,24 +67,7 @@ where
 \begin{equation}
   S = -q\Omega
 \end{equation}
-is the rate of shear (note also that $\nabla\times\vec{u}=S\ez$). Plugging
-\cref{eq:common-shear-flow} and
-\begin{equation}
-   \nabla\psi = 2\Omega Sx\ex
-\end{equation}
-into \cref{eq:eom} we find that
-\begin{equation}
-  \dot{\vec{v}} =
-  \frac{e}{m}(\vec{E}_\ast + \vec{v}\times\vec{B}_\ast),
-\end{equation}
-where $\vec{E}_\ast$ and $\vec{B}_\ast$ are defined through
-\begin{equation}
-  \frac{e}{m}\vec{E}_\ast = \frac{e}{m}\vec{E} - \nabla\psi
-\end{equation}
-and
-\begin{equation}
-  \frac{e}{m}\vec{B}_\ast = \frac{e}{m}\vec{B} + 2\vec{\Omega}.
-\end{equation}
+is the rate of shear (note also that $\nabla\times\vec{u}=S\ez$).
 
 \section{Shear along $y$}
 We use the same equation of motion but the tidal potential is taken to be
