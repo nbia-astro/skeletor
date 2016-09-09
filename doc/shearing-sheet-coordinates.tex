@@ -20,58 +20,48 @@
 We start by a simple rederivation of the equation of motion.
 The equation of motion is
 \begin{equation}
+  \label{eq:eom}
   \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} + \nabla\psi =
   \frac{e}{m}(\vec{E} + \vec{v}\times\vec{B}),
 \end{equation}
-where
+where the effective (gravito-centrifugal) potential is given by
 \begin{equation}
   \label{eq:tidal-potential}
-  \psi = -q\Omega^2 x^2 + \frac{1}{2}\nu^2 z^2
+  \psi = -q\Omega^2 x^2 + \frac{1}{2}\nu^2 z^2.
 \end{equation}
-Assuming
+Assuming that in equilibrium, the \emph{horizontal} force balance is such that
+the plasma is rotationally supported against gravity and the magnetic field is
+frozen into the bulk flow $\vec{u}=\int\!f\vec{v}\,d^3v$ (and hence
+$\vec{E}+\vec{u}\times\vec{B}=0$), we must have
 \begin{equation}
-  2\vec{\Omega}\times\vec{u}_s + \nabla\psi = 0.
+  2\vec{\Omega}\times\vec{u} + \nabla\psi = 0.
 \end{equation}
-we find that
+Solving this for $\vec{u}$ yields
 \begin{equation}
   \label{eq:common-shear-flow}
-  \vec{u}_s = Sx\ey,
+  \vec{u} = Sx\ey,
 \end{equation}
 where
 \begin{equation}
-  S = -q\Omega.
+  S = -q\Omega
 \end{equation}
-Plugging
+is the rate of shear (note also that $\nabla\times\vec{u}=S\ez$). Plugging
+\cref{eq:common-shear-flow} and
 \begin{equation}
-   \nabla\psi = -2\vec{\Omega}\times\vec{u}_s =
-   -2Sx\vec{\Omega}\times \ey
+   \nabla\psi = 2\Omega Sx\ex
 \end{equation}
-into the equation of motion and rearranging we find that
-\begin{equation}
-  \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} -2Sx\vec{\Omega}\times \ey =
-  \frac{e}{m}\vec{E} + \frac{e}{m}\vec{v}\times\vec{B},
-\end{equation}
-\begin{equation}
-  \dot{\vec{v}} =
-  \frac{e}{m}\vec{E} + 2Sx\vec{\Omega}\times \ey
-+ \frac{e}{m}\vec{v}\times\vec{B} + 2\vec{v}\times\vec{\Omega} ,
-\end{equation}
-\begin{equation}
-  \dot{\vec{v}} =
-  \frac{e}{m}\left(\vec{E} + \frac{2Sxm}{e}\vec{\Omega}\times \ey\right)
-+ \frac{e}{m}\vec{v}\times \left( \vec{B} + \frac{2m}{e}\vec{\Omega} \right)
-\end{equation}
-Defining effective electromagnetic fields $\vec{E}_\ast$ and $\vec{B}_\ast$
-\begin{equation}
-  \vec{E}_\ast = \vec{E} - Sx \ey\times2m\vec{\Omega}/e
-\end{equation}
-\begin{equation}
-  \vec{B}_\ast =  \vec{B} + 2m\vec{\Omega}/e
-\end{equation}
-gives us a standard Lorentz force equation.
+into \cref{eq:eom} we find that
 \begin{equation}
   \dot{\vec{v}} =
   \frac{e}{m}(\vec{E}_\ast + \vec{v}\times\vec{B}_\ast),
+\end{equation}
+where $\vec{E}_\ast$ and $\vec{B}_\ast$ are defined through
+\begin{equation}
+  \frac{e}{m}\vec{E}_\ast = \frac{e}{m}\vec{E} - \nabla\psi
+\end{equation}
+and
+\begin{equation}
+  \frac{e}{m}\vec{B}_\ast = \frac{e}{m}\vec{B} + 2\vec{\Omega}.
 \end{equation}
 
 \section{Shear along $y$}
