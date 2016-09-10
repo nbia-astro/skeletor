@@ -51,8 +51,8 @@ class Field(ndarray):
 
         # Copy data to guard cells from corresponding active cells
         self[:-1, -2] = self[:-1, 0]
-        self[-1, :-2] = self.send_down(self[0, :-2])
-        self[-1, -2] = self.send_down(self[0, 0])
+        self[:-1, -1] = self[:-1, 1]
+        self[-1, :] = self.send_down(self[0, :])
 
     def add_guards(self):
 
@@ -114,7 +114,7 @@ class Field(ndarray):
         self[0, :] += self.send_up(self[-1, :])
 
         # Erase guard cells (TH: Not sure why PPIC2 does this, but it's OK)
-        self[:, -2] = 0.0
+        self[:, -2:] = 0.0
         self[-1, :] = 0.0
 
     def add_guards_ppic2(self):
