@@ -93,7 +93,7 @@ class Particles(numpy.ndarray):
         from numpy import mod
         self["x"] = mod(self["x"], grid.nx)
 
-    def shear_periodic_y(self, grid):
+    def shear_periodic_y(self, grid, t):
         """Shearing periodic boundaries along y.
 
            This function modifies x and vx and subsequently applies periodic
@@ -104,9 +104,6 @@ class Particles(numpy.ndarray):
         """
         from numpy import where
 
-        # @TH: These parameters need to be passed. /TB
-        # time
-        t = self.t
         # Shear parameter
         S = -3/2;
 
@@ -136,7 +133,7 @@ class Particles(numpy.ndarray):
 
         ek = cppgbpush2l(self, fxy, bz, self.np, self.ihole, qm, dt, grid)
 
-        self.shear_periodic_y(grid)
+        self.shear_periodic_y(grid, self.t + dt)
 
         # Check for ihole overflow error
         if self.ihole[0] < 0:
