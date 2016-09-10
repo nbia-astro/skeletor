@@ -1,5 +1,6 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
 import numpy
+from skeletor import Ohm
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -13,7 +14,7 @@ plot = True
 perturb = True
 
 # Time step
-dt = 0.5e-2
+dt = 0.5e-3
 
 # Simulation time
 tend = 2*numpy.pi
@@ -55,10 +56,13 @@ phi = numpy.pi/2
 ampl = numpy.pi*5
 
 # Number of grid points in x- and y-direction
-nx, ny = 64, 32
+nx, ny = 32, 64
 
 # Average number of particles per cell
-npc = 16
+npc = 64
+
+# Electron temperature
+Te = 1.0
 
 # Total number of particles in simulation
 np = npc*nx*ny
@@ -174,11 +178,18 @@ assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
 # Electric field in y-direction
+E = Field(grid, comm, dtype=Float2)
+E.fill((0.0, 0.0))
+E_mod = Field(grid, comm, dtype=Float2)
+E_mod.fill((0.0, 0.0))
 E_star = Field(grid, comm, dtype=Float2)
 E_star.fill((0.0, 0.0))
 
+# Initialize Ohm's law solver
+ohm = Ohm(grid, npc, temperature=Te, charge=charge)
+
 for i in range(nx+2):
-    E_star['y'][:, i] = -2*S*(grid.yg-ny/2)*mass/charge*Omega
+    E_mod['y'][:, i] = -2*S*(grid.yg-ny/2)*mass/charge*Omega
 
 # Concatenate local arrays to obtain global arrays
 # The result is available on all processors.
@@ -221,6 +232,16 @@ for it in range(nt):
     sources.rho.add_guards_shearing(S*t)
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+
+    sources.rho.copy_guards_shearing(S*t)
+
+    # Calculate forces (Solve Ohm's law)
+    ohm(sources.rho, E, destroy_input=False)
+    # Set boundary condition
+    E.copy_guards_shearing(S*t)
+
+    E_star['x'] = E_mod['x'] + E['x']
+    E_star['y'] = E_mod['y'] + E['y']
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
