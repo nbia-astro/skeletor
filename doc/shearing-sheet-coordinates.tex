@@ -16,63 +16,59 @@
 
 \begin{document}
 
-\section{Standard coordinates}
+\section{Effective electromagnetic fields}
 We start by a simple rederivation of the equation of motion.
 The equation of motion is
 \begin{equation}
+  \label{eq:eom}
   \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} + \nabla\psi =
-  \frac{e}{m}(\vec{E} + \vec{v}\times\vec{B}),
+  \frac{e}{m}(\vec{E} + \vec{v}\times\vec{B}).
 \end{equation}
-where
+Note that by introducing the ``effective'' electromagnetic fields
+$\vec{E}_\ast$ and $\vec{B}_\ast$ via
+\begin{equation}
+  \frac{e}{m}\vec{E}_\ast = \frac{e}{m}\vec{E} - \nabla\psi
+\end{equation}
+and
+\begin{equation}
+  \frac{e}{m}\vec{B}_\ast = \frac{e}{m}\vec{B} + 2\vec{\Omega},
+\end{equation}
+we can rewrite \cref{eq:eom} as
+\begin{equation}
+  \dot{\vec{v}} =
+  \frac{e}{m}(\vec{E}_\ast + \vec{v}\times\vec{B}_\ast).
+\end{equation}
+
+\section{Standard coordinates}
+In standard coordinates the tidal potential is given by
 \begin{equation}
   \label{eq:tidal-potential}
-  \psi = -q\Omega^2 x^2 + \frac{1}{2}\nu^2 z^2
+  \psi = -q\Omega^2 x^2 + \frac{1}{2}\nu^2 z^2.
 \end{equation}
-Assuming
+Assuming that in equilibrium, the \emph{horizontal} force balance is such that
+the plasma is rotationally supported against gravity and the magnetic field is
+frozen into the bulk flow $\vec{u}=\int\!f\vec{v}\,d^3v$ (and hence
+$\vec{E}+\vec{u}\times\vec{B}=0$), we must have
 \begin{equation}
-  2\vec{\Omega}\times\vec{u}_s + \nabla\psi = 0.
+  \label{eq:gravito-centrifugal-balance}
+  2\vec{\Omega}\times\vec{u} + \nabla_\perp\psi = 0.
 \end{equation}
-we find that
+From \cref{eq:tidal-potential} it follows that the horizontal gradient of
+$\psi$ is
+\begin{equation}
+   \nabla_\perp\psi = -2q\Omega^2 x\ex.
+\end{equation}
+Given this, solving \cref{eq:gravito-centrifugal-balance} for $\vec{u}$ yields
 \begin{equation}
   \label{eq:common-shear-flow}
-  \vec{u}_s = Sx\ey,
+  \vec{u} = Sx\ey,
 \end{equation}
 where
 \begin{equation}
-  S = -q\Omega.
+  \label{eq:rate-of-shear}
+  S = -q\Omega
 \end{equation}
-Plugging
-\begin{equation}
-   \nabla\psi = -2\vec{\Omega}\times\vec{u}_s =
-   -2Sx\vec{\Omega}\times \ey
-\end{equation}
-into the equation of motion and rearranging we find that
-\begin{equation}
-  \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} -2Sx\vec{\Omega}\times \ey =
-  \frac{e}{m}\vec{E} + \frac{e}{m}\vec{v}\times\vec{B},
-\end{equation}
-\begin{equation}
-  \dot{\vec{v}} =
-  \frac{e}{m}\vec{E} + 2Sx\vec{\Omega}\times \ey
-+ \frac{e}{m}\vec{v}\times\vec{B} + 2\vec{v}\times\vec{\Omega} ,
-\end{equation}
-\begin{equation}
-  \dot{\vec{v}} =
-  \frac{e}{m}\left(\vec{E} + \frac{2Sxm}{e}\vec{\Omega}\times \ey\right)
-+ \frac{e}{m}\vec{v}\times \left( \vec{B} + \frac{2m}{e}\vec{\Omega} \right)
-\end{equation}
-Defining effective electromagnetic fields $\vec{E}_\ast$ and $\vec{B}_\ast$
-\begin{equation}
-  \vec{E}_\ast = \vec{E} - Sx \ey\times2m\vec{\Omega}/e
-\end{equation}
-\begin{equation}
-  \vec{B}_\ast =  \vec{B} + 2m\vec{\Omega}/e
-\end{equation}
-gives us a standard Lorentz force equation.
-\begin{equation}
-  \dot{\vec{v}} =
-  \frac{e}{m}(\vec{E}_\ast + \vec{v}\times\vec{B}_\ast),
-\end{equation}
+is the rate of shear (note also that $\nabla\times\vec{u}=S\ez$).
 
 \section{Shear along $y$}
 We use the same equation of motion but the tidal potential is taken to be
@@ -80,42 +76,26 @@ given by (replacing $x$ by $y$)
 \begin{equation}
   \psi = -q\Omega^2 y^2 + \frac{1}{2}\nu^2 z^2  \ .
 \end{equation}
-In this case,
+In this case, the horizontal gradient of the tidal potential is given by
 \begin{equation}
-  2 \vec{\Omega} \times \vec{u}_s = -\nabla \psi
-  \ .
+   \nabla_\perp\psi = -2q\Omega^2 y\ey.
 \end{equation}
+Given this, \cref{eq:gravito-centrifugal-balance} is satisfied provided that
 \begin{equation}
-  2 \Omega (\ey u_x - \ex u_y) = 2q\Omega^2 y \ey -\nu^2 z \ez
-  \ .
+  \label{eq:common-shear-flow-2}
+  \vec{u} = -Sy\ex.
 \end{equation}
-so that
+where the rate of shear is still given by \cref{eq:rate-of-shear}.
+% Note that our $x$-coordinate is oriented in the opposite direction to the
+% standard $x$-coordinate. So the physical background motion is in the same
+% direction regardless of the coordinate system.
+Note the sign changes in \cref{eq:common-shear-flow-2} compared to
+\cref{eq:common-shear-flow}, but also note that we still have
 \begin{equation}
-\vec{u}_s = q \Omega y \ex = -Sy\ex
+  \nabla\times\vec{u} = S\ez,
 \end{equation}
-Note that our $x$-coordinate is oriented in the opposite direction to the
-standard $x$-coordinate. So the physical background motion is in the same
-direction regardless of the coordinate system. We now plug
-\begin{equation}
-\nabla \psi = - 2 \vec{\Omega} \times \vec{u}_s
-= 2Sy\vec{\Omega} \times \ex
-\end{equation}
-into the equation of motion
-\begin{equation}
-  \dot{\vec{v}} + 2\vec{\Omega}\times\vec{v} + 2Sy\vec{\Omega} \times \ex =
-  \frac{e}{m}\vec{E} + \frac{e}{m}\vec{v}\times\vec{B},
-\end{equation}
-and rewrite
-\begin{equation}
-  \dot{\vec{v}} =
-  \frac{e}{m}\left(\vec{E} + Sy \ex \times 2m\vec{\Omega}/e\right) +
-  \frac{e}{m}\vec{v}\times \left( \vec{B} + 2m\vec{\Omega}/e \right)
-\end{equation}
-We conclude that $\vec{B}_\ast$ is the same as in the standard case and that
-$\vec{E}_\ast$ is given by
-\begin{equation}
-  \vec{E}_\ast = \vec{E} + Sy \ex \times 2m\vec{\Omega}/e
-\end{equation}
+so that the rate of shear $S$ is the $z$-component of the background vorticity
+in both coordinate systems.
 
 \section{Implementation notes}
 In the code we have (so far) $\vec{\Omega} = \Omega \ez$. In this case
