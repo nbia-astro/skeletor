@@ -8,7 +8,10 @@ from mpi4py.MPI import COMM_WORLD as comm
 quiet = True
 
 # Plotting
-plot = True
+plot = False
+
+# Dump data
+dump = True
 
 # Perturbation
 perturb = True
@@ -222,6 +225,7 @@ if plot:
         im1 = ax1.imshow(global_rho)
 
 t = 0
+k = 0
 ##########################################################################
 # Main loop over time                                                    #
 ##########################################################################
@@ -250,6 +254,14 @@ for it in range(nt):
 
     # Update time
     t += dt
+
+    if dump:
+        if (it % 100 == 0):
+            global_rho = concatenate(sources.rho.trim())
+            if comm.rank == 0:
+                numpy.savez("shearing_wave_rho.{:04d}.npz".format(k),\
+                    rho = global_rho, x=grid.x, y=grid.y, t = t)
+                k += 1
 
     # Make figures
     if plot:
