@@ -66,6 +66,41 @@ class Field(ndarray):
         self[-1, :-2] = 0.0
         self[-1, -2] = 0.0
 
+    def translate_fft (self, trans, iy):
+        "Translation using FFTs"
+        from numpy.fft import rfft, irfft, rfftfreq
+        from numpy import pi, exp
+
+        grid = self.grid
+        nx = grid.nx
+        dx = grid.Lx/grid.nx
+
+        # Wave numbers for real-to-complex transforms
+        kx = 2*pi*rfftfreq (grid.nx)/dx
+
+        # Translate in real space by phase shifting in spectral space
+        self[iy, :nx] = irfft (exp (-1j*kx*trans)*rfft (self[iy, :nx]))
+
+        # Set boundary condition
+        self[iy, -2:] = self[iy, :2]
+
+    def add_guards_shearing(self, St):
+
+        # Add data from guard cells to corresponding active cells in x
+        self[:, 0] += self[:, -2]
+
+        # Translate the y-ghostzones
+        if self.comm.rank == self.comm.size -1:
+            trans = self.grid.Ly*St
+            self.translate_fft(trans, self.grid.nyp)
+
+        # Add data from guard cells to corresponding active cells in y
+        self[0, :] += self.send_up(self[-1, :])
+
+        # Erase guard cells
+        self[:, -2:] = 0.0
+        self[-1, :] = 0.0
+
     def copy_guards2(self):
 
         # Copy data to guard cells from corresponding active cells

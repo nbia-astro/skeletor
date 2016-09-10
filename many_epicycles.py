@@ -10,7 +10,7 @@ quiet = True
 plot = True
 
 # Perturbation
-perturb = False
+perturb = True
 
 # Time step
 dt = 0.5e-2
@@ -208,7 +208,7 @@ if plot:
         ax1.invert_yaxis()
         plt.figure(2); plt.clf()
         fig, ax1 = plt.subplots(num=2, ncols=1)
-        im1 = ax1.imshow(global_rho[1:, :])
+        im1 = ax1.imshow(global_rho)
 
 t = 0
 ##########################################################################
@@ -218,7 +218,7 @@ for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-    sources.rho.add_guards_ppic2()
+    sources.rho.add_guards_shearing(S*t)
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
@@ -238,7 +238,7 @@ for it in range(nt):
                 lines1[0].set_data(ions['y'][:np], ions['x'][:np])
                 # lines1[1].set_data(numpy.mod(y_an(t), ny), x_an(t))
                 lines2[0].set_data(ions['vx'][:np], ions['vy'][:np])
-                im1.set_data(global_rho[1:, :])
+                im1.set_data(global_rho)
                 im1.autoscale()
                 # lines2[1].set_data(vx_an(t), vy_an(t))
                 with warnings.catch_warnings():
