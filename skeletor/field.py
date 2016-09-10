@@ -101,6 +101,16 @@ class Field(ndarray):
         self[:, -2:] = 0.0
         self[-1, :] = 0.0
 
+    def copy_guards_shearing(self, St):
+
+        # Copy data to guard cells from corresponding active cells
+        self.copy_guards()
+
+        # Translate the y-ghostzones
+        if self.comm.rank == self.comm.size -1:
+            trans = -self.grid.Ly*St
+            self.translate_fft(trans, -1)
+
     def copy_guards2(self):
 
         # Copy data to guard cells from corresponding active cells
