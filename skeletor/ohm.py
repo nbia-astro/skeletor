@@ -27,7 +27,7 @@ class Ohm:
         L = array([grid.Ly, grid.Lx], dtype=float)
 
         # Create FFT object
-        self.FFT = R2C(N, L, MPI, "double")
+        self.FFT = R2C(N, L, MPI.COMM_WORLD, "double")
 
         # Pre-allocate array for Fourier transform and force
         self.lnrho_hat = zeros(

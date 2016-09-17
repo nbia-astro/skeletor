@@ -150,7 +150,7 @@ class OperatorsMpiFFT4py:
         N = array([grid.ny, grid.nx], dtype=int)
 
         # Create FFT object
-        self.FFT = R2C(N, L, MPI, "double")
+        self.FFT = R2C(N, L, MPI.COMM_WORLD, "double")
 
         # Pre-allocate array for Fourier transform and force
         self.rho_hat = zeros(
