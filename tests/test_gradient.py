@@ -102,7 +102,7 @@ def test_gradient(plot=False):
     N = numpy.array([ny, nx], dtype=int)
 
     # Create FFT object
-    FFT = R2C(N, L, MPI, "double")
+    FFT = R2C(N, L, MPI.COMM_WORLD, "double")
 
     # Pre-allocate array for Fourier transform and force
     qe_hat = numpy.zeros(FFT.complex_shape(), dtype=FFT.complex)
