@@ -9,3 +9,4 @@ from .ohm import Ohm
 from .sources import Sources
 from .math import log
 from .initial_condition import uniform_density
+from .experiment import Experiment
