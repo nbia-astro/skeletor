@@ -9,3 +9,4 @@ from .poisson import PoissonMpiFFT4py
 from .ohm import Ohm
 from .sources import Sources
 from .initial_condition import uniform_density
+from .experiment import Experiment
