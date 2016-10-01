@@ -96,7 +96,7 @@ class PoissonMpiFFT4py:
         from math import log2
         from numpy import zeros, sum, where, zeros_like, array, exp
         from mpiFFT4py.line import R2C
-        from mpi4py import MPI
+        from mpi4py.MPI import COMM_WORLD as comm
 
         self.indx = int(log2(grid.nx))
         self.indy = int(log2(grid.ny))
@@ -117,7 +117,7 @@ class PoissonMpiFFT4py:
         N = array([grid.ny, grid.nx], dtype=int)
 
         # Create FFT object
-        self.FFT = R2C(N, L, MPI, "double")
+        self.FFT = R2C(N, L, comm, "double")
 
         # Pre-allocate array for Fourier transform and force
         self.rho_hat = zeros(

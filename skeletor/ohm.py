@@ -7,7 +7,7 @@ class Ohm:
         from numpy import zeros, zeros_like, array
         from math import log2
         from mpiFFT4py.line import R2C
-        from mpi4py import MPI
+        from mpi4py.MPI import COMM_WORLD as comm
 
         self.indx = int(log2(grid.nx))
         self.indy = int(log2(grid.ny))
@@ -27,7 +27,7 @@ class Ohm:
         L = array([grid.Ly, grid.Lx], dtype=float)
 
         # Create FFT object
-        self.FFT = R2C(N, L, MPI, "double")
+        self.FFT = R2C(N, L, comm, "double")
 
         # Pre-allocate array for Fourier transform and force
         self.lnrho_hat = zeros(
