@@ -1,8 +1,12 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
 from skeletor import Ohm, uniform_density, velocity_perturbation, Experiment
+from skeletor import IO
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
+
+# Set a folder for data output
+data_folder = '../data/run_oct1/'
 
 # Quiet start
 quiet = True
@@ -74,6 +78,12 @@ np = npc*nx*ny
 # Maximum number of electrons in each partition
 npmax = int(1.5*np/nvp)
 
+# Initalize IO
+io = IO(data_folder, locals(), __file__)
+
+# Set the rate at which we want to dump fields
+io.set_outputrate(100*dt)
+
 # Create particle array
 ions = Particles(npmax, charge, mass)
 
@@ -84,23 +94,21 @@ ions.initialize(x, y, vx, vy, grid)
 ohm = Ohm(grid, npc, temperature=Te, charge=charge)
 
 # Initialize experiment
-e = Experiment(grid, ions, ohm)
+e = Experiment(grid, ions, ohm, io)
 
 # Deposit charges and calculate initial electric field
 e.prepare()
 
-diff2 = 0
-# ##########################################################################
-# # Main loop over time                                                    #
-# ##########################################################################
-for it in range(nt):
+###########################################################################
+# Run experiment
+###########################################################################
 
-    e.step(dt)
+e.run(dt, nt)
 
-    # Difference between numerical and analytic solution
-    local_rho = e.sources.rho.trim()
-    local_rho_an = rho_an(xg, yg, e.t)
-    diff2 += ((local_rho_an - local_rho)**2).mean()
+# Difference between numerical and analytic solution
+local_rho = e.sources.rho.trim()
+local_rho_an = rho_an(xg, yg, e.t)
+diff2 = ((local_rho_an - local_rho)**2).mean()
 
 # Check if test has passed
 assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge*npc
