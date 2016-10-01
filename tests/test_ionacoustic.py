@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-from skeletor import Ohm
+from skeletor import Ohm, uniform_density
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -65,19 +65,8 @@ def test_ionacoustic(plot=False):
         """Analytic y-velocity as function of x, y and t"""
         return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k
 
-    if quiet:
-        # Uniform distribution of particle positions (quiet start)
-        sqrt_npc = int(numpy.sqrt(npc))
-        assert sqrt_npc**2 == npc
-        dx = dy = 1/sqrt_npc
-        x, y = numpy.meshgrid(
-                numpy.arange(0, nx, dx),
-                numpy.arange(0, ny, dy))
-        x = x.flatten()
-        y = y.flatten()
-    else:
-        x = nx*numpy.random.uniform(size=np).astype(Float)
-        y = ny*numpy.random.uniform(size=np).astype(Float)
+    # Uniform distribution of particle positions
+    x, y = uniform_density(nx, ny, npc, quiet=quiet)
 
     # Perturbation to particle velocities
     vx = ux_an(x, y, t=0)
