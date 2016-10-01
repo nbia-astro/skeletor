@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-from skeletor import Ohm, uniform_density, Experiment
+from skeletor import Ohm, uniform_density, velocity_perturbation, Experiment
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -33,9 +33,6 @@ cs = numpy.sqrt(Te/mass)
 # Time step
 dt = cfl/cs
 
-# Total number of particles in simulation
-np = npc*nx*ny
-
 # Wave vector and its modulus
 kx = 2*numpy.pi*ikx/nx
 ky = 2*numpy.pi*iky/ny
@@ -54,24 +51,13 @@ def rho_an(x, y, t):
     """Analytic density as function of x, y and t"""
     return npc*charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
 
-def ux_an(x, y, t):
-    """Analytic x-velocity as function of x, y and t"""
-    return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*kx/k
-
-def uy_an(x, y, t):
-    """Analytic y-velocity as function of x, y and t"""
-    return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k
-
 # Uniform distribution of particle positions
 x, y = uniform_density(nx, ny, npc, quiet=quiet)
 
-# Perturbation to particle velocities
-vx = ux_an(x, y, t=0)
-vy = uy_an(x, y, t=0)
-
-# Add thermal velocity
-vx += vtx*numpy.random.normal(size=np).astype(Float)
-vy += vty*numpy.random.normal(size=np).astype(Float)
+# Perturbation in velocity
+ampl_vx = -omega/k*A*kx/k
+ampl_vy = -omega/k*A*ky/k
+vx, vy = velocity_perturbation(x, y, kx, ky, ampl_vx, ampl_vy, vtx, vty)
 
 # Start parallel processing
 idproc, nvp = cppinit(comm)
@@ -83,6 +69,8 @@ grid = Grid(nx, ny, comm)
 # x- and y-grid
 xg, yg = numpy.meshgrid(grid.x, grid.y)
 
+# Total number of particles in simulation
+np = npc*nx*ny
 # Maximum number of electrons in each partition
 npmax = int(1.5*np/nvp)
 
