@@ -26,13 +26,18 @@ class IO:
             info = {'experiment' : experiment}
 
             # Save git commit number
-            git_commit = subprocess.check_output(["git", "rev-parse", 'HEAD'])
-            git_commit = git_commit.strip().decode("utf-8")
+            git_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+            git_commit = git_commit.strip().decode('utf-8')
             info.update({'git_commit' : git_commit})
+
+            # Save the hostname
+            hostname = subprocess.check_output(['hostname'])
+            hostname = hostname.strip().decode('utf-8')
+            info.update({'hostname' : hostname})
 
             # Save the time at the start of simulation
             i = datetime.now()
-            simulation_start = i.strftime('%d/%m/%Y_%H:%M:%S')
+            simulation_start = i.strftime('%d/%m/%Y at %H:%M:%S')
             info.update({'simulation_start' : simulation_start})
 
             # Add tag which can be used to group simulations together
@@ -43,6 +48,12 @@ class IO:
             for key in local_vars.keys():
                 if type(local_vars[key]) in (float, float64, int):
                     info.update({key : local_vars[key]})
+
+            # Save the number of MPI processes used
+            info.update({'MPI' : comm.size})
+
+            # Delete idproc which is not useful information
+            del info['idproc']
 
             # Save the dictionary info to the file info.p
             pickle.dump(info, open(data_folder+'info.p', 'wb'))
