@@ -1,5 +1,5 @@
 class IO:
-    def __init__(self, data_folder, local_vars, experiment):
+    def __init__(self, data_folder, local_vars, experiment, tag=''):
         """
         Initialisation creates the output directory and saves the path to the
         io object.
@@ -16,6 +16,7 @@ class IO:
             from numpy import float64
 
             # Create datafolder
+            if data_folder[-1] != '/': data_folder += '/'
             subprocess.call('mkdir ' + data_folder, shell=True)
 
             # Copy the experiment to the data folder
@@ -33,6 +34,9 @@ class IO:
             i = datetime.now()
             simulation_start = i.strftime('%d/%m/%Y_%H:%M:%S')
             info.update({'simulation_start' : simulation_start})
+
+            # Add tag which can be used to group simulations together
+            info.update({'tag' : tag})
 
             # Collect all variables in local namespace that are int, float or
             # float64. These will in general be the values set by us.

@@ -7,6 +7,9 @@ from mpi4py.MPI import COMM_WORLD as comm
 
 # Set a folder for data output
 data_folder = '../data/run_oct1/'
+# Set a tag which can be used to quickly find groups of simulations that we
+# would like to compare
+tag = 'test_oct1'
 
 # Quiet start
 quiet = True
@@ -79,7 +82,7 @@ np = npc*nx*ny
 npmax = int(1.5*np/nvp)
 
 # Initalize IO
-io = IO(data_folder, locals(), __file__)
+io = IO(data_folder, locals(), __file__, tag)
 
 # Set the rate at which we want to dump fields
 io.set_outputrate(100*dt)
