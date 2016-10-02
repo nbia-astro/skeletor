@@ -7,6 +7,7 @@ class IO:
         saves a dictionary with important information.
         """
         from mpi4py.MPI import COMM_WORLD as comm
+        from mpi4py.MPI import Wtime
 
         if comm.rank == 0:
             import subprocess
@@ -58,8 +59,22 @@ class IO:
             # Save the dictionary info to the file info.p
             pickle.dump(info, open(data_folder+'info.p', 'wb'))
 
+            # Start a log file
+            f = open('skeletor.log', 'w')
+            # Write start date and time
+            f.write('Simulation started on ' + simulation_start +'\n\n')
+            # Write the contents of info.p for convenience
+            f.write('Contents of info.p is printed below \n')
+            for key in info.keys():
+                f.write(key + ' = {} \n'.format(info[key]))
+            f.write('\n\nEntering main simulation loop \n')
+            f.close()
+
         self.data_folder = data_folder
+        # Snap shot number
         self.snap = 0
+        # Used for computing total runtime
+        self.wt = Wtime()
 
     def set_outputrate(self, dt):
         self.dt = dt
@@ -91,3 +106,37 @@ class IO:
 
         # Update snap shot number on all processors
         self.snap += 1
+
+    def log(self, it, t, dt):
+        from mpi4py.MPI import COMM_WORLD as comm
+        if comm.rank == 0:
+            f = open('skeletor.log', 'a')
+            f.write('step {0}\ttime {1}\tdt {2}\n'.format(it, t, dt))
+            f.close()
+
+    def finished(self):
+        """Write elapsed time to log file and move the log file to the data
+        directory"""
+        from mpi4py.MPI import COMM_WORLD as comm
+        from mpi4py.MPI import Wtime
+        seconds = Wtime() - self.wt
+        if comm.rank == 0:
+            import subprocess
+            from datetime import datetime
+
+            # Time at end of simulation
+            i = datetime.now()
+            endtime = i.strftime('%d/%m/%Y at %H:%M:%S')
+
+            f = open('skeletor.log', 'a')
+            f.write('Simulation ended on '+endtime+'\n')
+            m, s = divmod(seconds, 60)
+            h, m = divmod(m, 60)
+            d, h = divmod(h, 24)
+
+            f.write('Time elapsed was {} days {} hours {} minutes {} seconds'\
+                     .format(d, h, m, s))
+            f.close()
+
+            subprocess.call('mv skeletor.log '+ self.data_folder, shell=True)
+
