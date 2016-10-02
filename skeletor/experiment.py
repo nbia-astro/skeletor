@@ -69,6 +69,9 @@ class Experiment:
             # Update experiment
             self.step(dt)
 
+            self.io.log(it, self.t, dt)
+
             # Output fields
             if self.io.dt*self.io.snap > self.t:
                 self.io.output_fields(self.sources, self.E, self.grid, self.t)
+        self.io.finished()
