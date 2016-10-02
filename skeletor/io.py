@@ -123,6 +123,12 @@ class IO:
         if comm.rank == 0:
             import subprocess
             from datetime import datetime
+            import pickle
+
+            # Add run time to info.p
+            info = pickle.load(open(self.data_folder+'info.p', 'rb'))
+            info.update({'seconds' : seconds})
+            pickle.dump(info, open(self.data_folder+'info.p', 'wb'))
 
             # Time at end of simulation
             i = datetime.now()
