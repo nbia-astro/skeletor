@@ -41,6 +41,9 @@ class Ohm:
         # Ratio of temperature to charge
         self.alpha = self.temperature/self.charge
 
+        # Dealias filter (only include up to 2/3 kmax)
+        self.dealias = self.FFT.get_dealias_filter()
+
     def __call__(self, rho, E, destroy_input=True):
         from numpy import log
 
@@ -48,9 +51,12 @@ class Ohm:
         self.lnrho_hat[:] = self.FFT.fft2(log(rho.trim()), self.lnrho_hat)
 
         # Pressure term of Ohm's law
-        # Notice that we multiply the charge to get the force
         self.Ex_hat[:] = -self.alpha*1j*self.kx*self.lnrho_hat
         self.Ey_hat[:] = -self.alpha*1j*self.ky*self.lnrho_hat
+
+        # Remove high wavenumbers
+        self.Ex_hat *= self.dealias
+        self.Ey_hat *= self.dealias
 
         # Transform back to real space
         E["x"][:-1, :-2] = self.FFT.ifft2(self.Ex_hat, E["x"][:-1, :-2])

@@ -140,6 +140,9 @@ class PoissonMpiFFT4py:
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
+        # Dealias filter (only include up to 2/3 kmax)
+        self.dealias = self.FFT.get_dealias_filter()
+
     def __call__(self, rho, E, destroy_input=True):
 
         # Transform charge density to Fourier space
@@ -148,6 +151,10 @@ class PoissonMpiFFT4py:
         # Solve Gauss' law in Fourier space and transform back to real space
         self.Ex_hat[:] = -1j*self.kx*self.k21_eff*self.rho_hat
         self.Ey_hat[:] = -1j*self.ky*self.k21_eff*self.rho_hat
+
+        # Remove high wavenumbers
+        self.Ex_hat *= self.dealias
+        self.Ey_hat *= self.dealias
 
         E['x'][:-1, :-2] = self.FFT.ifft2(self.Ex_hat, E['x'][:-1, :-2])
         E['y'][:-1, :-2] = self.FFT.ifft2(self.Ey_hat, E['y'][:-1, :-2])
