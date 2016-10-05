@@ -117,7 +117,7 @@ class PoissonMpiFFT4py:
         N = array([grid.ny, grid.nx], dtype=int)
 
         # Create FFT object
-        self.FFT = R2C(N, L, comm, "double")
+        self.FFT = R2C(N, L, comm, "single")
 
         # Pre-allocate array for Fourier transform and force
         self.rho_hat = zeros(

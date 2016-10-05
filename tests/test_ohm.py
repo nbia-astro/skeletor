@@ -14,7 +14,7 @@ def test_ohm(plot=False):
     ny = 1 << indy
 
     #############################################
-    # Solve Ohm's law with mpifft5py            #
+    # Solve Ohm's law with mpifft4py            #
     #############################################
 
     # Start parallel processing.
@@ -76,8 +76,8 @@ def test_ohm(plot=False):
     # increasing) the resolution of the grid (try indx, indy = 3, 4) leads to
     # failure. Manually expectecting the difference I find that they are at the
     # 1e-8 level.
-    assert numpy.allclose(global_Ex, global_E["x"])
-    assert numpy.allclose(global_Ey, global_E["y"])
+    assert numpy.allclose(global_Ex, global_E["x"], atol=1e-06)
+    assert numpy.allclose(global_Ey, global_E["y"], atol=1e-06)
 
     #############
     # Visualize #
