@@ -5,11 +5,17 @@ import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
-# Set a folder for data output
+# Set a folder for data output (relative to the file)
 data_folder = '../data/run_oct1/'
 # Set a tag which can be used to quickly find groups of simulations that we
 # would like to compare
 tag = 'test_oct1'
+
+# Make sure this works even when the script is not in current directory
+from os import path
+# Absolute path of this file
+this_file_path = path.dirname(path.realpath(__file__))
+data_folder = this_file_path + '/' + data_folder
 
 # Quiet start
 quiet = True
