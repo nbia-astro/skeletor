@@ -91,10 +91,10 @@ class PoissonMpiFFT4py:
 
     """Solve Gauss' law ∇·E = ρ/ε0 via a discrete fourier transform."""
 
-    def __init__(self, grid, ax, ay, np):
+    def __init__(self, grid, ax, ay, np, cut=2/3):
 
         from math import log2
-        from numpy import zeros, sum, where, zeros_like, array, exp
+        from numpy import zeros, sum, where, zeros_like, array, exp, uint8
         from mpiFFT4py.line import R2C
         from mpi4py.MPI import COMM_WORLD as comm
 
@@ -140,8 +140,11 @@ class PoissonMpiFFT4py:
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
-        # Dealias filter (only include up to 2/3 kmax)
-        self.dealias = self.FFT.get_dealias_filter()
+        # Dealias filter: only include up to kmax = cut*(N//2+1)
+        K = self.FFT.get_local_wavenumbermesh()
+        kmax = cut*(N//2+1)
+        self.dealias = array((abs(K[0]) < kmax[0])*(abs(K[1]) < kmax[1]),
+                              dtype=uint8)
 
     def __call__(self, rho, E, destroy_input=True):
 

@@ -2,9 +2,10 @@ class Ohm:
 
     """Solve Ohm's law via a discrete Fourier transform."""
 
-    def __init__(self, grid, npc, charge=1.0, temperature=0.0, eta=0.0):
+    def __init__(self, grid, npc, charge=1.0, temperature=0.0, eta=0.0, \
+                 cut=1/3):
 
-        from numpy import zeros, zeros_like, array
+        from numpy import zeros, zeros_like, array, uint8
         from math import log2
         from mpiFFT4py.line import R2C
         from mpi4py.MPI import COMM_WORLD as comm
@@ -41,8 +42,12 @@ class Ohm:
         # Ratio of temperature to charge
         self.alpha = self.temperature/self.charge
 
-        # Dealias filter (only include up to 2/3 kmax)
-        self.dealias = self.FFT.get_dealias_filter()
+        # Dealias filter: only include up to kmax = cut*(N//2+1)
+        K = self.FFT.get_local_wavenumbermesh()
+        kmax = cut*(N//2+1)
+        self.dealias = array((abs(K[0]) < kmax[0])*(abs(K[1]) < kmax[1]),
+                              dtype=uint8)
+
 
     def __call__(self, rho, E, destroy_input=True):
         from numpy import log
