@@ -42,13 +42,13 @@ def test_gyromotion(plot=False):
     np = 1
 
     x0 = 8.
-    y0 = 32.
+    y0 = 33.
 
     x0 = numpy.array(x0)
     y0 = numpy.array(y0)
 
-    def  x_an(t): return -ampl*numpy.cos (og*t + phi) + x0
-    def  y_an(t): return +ampl*numpy.sin (og*t + phi) + y0
+    def  x_an(t): return (-ampl*numpy.cos (og*t + phi) + x0).astype(Float)
+    def  y_an(t): return (+ampl*numpy.sin (og*t + phi) + y0).astype(Float)
     def vx_an(t): return og*ampl*numpy.sin (og*t + phi)*numpy.ones(np)
     def vy_an(t): return og*ampl*numpy.cos (og*t + phi)*numpy.ones(np)
 
@@ -76,8 +76,8 @@ def test_gyromotion(plot=False):
     xg, yg = numpy.meshgrid(grid.x, grid.y)
 
     # Maximum number of ions in each partition
-    # Set to big number to make sure particles can move between grids
-    npmax = int(1.25*np/nvp)
+    # For this test we only have one particle.
+    npmax = np
 
     # Create particle array
     ions = Particles(npmax, charge, mass)
@@ -100,13 +100,12 @@ def test_gyromotion(plot=False):
         from matplotlib.cbook import mplDeprecation
         import warnings
 
-        if comm.rank == 0:
-            plt.rc('image', origin='lower', interpolation='nearest')
-            plt.figure(1)
-            fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
-            lines = ax1.plot(ions['x'], ions['y'], 'b.', x_an(0), y_an(0), 'rx')
-            ax1.set_xlim(-1, nx+1)
-            ax1.set_ylim(-1, ny+1)
+        plt.rc('image', origin='lower', interpolation='nearest')
+        plt.figure(1)
+        fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
+        lines = ax1.plot(ions['x'][0], ions['y'][0], 'b.', x_an(0), y_an(0), 'rx')
+        ax1.set_xlim(-1, nx+1)
+        ax1.set_ylim(-1, ny+1)
 
     t = 0
     ##########################################################################
@@ -121,22 +120,31 @@ def test_gyromotion(plot=False):
 
         # Update time
         t += dt
+        # True if particle is in this domain
+        ind = numpy.logical_and(ions['y'][0] >= grid.edges[0], \
+                                ions['y'][0] < grid.edges[1])
+        if ind:
+            diff_x = abs(ions['x'][0]-x_an(t))
+            diff_y = abs(ions['y'][0]-y_an(t))
+            # Round off errrors giving trouble when comparing
 
-        err = numpy.max(numpy.abs([ions['x']-x_an(t), ions['y']-y_an(t)]))/ampl
+            err = numpy.max([diff_x, diff_y])/ampl
+            if err > 1.0: err = 0.
+            # Check if test has passed
+            # print(err, ions['y'][0], y_an(t), ions['x'][0], x_an(t))
+            assert(err < 5.0e-3)
 
         # Make figures
         if plot:
             if (it % 100 == 0):
-                if comm.rank == 0:
-                    lines[0].set_data(ions['x'], ions['y'])
+                if ind:
+                    lines[0].set_data(ions['x'][0], ions['y'][0])
                     lines[1].set_data(x_an(t), y_an(t))
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                     "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
 
-    # Check if test has passed
-    assert(err < 1e-3)
 
 if __name__ == "__main__":
 

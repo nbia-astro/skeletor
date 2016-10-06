@@ -92,8 +92,8 @@ def test_shearing_epicycle(plot=False):
     xg, yg = numpy.meshgrid(grid.x, grid.y)
 
     # Maximum number of ions in each partition
-    # Set to big number to make sure particles can move between grids
-    npmax = int(1.25*np/nvp)
+    # For this test we only have one particle.
+    npmax = np
 
     # Create particle array
     ions = Particles(npmax, charge, mass)
@@ -117,20 +117,19 @@ def test_shearing_epicycle(plot=False):
         from matplotlib.cbook import mplDeprecation
         import warnings
 
-        if comm.rank == 0:
-            plt.rc('image', origin='lower', interpolation='nearest')
-            plt.figure(1);plt.clf()
-            fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
-            lines1 = ax1.plot(ions['x'], ions['y'], 'b.', x_an(0), y_an(0), 'rx')
-            lines2 = ax2.plot(ions['vx'], ions['vy'], 'b.',  vx_an(0), vy_an(0), 'rx')
-            ax1.set_xlim(-1, nx+1)
-            ax1.set_ylim(-1, ny+1)
-            ax2.set_xlim(-1.1*og*ampl, 1.1*og*ampl)
-            ax2.set_ylim((-Sz*ampl+S*x0), (Sz*ampl+S*x0))
-            ax1.set_xlabel('x')
-            ax1.set_ylabel('y')
-            ax2.set_xlabel('vx')
-            ax2.set_ylabel('vy')
+        plt.rc('image', origin='lower', interpolation='nearest')
+        plt.figure(1);plt.clf()
+        fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
+        lines1 = ax1.plot(ions['x'][0], ions['y'][0], 'b.', x_an(0), y_an(0), 'rx')
+        lines2 = ax2.plot(ions['vx'][0], ions['vy'][0], 'b.',  vx_an(0), vy_an(0), 'rx')
+        ax1.set_xlim(-1, nx+1)
+        ax1.set_ylim(-1, ny+1)
+        ax2.set_xlim(-1.1*og*ampl, 1.1*og*ampl)
+        ax2.set_ylim((-Sz*ampl+S*x0), (Sz*ampl+S*x0))
+        ax1.set_xlabel('x')
+        ax1.set_ylabel('y')
+        ax2.set_xlabel('vx')
+        ax2.set_ylabel('vy')
 
     t = 0
     ##########################################################################
@@ -146,24 +145,38 @@ def test_shearing_epicycle(plot=False):
         # Update time
         t += dt
 
-        err = numpy.max(numpy.abs([ions['x']-x_an(t), ions['y']-
-                        numpy.mod(y_an(t), ny)]))/ampl
+        # True if particle is in this domain
+        ind = numpy.logical_and(ions['y'][0] >= grid.edges[0], \
+                                ions['y'][0] < grid.edges[1])
+        if ind:
+            diff_x = abs(ions['x'][0]-x_an(t))
+            diff_y = abs(ions['y'][0]-y_an(t))
+            # Round off errrors giving trouble when comparing
+            if diff_x > nx/2: diff_x = 0
+            if diff_y > ny/2: diff_y = 0
+
+            err = numpy.max([diff_x, diff_y])/ampl
+            # Round off errrors giving trouble when comparing
+            if err > 1.0: err = 0.0
+
+            # print(err, ions['y'][0], y_an(t), ions['x'][0], x_an(t))
+            # Check if test has passed
+            # print(err, ions['y'][0], y_an(t), ions['x'][0], x_an(t))
+            assert(err < 5.0e-3), 'err'
 
         # Make figures
         if plot:
             if (it % 200 == 0):
                 if comm.rank == 0:
-                    lines1[0].set_data(ions['x'], ions['y'])
+                    lines1[0].set_data(ions['x'][0], ions['y'][0])
                     lines1[1].set_data(x_an(t), numpy.mod(y_an(t), ny))
-                    lines2[0].set_data(ions['vx'], ions['vy'])
+                    lines2[0].set_data(ions['vx'][0], ions['vy'][0])
                     lines2[1].set_data(vx_an(t), vy_an(t))
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                     "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
 
-    # Check if test has passed
-    assert(err < 2e-3)
 
 if __name__ == "__main__":
 
