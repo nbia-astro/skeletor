@@ -1,6 +1,6 @@
 class Experiment:
 
-    def __init__ (self, grid, ions, solver, io):
+    def __init__ (self, grid, ions, solver, io=None):
 
         from skeletor import Float, Float2, Grid, Field, Sources
         from mpi4py.MPI import COMM_WORLD as comm
@@ -62,16 +62,22 @@ class Experiment:
 
     def run(self, dt, nt):
 
-        # Dump initial data
-        self.io.output_fields(self.sources, self.E, self.grid, self.t)
+        if self.io is None:
+            for it in range(nt):
+                # Update experiment
+                self.step(dt)
+        else:
+            # Dump initial data
+            self.io.output_fields(self.sources, self.E, self.grid, self.t)
 
-        for it in range(nt):
-            # Update experiment
-            self.step(dt)
+            for it in range(nt):
+                # Update experiment
+                self.step(dt)
 
-            self.io.log(it, self.t, dt)
+                self.io.log(it, self.t, dt)
 
-            # Output fields
-            if self.io.dt*self.io.snap > self.t:
-                self.io.output_fields(self.sources, self.E, self.grid, self.t)
-        self.io.finished()
+                # Output fields
+                if self.io.dt*self.io.snap > self.t:
+                    self.io.output_fields(self.sources, self.E, self.grid, \
+                                          self.t)
+            self.io.finished()
