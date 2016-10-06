@@ -23,7 +23,7 @@ class IO:
             # Copy the experiment to the data folder
             # experiment = path.basename(experiment)
             subprocess.call('cp ' + experiment +' '+ data_folder+ \
-                            path.basename(experiment), shell=True)
+                            'experiment.py', shell=True)
             info = {'experiment' : experiment}
 
             # Save git commit number
