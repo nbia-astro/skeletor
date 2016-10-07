@@ -4,4 +4,4 @@ matplotlib
 mpi4py
 numpy
 scipy
-git+https://github.com/spectralDNS/mpiFFT4py.git
+git+https://github.com/tberlok/mpiFFT4py.git
