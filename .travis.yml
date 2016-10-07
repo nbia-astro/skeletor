@@ -15,7 +15,7 @@ before_install:
     - conda install -q mpi4py scipy pytest Cython
 
     # Install mpiFFT4py
-    - pip install git+https://github.com/spectralDNS/mpiFFT4py.git
+    - pip install git+https://github.com/tberlok/mpiFFT4py.git
 
     # Install python-mpi-bcast
     - git clone https://github.com/rainwoodman/python-mpi-bcast.git
