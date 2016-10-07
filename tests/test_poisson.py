@@ -1,7 +1,7 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Poisson
 from mpi4py.MPI import COMM_WORLD as comm
 from mpiFFT4py.line import R2C
-from mpi4py import MPI
+from mpi4py.MPI import COMM_WORLD as comm
 
 import numpy
 
@@ -114,7 +114,7 @@ def test_poisson(plot=False):
     N = numpy.array([ny, nx], dtype=int)
 
     # Create FFT object
-    FFT = R2C(N, L, MPI, "double")
+    FFT = R2C(N, L, comm, "single")
 
     # Pre-allocate array for Fourier transform and force
     qe_hat = numpy.zeros(FFT.complex_shape(), dtype=FFT.complex)
