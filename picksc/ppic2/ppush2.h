@@ -16,6 +16,11 @@ void cppgpush2l(float part[], float fxy[], float edges[], int npp,
                 int nx, int ny, int idimp, int npmax, int nxv,
                 int nypmx, int idps, int ntmax, int ipbc);
 
+void cppgbpush2l(float part[], float fxy[], float bz, float edges[], int npp,
+                int noff, int ihole[], float qbm, float dt, float *ek,
+                int nx, int ny, int idimp, int npmax, int nxv,
+                int nypmx, int idps, int ntmax, int ipbc);
+
 void cppgpost2l(float part[], float q[], int npp, int noff, float qm,
                 int idimp, int npmax, int nxv, int nypmx);
 

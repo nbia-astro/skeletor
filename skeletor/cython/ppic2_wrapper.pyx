@@ -84,6 +84,22 @@ def cppgpush2l(
 
     return ek
 
+def cppgbpush2l(
+        particle_t[:] particles, float2_t[:,:] fxy, float_t bz,
+        int npp, int[:] ihole, float_t qm, float_t dt, grid_t grid):
+
+    cdef float_t ek = 0.0
+    cdef int npmax = particles.shape[0]
+    cdef int nxe = fxy.shape[1]
+    cdef int ntmax = ihole.shape[0] - 1
+
+    ppush2.cppgbpush2l(
+            &particles[0].x, &fxy[0,0].x, bz, grid.edges, npp, grid.noff,
+            &ihole[0], qm, dt, &ek, grid.nx, grid.ny, idimp, npmax, nxe,
+            grid.nypmx, idps, ntmax, ipbc)
+
+    return ek
+
 
 def cppmove2(
         particle_t[:] particles, int npp,
