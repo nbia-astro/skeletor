@@ -1,3 +1,4 @@
+# Make sure these definitions match those in "picksc/ppic2/precision.h"
 ctypedef float real_t
 ctypedef float complex complex_t
 
