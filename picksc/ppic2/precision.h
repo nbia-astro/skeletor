@@ -4,7 +4,7 @@
 #include <complex.h>
 
 /* Make sure these definitions match those in "skeletor/cython/ctypes.pxd" */
-typedef float real_t;
-typedef float complex complex_t;
+typedef double real_t;
+typedef double complex complex_t;
 
 #endif

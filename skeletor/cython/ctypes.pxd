@@ -1,6 +1,6 @@
 # Make sure these definitions match those in "picksc/ppic2/precision.h"
-ctypedef float real_t
-ctypedef float complex complex_t
+ctypedef double real_t
+ctypedef double complex complex_t
 
 cdef struct particle_t:
     real_t x, y, vx, vy
