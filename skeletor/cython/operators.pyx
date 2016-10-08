@@ -3,10 +3,10 @@ from libc.math cimport M_PI
 cimport cython
 
 cdef extern from "complex.h":
-    real_t crealf(complex_t) nogil
-    real_t cimagf(complex_t) nogil
-    complex_t conjf(complex_t) nogil
-    complex_t _Complex_I
+    float crealf(float complex) nogil
+    float cimagf(float complex) nogil
+    float complex conjf(float complex) nogil
+    float complex _Complex_I
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
