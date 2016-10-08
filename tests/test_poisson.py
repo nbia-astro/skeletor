@@ -65,7 +65,10 @@ def test_poisson(plot=False):
     # Solve Gauss' law
     poisson(qe, fxye_custom, destroy_input=False, custom_cppois22=True)
 
-    assert numpy.all(fxye == fxye_custom)
+    # Result may differ up to round-off error
+    tol = numpy.finfo(qe.dtype).eps
+    for c in ("x", "y"):
+        assert numpy.allclose(fxye[c], fxye_custom[c], atol=tol, rtol=0.0)
 
     ##############################################
     # Solve Gauss' law with Numpy's built-in FFT #
