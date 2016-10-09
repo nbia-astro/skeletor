@@ -1,0 +1,282 @@
+\documentclass[aps,pre,notitlepage,amsmath,amssymb,amsfonts,nobibnotes,nofootinbib,superscriptaddress,onecolumn,a4paper,10pt]{revtex4-1}
+\setcitestyle{authoryear,round}
+\bibliographystyle{apsrev4-1}
+% Use the same section numbering as ApJ
+% See http://tex.stackexchange.com/questions/87131/numbering-sections
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+% Fix references
+\makeatletter
+\def\p@subsection{}
+\def\p@subsubsection{}
+\makeatother
+
+\input{preamble}
+\newcommand{\tvec}[1]{\tilde{\vec{#1}}}
+
+\begin{document}
+
+\title{Notes on shearing periodicity}
+\author{Tobias Heinemann}
+\author{Thomas Berlok}
+\affiliation{Niels Bohr International Academy}
+\maketitle
+
+\section{Particle dynamics in the shearing sheet}
+
+In a frame rotating with a constant angular velocity, Newton's second law may
+be written as
+\begin{equation}
+  \label{eq:eom}
+  \ddot{\vec{r}} + 2\vec{\Omega}\times\dot{\vec{r}} + \nabla\psi = \vec{a}.
+\end{equation}
+Here, $\vec{a}$ is the acceleration due to the Lorentz force, which we will
+discuss in \cref{sec:electric,sec:magnetic}. For now let us ignore $\vec{a}$
+and focus on the left hand side.
+
+In standard shearing sheet coordinates, the angular velocity of the rotating
+frame is $\vec{\Omega}=\Omega\ez$ and the effective potential is
+$\psi=S\Omega x^2 + \nu^2 z^2/2$. For numerical reasons it is advantageous to
+adopt a coordinate system that is rotated clock-wise around the $z$-axis by 90
+degrees ($x\to y, y\to-x$). In the new coordinate system, the angular velocity
+is the same but the effective potential is now
+\begin{equation}
+  \label{eq:effective-potential}
+  \psi = S\Omega y^2 + \frac{1}{2}\nu^2 z^2.
+\end{equation}
+
+The horizontal components of \cref{eq:eom} upon substitution of
+\cref{eq:effective-potential} are given by
+\begin{align}
+  \ddot{x} - 2\Omega\dot{y} &= a_x \\
+  \label{eq:eom-y}
+  \ddot{y} + 2\Omega(\dot{x} + Sy) &= a_y.
+\end{align}
+It follows immediately that the system is invariant under translations along
+$x$:
+\begin{equation}
+  \label{eq:trans-x}
+  \begin{aligned}
+    x &\to x + \Delta x \\
+    y &\to y
+  \end{aligned}
+\end{equation}
+The system is also invariant under translations along $y$ if such translations
+are followed by a boost along $x$:
+\begin{equation}
+  \label{eq:trans-y}
+  \begin{aligned}
+    y &\to y + \Delta y \\
+    x &\to x - St\Delta y
+  \end{aligned}
+\end{equation}
+The symmetries \labelcref{eq:trans-x,eq:trans-y} imply that in spite of the
+glaring inhomogeneity in \cref{eq:effective-potential}, the system is in a
+certain sense still homogeneous in the horizontal directions. In the words of
+\citet{Wisdom1988}, ``the dynamics of the [linearized] model are independent
+of the choice of origin, except for a uniform shear that is a consequence of
+the differential rotation in a Keplerian disk.'' The uniform shear in question
+is given by
+\begin{equation}
+  \label{eq:shear-flow}
+  \vec{u} = -Sx\ey.
+\end{equation}
+This flow has the very special property that it appears the same to every
+observer that is locally at rest with respect to it. In Galilean invariant
+theories, only flows that depend linearly on the coordinates have this
+property.
+
+In terms of the one-particle distribution function $f(\vec{r},\vec{v},t)$ with
+$\vec{v}=\dot{\vec{r}}$, the system of equations \labelcref{eq:eom} for many
+particles may equivalently be written as
+\begin{equation}
+  \label{eq:vlasov}
+  \pder{f}{t} + \vec{v}\cdot\nabla f
+  + (\vec{a} - 2\vec{\Omega}\times\vec{v} - \nabla\psi)\cdot\pder{f}{\vec{v}}
+  = 0.
+\end{equation}
+Depending on whether $f$ is the microscopic or macroscopic distribution
+function, \cref{eq:vlasov} is either the Klimontovich or the Vlasov equation.
+The former is exact while the latter only holds if the plasma is
+collisionless. For our present discussion the distinction is not important and
+we will refer to \cref{eq:vlasov} as the Vlasov equation.
+
+Let us introduce the \emph{relative} velocity $\tvec{v}$ through
+\begin{equation}
+  \label{eq:relative-velocity}
+  \vec{v} = -Sy\ex + \tvec{v}.
+\end{equation}
+Because
+\begin{equation}
+  \left.\pder{}{y}\right|_{\vec{v}} =
+  \left.\pder{}{y}\right|_{\tvec{v}} + S\pder{}{\tilde{v}_x},
+\end{equation}
+the Vlasov equation \labelcref{eq:vlasov} expressed in terms of the phase
+space coordinates $(\vec{r},\tvec{v})$ is
+\begin{equation}
+  \label{eq:vlasov-relative}
+  \left(\pder{}{t} - Sy\pder{}{x}\right)f + \tilde{\vec{v}}\cdot\nabla f
+  + (\vec{a} - 2\vec{\Omega}\times\tvec{v} + S\tilde{v}_y\ex - \nu^2 z\ez)
+  \cdot\pder{f}{\tvec{v}} = 0.
+\end{equation}
+While this equation appears more complicated than \cref{eq:vlasov}, it has the
+distinct advantage that it depends explicitly on $y$ only through the
+differential operator $\pader{}{t}-Sy\,\pader{}{x}$. This explicit
+$y$-dependence can be eliminated (in favor of an explicit $t$-dependence)
+through a transformation to shearing coordinates, see
+\cref{sec:shearing-coordinates}.
+
+So far we have only considered the motion of particles in a prescribed
+effective potential. Let us now turn to the electromagnetic force and the
+field equations governing the electromagnetic field (i.e.\ Maxwell's
+equations). As pointed out by \citet{LeBellac1973}, it is essential for this
+discussion to consider the two distinct non-relativistic limits of Maxwell's
+equations.
+
+\subsection{Electric limit}\label{sec:electric}
+
+In the electric limit, the magnetic field plays an entirely passive role and
+the Lorentz acceleration is simply
+\begin{equation}
+  \label{eq:electric-accel}
+  \vec{a} = \frac{e}{m}\vec{E}.
+\end{equation}
+The system of equations is closed with Gauss' law
+\begin{equation}
+  \epsilon_0\nabla\cdot\vec{E} = \sum e\int\!d^3v\,f.
+\end{equation}
+
+In the electric limit, the electric field is invariant under Galilean
+transformations:
+\begin{equation}
+  \vec{E}' = \vec{E}
+\end{equation}
+From this it follows that \cref{eq:vlasov} with $\vec{a}$ as given in
+\cref{eq:electric-accel} is manifestly invariant under
+\cref{eq:trans-x,eq:trans-y}.
+
+\subsection{Magnetic limit}\label{sec:magnetic}
+
+The magnetic field is not passive in this limit and the Lorentz acceleration
+is given by
+\begin{equation}
+  \label{eq:magnetic-accel}
+  \vec{a} = \frac{e}{m}(\vec{E} + \vec{v}\times\vec{B}).
+\end{equation}
+The system of equations is closed with Ampère's law
+\begin{equation}
+  \label{eq:ampere}
+  \mu_0^{-1}\nabla\times\vec{B} = \sum e\int\!d^3v\,f\vec{v}
+\end{equation}
+and Faraday's law
+\begin{equation}
+  \label{eq:faraday}
+  \pder{\vec{B}}{t} + \nabla\times\vec{E} = 0.
+\end{equation}
+
+The transformation law for the electromagnetic field in this limit is
+\begin{equation}
+  \label{eq:magnetic-transform}
+  \begin{aligned}
+    \vec{E}' &= \vec{E} + \Delta\vec{v}\times\vec{B} \\
+    \vec{B}' &= \vec{B},
+  \end{aligned}
+\end{equation}
+where $\Delta\vec{v}$ is the boost velocity. Since the transformation law for
+the velocity itself is $\vec{v}'=\vec{v}-\Delta\vec{v}$, it is clear that the
+Lorentz acceleration as given in \cref{eq:magnetic-accel} is Galilean
+invariant. From \cref{eq:magnetic-transform} it also follows that the plasma
+has to be strictly neutral in the magnetic limit. This is because if $\vec{B}$
+is invariant (meaning $\vec{B}'=\vec{B}$), then so is its curl and hence the
+left hand side of Ampère's law \labelcref{eq:ampere}. The right hand side is,
+however, not invariant in general. This can only be reconciled by demanding
+that
+\begin{equation}
+  \label{eq:strict-neutrality}
+  \sum e\int\!d^3v\,f = 0,
+\end{equation}
+i.e.\ by demanding that the plasma is \emph{strictly} neutral. In this case
+the right hand side of \cref{eq:ampere} is also invariant.
+
+Let us now express \cref{eq:magnetic-accel,eq:ampere,eq:faraday} in terms of
+the relative velocity $\tvec{v}$ defined in \cref{eq:relative-velocity}. This
+will cast the equations in a form that is manifestly invariant under
+\labelcref{eq:trans-x,eq:trans-y}. We start with Ampère's law
+\labelcref{eq:ampere}. From \cref{eq:strict-neutrality} it follows that
+\begin{equation}
+  \mu_0^{-1}\nabla\times\vec{B} = \sum e\int\!d^3v\,f\tvec{v}.
+\end{equation}
+That is all. Next we consider the Lorentz acceleration defined in
+\cref{eq:magnetic-accel}, which may be written as
+\begin{equation}
+  \vec{a} = \frac{e}{m}(\tvec{E} + \tvec{v}\times\vec{B}),
+\end{equation}
+where we have introduced the \emph{relative} electric field
+\begin{equation}
+  \tvec{E} = \vec{E} - Sy\ex\times\vec{B}.
+\end{equation}
+Expressing Faraday's law \labelcref{eq:faraday} in terms of $\tvec{E}$ yields
+\begin{equation}
+  \label{eq:faraday-relative}
+  \left(\pder{}{t} - Sy\pder{}{x}\right)\vec{B} + SB_y\ex
+  + \nabla\times\tvec{E} = 0.
+\end{equation}
+This form of Faraday's law makes explicit that the magnetic field is advected
+and stretched by the uniform shear flow. Note that the differential operator
+$\pader{}{t}-Sy\,\pader{}{x}$ appearing here is the same as in
+\cref{eq:vlasov-relative}.
+
+\section{Shearing coordinates}\label{sec:shearing-coordinates}
+
+Both the Vlasov equation and Faraday's law in the form of
+\cref{eq:vlasov-relative,eq:faraday-relative}, respectively, do not explicitly
+depend on $x$. They do explicitly depend on $y$ in exactly the same way. This
+$y$-dependence can, however, be eliminated through a transformation from
+``laboratory coordinates'' ($x$, $y$, $t$) to shearing coordinates ($x'$,
+$y'$, $t'$) defined by\footnote{We will often suppress the $z$-coordinate
+  because it does not affect this discussion in any way.}
+\begin{equation}
+  \label{eq:shearing-coordinates}
+  x' = x + Sty,\quad y' = y,\quad t' = t.
+\end{equation}
+From this it follows that
+\begin{equation}
+  \pder{}{x} = \pder{}{x'},\quad
+  \pder{}{y} = \pder{}{y'} + St\pder{}{x'},\quad
+  \pder{}{t} - Sy\pder{}{x} = \pder{}{t'}.
+\end{equation}
+The second equality shows that an explicit time-dependence arises whenever a
+partial derivative with respect to $y$ is taken. On the plus side, the third
+equality shows that the explicit $y$-dependence is indeed eliminated.
+
+In shearing coordinates, the system is thus homogeneous in the horizontal
+directions. This means that we can impose periodic boundary conditions in
+shearing coordinates. In turn this means that we can expand any field, say
+$\tvec{E}$ in a double Fourier series:
+\begin{equation}
+  \tvec{E}(x',y',t') = \sum_{k_x',k_y'}\tvec{E}(k_x',k_y',t')
+  e^{ik_x' x' + ik_y' y'}
+\end{equation}
+From \cref{eq:shearing-coordinates} it follows that
+\begin{equation}
+  k_x' x' + k_y' y' = k_x x + k_y y,
+\end{equation}
+where the laboratory frame wave numbers
+\begin{align}
+  k_x &= k_x' \\
+  k_y &= k_y + Stk_x.
+\end{align}
+In the ``laboratory coordinates'' ($x$, $y$, $t$) we may thus express
+$\tvec{E}$ as a sum of ``shearing waves'':
+\begin{equation}
+  \tvec{E}(x,y,t) = \sum_{k_x',k_y'}\tvec{E}(k_x',k_y',t)
+  e^{ik_x x + ik_y(t) y},
+\end{equation}
+where we have indicated the explicit time-dependence of $k_y$. Because of this
+time-dependence, the relative electric field is not periodic but
+\emph{shearing-periodic} in laboratory coordinates.
+
+\bibliography{shearing-periodicity}
+
+\end{document}
