@@ -82,6 +82,14 @@ class Particles(numpy.ndarray):
             raise RuntimeError(msg.format(ierr))
         self.np = npp
 
+    def periodic_x(self, grid):
+        """Periodic boundaries in x
+
+        This function will not work with MPI along x.
+        """
+        from numpy import mod
+        self["x"] = mod(self["x"], grid.nx)
+
     def push(self, fxy, dt, bz=0):
 
         from .cython.ppic2_wrapper import cppgbpush2l, cppmove2
@@ -91,6 +99,9 @@ class Particles(numpy.ndarray):
         qm = self.charge/self.mass
 
         ek = cppgbpush2l(self, fxy, bz, self.np, self.ihole, qm, dt, grid)
+
+        # Apply periodicity in x
+        self.periodic_x(grid)
 
         # Check for ihole overflow error
         if self.ihole[0] < 0:
