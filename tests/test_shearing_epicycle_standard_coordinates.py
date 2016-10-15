@@ -63,9 +63,9 @@ def test_shearing_epicycle(plot=False):
     y0 = numpy.array(y0)
 
     def  x_an(t): return          ampl*numpy.cos (og*t + phi)*numpy.ones(np) + x0
-    def  y_an(t): return -(Sz/og)*ampl*numpy.sin (og*t + phi)*numpy.ones(np) + y0 + S*t*x0
+    def  y_an(t): return -(Sz/og)*ampl*numpy.sin (og*t + phi)*numpy.ones(np) + y0 + S*t*(x0-nx/2)
     def vx_an(t): return -og*ampl*numpy.sin (og*t + phi)*numpy.ones(np)
-    def vy_an(t): return (-Sz*ampl*numpy.cos (og*t + phi) + S*x0)*numpy.ones(np)
+    def vy_an(t): return (-Sz*ampl*numpy.cos (og*t + phi) + S*(x0-nx/2))*numpy.ones(np)
 
 
     # Particle position at t = -dt/2
@@ -108,7 +108,7 @@ def test_shearing_epicycle(plot=False):
     # Electric field in x-direction
     E_star = Field(grid, comm, dtype=Float2)
     E_star.fill((0.0, 0.0))
-    E_star['x'][:-1, :-2] = -2*S*xg*mass/charge*Omega
+    E_star['x'][:-1, :-2] = -2*S*(xg-nx/2)*mass/charge*Omega
     E_star.copy_guards_ppic2()
 
     # Make initial figure
@@ -162,7 +162,7 @@ def test_shearing_epicycle(plot=False):
             # print(err, ions['y'][0], y_an(t), ions['x'][0], x_an(t))
             # Check if test has passed
             # print(err, ions['y'][0], y_an(t), ions['x'][0], x_an(t))
-            assert(err < 5.0e-3), 'err'
+            assert(err < 5.0e-2), 'err'
 
         # Make figures
         if plot:
