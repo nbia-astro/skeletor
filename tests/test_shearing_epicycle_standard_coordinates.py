@@ -32,9 +32,6 @@ def test_shearing_epicycle(plot=False):
     # Cycltron frequency in the z-direction
     ocbz = charge/mass*bz
 
-    # Modified magnetic field
-    bz_star = bz + 2.0*mass/charge*Omega
-
     # Spin
     Sz = ocbz + 2.0*Omega
 
@@ -80,7 +77,6 @@ def test_shearing_epicycle(plot=False):
     x += vx*dt/2
     y += vy*dt/2
 
-
     # Start parallel processing
     idproc, nvp = cppinit(comm)
 
@@ -96,7 +92,7 @@ def test_shearing_epicycle(plot=False):
     npmax = np
 
     # Create particle array
-    ions = Particles(npmax, charge, mass)
+    ions = Particles(npmax, charge, mass, Omega=Omega, S=S)
 
     # Assign particles to subdomains
     ions.initialize(x, y, vx, vy, grid)
@@ -138,7 +134,7 @@ def test_shearing_epicycle(plot=False):
     for it in range(nt):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        ions.push(E_star, dt, bz_star)
+        ions.push(E_star, dt)
 
         assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
