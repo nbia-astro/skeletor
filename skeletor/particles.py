@@ -6,7 +6,7 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, npmax, charge=1.0, mass=1.0):
+    def __new__(cls, npmax, charge=1.0, mass=1.0, S=0, Omega=0, bz=0):
 
         from .cython.dtypes import Int, Particle
 
@@ -21,6 +21,21 @@ class Particles(numpy.ndarray):
         # Particle charge and mass
         obj.charge = charge
         obj.mass = mass
+
+        # Constant magnetic field
+        obj.bz = bz
+
+        # Shear parameter
+        obj.S = S
+        # True if shear is turned on
+        obj.shear = (S != 0)
+
+        # Angular frequency
+        obj.Omega = Omega
+        obj.rotation = (Omega != 0)
+
+        if obj.rotation:
+            obj.bz += 2.0*mass/charge*Omega
 
         # Location of hole left in particle arrays
         obj.ihole = numpy.zeros(ntmax, Int)
@@ -82,7 +97,39 @@ class Particles(numpy.ndarray):
             raise RuntimeError(msg.format(ierr))
         self.np = npp
 
-    def push(self, fxy, dt, bz=0):
+    def periodic_x(self, grid):
+        """Periodic boundaries in x
+
+        This function will not work with MPI along x.
+        """
+        from numpy import mod
+        self["x"] = mod(self["x"], grid.nx)
+
+    def shear_periodic_y(self, grid, t):
+        """Shearing periodic boundaries along y.
+
+           This function modifies x and vx and subsequently applies periodic
+           boundaries on x.
+
+           The periodic boundaries on y are handled by ppic2 *after* we have
+           used the values of y to update x and vx.
+        """
+        from numpy import where
+
+        # Left
+        ind1 = where(self["y"] < 0)
+        # Right
+        ind2 = where(self["y"] >= grid.Ly)
+
+        # Left to right
+        self["x"][ind1] -= self.S*grid.Ly*t
+        self["vx"][ind1] -= self.S*grid.Ly
+
+        # Right to left
+        self["x"][ind2] += self.S*grid.Ly*t
+        self["vx"][ind2] += self.S*grid.Ly
+
+    def push(self, fxy, dt, t=0):
 
         from .cython.ppic2_wrapper import cppgbpush2l, cppmove2
 
@@ -90,7 +137,14 @@ class Particles(numpy.ndarray):
 
         qm = self.charge/self.mass
 
-        ek = cppgbpush2l(self, fxy, bz, self.np, self.ihole, qm, dt, grid)
+        ek = cppgbpush2l(self, fxy, self.bz, self.np, self.ihole, qm, dt, grid)
+
+        # Shearing periodicity
+        if self.shear:
+            self.shear_periodic_y(grid, t+dt)
+
+        # Apply periodicity in x
+        self.periodic_x(grid)
 
         # Check for ihole overflow error
         if self.ihole[0] < 0:

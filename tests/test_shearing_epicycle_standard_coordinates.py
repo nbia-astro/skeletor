@@ -32,9 +32,6 @@ def test_shearing_epicycle(plot=False):
     # Cycltron frequency in the z-direction
     ocbz = charge/mass*bz
 
-    # Modified magnetic field
-    bz_star = bz + 2.0*mass/charge*Omega
-
     # Spin
     Sz = ocbz + 2.0*Omega
 
@@ -63,9 +60,9 @@ def test_shearing_epicycle(plot=False):
     y0 = numpy.array(y0)
 
     def  x_an(t): return          ampl*numpy.cos (og*t + phi)*numpy.ones(np) + x0
-    def  y_an(t): return -(Sz/og)*ampl*numpy.sin (og*t + phi)*numpy.ones(np) + y0 + S*t*x0
+    def  y_an(t): return -(Sz/og)*ampl*numpy.sin (og*t + phi)*numpy.ones(np) + y0 + S*t*(x0-nx/2)
     def vx_an(t): return -og*ampl*numpy.sin (og*t + phi)*numpy.ones(np)
-    def vy_an(t): return (-Sz*ampl*numpy.cos (og*t + phi) + S*x0)*numpy.ones(np)
+    def vy_an(t): return (-Sz*ampl*numpy.cos (og*t + phi) + S*(x0-nx/2))*numpy.ones(np)
 
 
     # Particle position at t = -dt/2
@@ -79,7 +76,6 @@ def test_shearing_epicycle(plot=False):
     # Drift forward by dt/2
     x += vx*dt/2
     y += vy*dt/2
-
 
     # Start parallel processing
     idproc, nvp = cppinit(comm)
@@ -96,7 +92,7 @@ def test_shearing_epicycle(plot=False):
     npmax = np
 
     # Create particle array
-    ions = Particles(npmax, charge, mass)
+    ions = Particles(npmax, charge, mass, Omega=Omega, S=S)
 
     # Assign particles to subdomains
     ions.initialize(x, y, vx, vy, grid)
@@ -108,7 +104,7 @@ def test_shearing_epicycle(plot=False):
     # Electric field in x-direction
     E_star = Field(grid, comm, dtype=Float2)
     E_star.fill((0.0, 0.0))
-    E_star['x'][:-1, :-2] = -2*S*xg*mass/charge*Omega
+    E_star['x'][:-1, :-2] = -2*S*(xg-nx/2)*mass/charge*Omega
     E_star.copy_guards_ppic2()
 
     # Make initial figure
@@ -138,7 +134,7 @@ def test_shearing_epicycle(plot=False):
     for it in range(nt):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        ions.push(E_star, dt, bz_star)
+        ions.push(E_star, dt)
 
         assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
@@ -162,7 +158,7 @@ def test_shearing_epicycle(plot=False):
             # print(err, ions['y'][0], y_an(t), ions['x'][0], x_an(t))
             # Check if test has passed
             # print(err, ions['y'][0], y_an(t), ions['x'][0], x_an(t))
-            assert(err < 5.0e-3), 'err'
+            assert(err < 5.0e-2), 'err'
 
         # Make figures
         if plot:
