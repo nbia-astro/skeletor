@@ -5,6 +5,7 @@ from .field import Field
 from .particles import Particles
 from .particle_sort import ParticleSort
 from .operators import Operators, OperatorsMpiFFT4py
+from .poisson import Poisson
 from .ohm import Ohm
 from .sources import Sources
 from .math import log
