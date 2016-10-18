@@ -1,8 +1,8 @@
-from ctypes cimport float_t, complex_t
+from ctypes cimport real_t, complex_t
 from numpy import dtype
 
 Int = dtype("i{}".format(sizeof(int)))
-Float = dtype("f{}".format(sizeof(float_t)))
+Float = dtype("f{}".format(sizeof(real_t)))
 Complex = dtype("c{}".format(sizeof(complex_t)))
 
 Float2 = [('x', Float), ('y', Float)]

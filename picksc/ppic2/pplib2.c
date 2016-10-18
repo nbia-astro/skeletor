@@ -52,8 +52,8 @@ static MPI_Op msum, mmax;
 
 static FILE *unit2 = NULL;
 
-float vresult(float prec) {
-   float vresult;
+real_t vresult(real_t prec) {
+   real_t vresult;
    vresult = prec;
    return vresult;
 }
@@ -73,9 +73,9 @@ void cppinit2(int *idproc, int *nvp, MPI_Comm comm, int argc, char *argv[]) {
    nvp = number of real or virtual processors obtained
 local data */
    static int ibig = 2147483647;
-   static float small = 1.0e-12;
+   static real_t small = 1.0e-12;
    int ierror, flag, ndprec, idprec, iprec;
-   float prec;
+   real_t prec;
    prec = 1.0 + small;
    iprec = ibig + 1;
 /* ndprec = (0,1) = (no,yes) use (normal,autodouble) precision */
@@ -165,7 +165,7 @@ local data */
 }
 
 /*--------------------------------------------------------------------*/
-void cpwtimera(int icntrl, float *time, double *dtime) {
+void cpwtimera(int icntrl, real_t *time, double *dtime) {
 /* this subroutine performs local wall clock timing
    input: icntrl, dtime
    icntrl = (-1,0,1) = (initialize,ignore,read) clock
@@ -182,13 +182,13 @@ local data */
    else if (icntrl==1) {
       jclock = *dtime;
       *dtime = MPI_Wtime();
-      *time = (float ) (*dtime - jclock);
+      *time = (real_t ) (*dtime - jclock);
    }
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cppsum(float f[], float g[], int nxp) {
+void cppsum(real_t f[], real_t g[], int nxp) {
 /* this subroutine performs a parallel sum of a vector, that is:
    f[k][j] = sum over k of f[k][j]
    at the end, all processors contain the same summation.
@@ -264,7 +264,7 @@ local data */
 }
 
 /*--------------------------------------------------------------------*/
-void cppncguard2l(float f[], int nyp, int kstrt, int nvp, int nxv,
+void cppncguard2l(real_t f[], int nyp, int kstrt, int nvp, int nxv,
                   int nypmx) {
 /* this subroutine copies data to guard cells in non-uniform partitions
    f[k][j] = real data for grid j,k in particle partition.
@@ -305,7 +305,7 @@ local data */
 }
 
 /*--------------------------------------------------------------------*/
-void cppnaguard2l(float f[], float scr[], int nyp, int nx, int kstrt,
+void cppnaguard2l(real_t f[], real_t scr[], int nyp, int nx, int kstrt,
                   int nvp, int nxv, int nypmx) {
 /* this subroutine adds data from guard cells in non-uniform partitions
    f[k][j] = real data for grid j,k in particle partition.
@@ -355,7 +355,7 @@ local data */
 }
 
 /*--------------------------------------------------------------------*/
-void cppnacguard2l(float f[], float scr[], int nyp, int nx, int ndim,
+void cppnacguard2l(real_t f[], real_t scr[], int nyp, int nx, int ndim,
                    int kstrt, int nvp, int nxv, int nypmx) {
 /* this subroutine adds data from guard cells in non-uniform partitions
    f[k][j][ndim] = real data for grid j,k in particle partition.
@@ -412,8 +412,8 @@ local data */
 }
 
 /*--------------------------------------------------------------------*/
-void cpptpose(float complex f[], float complex g[], float complex s[],
-              float complex t[], int nx, int ny, int kxp, int kyp,
+void cpptpose(complex_t f[], complex_t g[], complex_t s[],
+              complex_t t[], int nx, int ny, int kxp, int kyp,
               int kstrt, int nvp, int nxv, int nyv, int kxpd, int kypd) {
 /* this subroutine performs a transpose of a matrix f, distributed in y,
    to a matrix g, distributed in x, that is,
@@ -501,8 +501,8 @@ local data */
 }
 
 /*--------------------------------------------------------------------*/
-void cppntpose(float complex f[], float complex g[], float complex s[],
-               float complex t[], int nx, int ny, int kxp, int kyp,
+void cppntpose(complex_t f[], complex_t g[], complex_t s[],
+               complex_t t[], int nx, int ny, int kxp, int kyp,
                int kstrt, int nvp, int ndim, int nxv, int nyv, int kxpd,
                int kypd) {
 /* this subroutine performs a transpose of a matrix f, distributed in y,
@@ -604,8 +604,8 @@ local data */
 }
 
 /*--------------------------------------------------------------------*/
-void cppmove2(float part[], float edges[], int *npp, float sbufr[],
-              float sbufl[], float rbufr[], float rbufl[], int ihole[],
+void cppmove2(real_t part[], real_t edges[], int *npp, real_t sbufr[],
+              real_t sbufl[], real_t rbufr[], real_t rbufl[], int ihole[],
               int ny, int kstrt, int nvp, int idimp, int npmax, int idps,
               int nbmax, int ntmax, int info[]) {
 /* this subroutine moves particles into appropriate spatial regions
@@ -641,11 +641,11 @@ local data */
    int iy = 1;
    int ierr, ks, ih, iter, nps, itg, kl, kr, j, j1, j2, i;
    int joff, jin, nbsize, nter, mter, itermax, mpp;
-   float any, yt;
+   real_t any, yt;
    MPI_Request msid[4];
    MPI_Status istatus;
    int jsl[2], jsr[2], jss[2], ibflg[4], iwork[4];
-   any = (float) ny;
+   any = (real_t) ny;
    ks = kstrt - 1;
    nbsize = idimp*nbmax;
    iter = 2;
@@ -997,13 +997,13 @@ void cppabort_() {
 }
 
 /*--------------------------------------------------------------------*/
-void cpwtimera_(int *icntrl, float *time, double *dtime) {
+void cpwtimera_(int *icntrl, real_t *time, double *dtime) {
    cpwtimera(*icntrl,time,dtime);
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cppsum_(float *f, float *g, int *nxp) {
+void cppsum_(real_t *f, real_t *g, int *nxp) {
    cppsum(f,g,*nxp);
    return;
 }
@@ -1027,29 +1027,29 @@ void cppdmax_(double *f, double *g, int *nxp) {
 }
 
 /*--------------------------------------------------------------------*/
-void cppncguard2l_(float *f, int *nyp, int *kstrt, int *nvp, int *nxv,
+void cppncguard2l_(real_t *f, int *nyp, int *kstrt, int *nvp, int *nxv,
                    int *nypmx) {
    cppncguard2l(f,*nyp,*kstrt,*nvp,*nxv,*nypmx);
    return;
 }
  
 /*--------------------------------------------------------------------*/
-void cppnaguard2l_(float *f, float *scr, int *nyp, int *nx, int *kstrt,
+void cppnaguard2l_(real_t *f, real_t *scr, int *nyp, int *nx, int *kstrt,
                    int *nvp, int *nxv, int *nypmx) {
    cppnaguard2l(f,scr,*nyp,*nx,*kstrt,*nvp,*nxv,*nypmx);
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cppnacguard2l_(float *f, float *scr, int *nyp, int *nx, int *ndim,
+void cppnacguard2l_(real_t *f, real_t *scr, int *nyp, int *nx, int *ndim,
                     int *kstrt, int *nvp, int *nxv, int *nypmx) {
    cppnacguard2l(f,scr,*nyp,*nx,*ndim,*kstrt,*nvp,*nxv,*nypmx);
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cpptpose_(float complex *f, float complex *g, float complex *s,
-               float complex *t, int *nx, int *ny, int *kxp, int *kyp,
+void cpptpose_(complex_t *f, complex_t *g, complex_t *s,
+               complex_t *t, int *nx, int *ny, int *kxp, int *kyp,
                int *kstrt, int *nvp, int *nxv, int *nyv, int *kxpd,
                int *kypd) {
    cpptpose(f,g,s,t,*nx,*ny,*kxp,*kyp,*kstrt,*nvp,*nxv,*nyv,*kxpd,*kypd);
@@ -1057,8 +1057,8 @@ void cpptpose_(float complex *f, float complex *g, float complex *s,
 }
 
 /*--------------------------------------------------------------------*/
-void cppntpose_(float complex *f, float complex *g, float complex *s,
-                float complex *t, int *nx, int *ny, int *kxp, int *kyp,
+void cppntpose_(complex_t *f, complex_t *g, complex_t *s,
+                complex_t *t, int *nx, int *ny, int *kxp, int *kyp,
                 int *kstrt, int *nvp, int *ndim, int *nxv, int *nyv,
                 int *kxpd, int *kypd) {
    cppntpose(f,g,s,t,*nx,*ny,*kxp,*kyp,*kstrt,*nvp,*ndim,*nxv,*nyv,*kxpd,
@@ -1067,8 +1067,8 @@ void cppntpose_(float complex *f, float complex *g, float complex *s,
 }
 
 /*--------------------------------------------------------------------*/
-void cppmove2_(float *part, float *edges, int *npp, float *sbufr,
-               float *sbufl, float *rbufr, float *rbufl, int *ihole,
+void cppmove2_(real_t *part, real_t *edges, int *npp, real_t *sbufr,
+               real_t *sbufl, real_t *rbufr, real_t *rbufl, int *ihole,
                int *ny, int *kstrt, int *nvp, int *idimp, int *npmax,
                int *idps, int *nbmax, int *ntmax, int *info) {
    cppmove2(part,edges,npp,sbufr,sbufl,rbufr,rbufl,ihole,*ny,*kstrt,*nvp,
