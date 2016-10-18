@@ -7,3 +7,4 @@ from .particle_sort import ParticleSort
 from .operators import Operators, OperatorsMpiFFT4py
 from .ohm import Ohm
 from .sources import Sources
+from .math import log
