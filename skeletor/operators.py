@@ -122,7 +122,7 @@ class Operators:
 
 class OperatorsMpiFFT4py:
 
-    """Solve Gauss' law ∇·E = ρ/ε0 via a discrete fourier transform."""
+    """Differential and translation operators using mpiFFT4py"""
 
     def __init__(self, grid, ax, ay, np):
 
@@ -130,6 +130,7 @@ class OperatorsMpiFFT4py:
         from numpy import zeros, sum, where, zeros_like, array, exp
         from mpiFFT4py.line import R2C
         from mpi4py import MPI
+        from skeletor import Float, Complex
 
         self.indx = int(log2(grid.nx))
         self.indy = int(log2(grid.ny))
@@ -141,22 +142,22 @@ class OperatorsMpiFFT4py:
         self.ax = ax
         self.ay = ay
 
-        # Normalization constant
-        self.affp = grid.nx*grid.ny/np
-
         # Length vector
-        L = array([grid.Ly, grid.Lx], dtype=float)
+        L = array([grid.Ly, grid.Lx], dtype=Float)
         # Grid size vector
         N = array([grid.ny, grid.nx], dtype=int)
 
         # Create FFT object
-        self.FFT = R2C(N, L, MPI.COMM_WORLD, "double")
+        if str(Float) == 'float64':
+            precision = 'double'
+        else:
+            precision = 'single'
+        self.FFT = R2C(N, L, MPI.COMM_WORLD, precision)
 
         # Pre-allocate array for Fourier transform and force
-        self.rho_hat = zeros(
-                self.FFT.complex_shape(), dtype=self.FFT.complex)
-        self.Ex_hat = zeros_like(self.rho_hat)
-        self.Ey_hat = zeros_like(self.rho_hat)
+        self.f_hat = zeros(self.FFT.complex_shape(), dtype=Complex)
+        self.fx_hat = zeros_like(self.f_hat)
+        self.fy_hat = zeros_like(self.f_hat)
 
         # Scaled local wavevector
         k = self.FFT.get_scaled_local_wavenumbermesh()
@@ -167,20 +168,28 @@ class OperatorsMpiFFT4py:
         self.ky = k[0]
 
         # Local wavenumber squared
-        k2 = sum(k*k, 0, dtype=float)
+        k2 = sum(k*k, 0, dtype=Float)
         # Inverse of the wavenumber squared
-        self.k21 = 1 / where(k2 == 0, 1, k2).astype(float)
+        self.k21 = 1 / where(k2 == 0, 1, k2).astype(Float)
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
-    def poisson(self, rho, E, destroy_input=True):
+    def gradient(self, f, grad):
+        """Calculate the gradient of f"""
+        self.f_hat = self.FFT.fft2(f.trim(), self.f_hat)
+        self.fx_hat[:] = 1j*self.kx*self.f_hat[:]
+        self.fy_hat[:] = 1j*self.ky*self.f_hat[:]
+        grad["x"][:-1, :-2] = self.FFT.ifft2(self.fx_hat, grad["x"][:-1, :-2])
+        grad["y"][:-1, :-2] = self.FFT.ifft2(self.fy_hat, grad["y"][:-1, :-2])
 
-        # Transform charge density to Fourier space
-        self.rho_hat[:] = self.affp*self.FFT.fft2(rho.trim(), self.rho_hat)
+    def grad_inv_del(self, f, grad_inv_del):
+        """ """
+        self.f_hat[:] = self.FFT.fft2(f.trim(), self.f_hat)
 
-        # Solve Gauss' law in Fourier space and transform back to real space
-        self.Ex_hat[:] = -1j*self.kx*self.k21_eff*self.rho_hat
-        self.Ey_hat[:] = -1j*self.ky*self.k21_eff*self.rho_hat
+        self.fx_hat[:] = -1j*self.kx*self.k21_eff*self.f_hat
+        self.fy_hat[:] = -1j*self.ky*self.k21_eff*self.f_hat
 
-        E['x'][:-1, :-2] = self.FFT.ifft2(self.Ex_hat, E['x'][:-1, :-2])
-        E['y'][:-1, :-2] = self.FFT.ifft2(self.Ey_hat, E['y'][:-1, :-2])
+        grad_inv_del['x'][:-1, :-2] = self.FFT.ifft2(
+            self.fx_hat, grad_inv_del['x'][:-1, :-2])
+        grad_inv_del['y'][:-1, :-2] = self.FFT.ifft2(
+            self.fy_hat, grad_inv_del['y'][:-1, :-2])
