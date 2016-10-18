@@ -1,5 +1,6 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
 from skeletor import Ohm
+from skeletor import OperatorsMpiFFT4py as Operators
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -93,6 +94,11 @@ def test_ionacoustic(plot=False):
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     grid = Grid(nx, ny, comm)
+
+    ax = 0
+    ay = 0
+    operators = Operators(grid, ax, ay, np)
+    grid.operators = operators
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(grid.x, grid.y)
