@@ -12,4 +12,6 @@ class Poisson:
 
     def __call__(self, rho, E, destroy_input=True):
 
-        self.operators.grad_inv_del(self.affp*rho, E)
+        self.operators.grad_inv_del(rho, E)
+        E['x'] *= self.affp
+        E['y'] *= self.affp
