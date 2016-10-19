@@ -149,6 +149,32 @@ class ShearField(Field):
             trans = -self.grid.Ly*St
             self._translate_fft(trans, -1)
 
+    def translate(self, St):
+        """Translation using numpy's fft."""
+        from numpy.fft import rfft, irfft, rfftfreq
+        from numpy import pi, exp, outer
+
+        # dx should be a property of the grid
+        dx = self.grid.Lx/self.grid.nx
+
+        # Wave numbers for real-to-complex transforms
+        kx = 2*pi*rfftfreq(self.grid.nx)/dx
+
+        # Fourier transform along x
+        fx_hat = rfft(self[:-1, :-2], axis=1)
+
+        # Required translation
+        trans = -self.grid.y*St
+        # Phase corresponds to translation
+        phase = outer(trans, -1j*kx)
+
+        fx_hat *= exp(phase)
+
+        # Inverse Fourier transform along x
+        self[:-1, :-2] = irfft(fx_hat, axis=1)
+
+        # Set boundary condition?
+
     def copy_guards2(self):
         raise 'copy_guards2 not implemented for shearing fields'
 
