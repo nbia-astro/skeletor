@@ -120,7 +120,7 @@ class ShearField(Field):
 
         return obj
 
-    def _translate_fft(self, trans, iy):
+    def _translate_boundary(self, trans, iy):
 
         "Translation using FFTs"
         from numpy.fft import rfft, irfft
@@ -143,7 +143,7 @@ class ShearField(Field):
         # Translate the y-ghostzones
         if self.comm.rank == self.comm.size - 1:
             trans = self.grid.Ly*St
-            self._translate_fft(trans, self.grid.nyp)
+            self._translate_boundary(trans, self.grid.nyp)
 
         # Add data from guard cells to corresponding active cells in y
         self[0, :] += self.send_up(self[-1, :])
@@ -162,7 +162,7 @@ class ShearField(Field):
         # Translate the y-ghostzones
         if self.comm.rank == self.comm.size - 1:
             trans = -self.grid.Ly*St
-            self._translate_fft(trans, -1)
+            self._translate_boundary(trans, -1)
 
     def translate(self, St):
         """Translation using numpy's fft."""
