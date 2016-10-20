@@ -101,21 +101,36 @@ class Field(ndarray):
 
 class ShearField(Field):
 
+    def __new__(cls, grid, comm, **kwds):
+
+        from numpy.fft import rfftfreq
+        from numpy import outer, pi
+
+        obj = super().__new__(cls, grid, comm, **kwds)
+
+        # Grid spacing
+        # TODO: this should be a property of the Grid class
+        dx = obj.grid.Lx/obj.grid.nx
+
+        # Wave numbers for real-to-complex transforms
+        obj.kx = 2*pi*rfftfreq(obj.grid.nx)/dx
+
+        # Outer product of y and kx
+        obj.y_kx = outer(obj.grid.y, obj.kx)
+
+        return obj
+
     def _translate_fft(self, trans, iy):
 
         "Translation using FFTs"
-        from numpy.fft import rfft, irfft, rfftfreq
-        from numpy import pi, exp
+        from numpy.fft import rfft, irfft
+        from numpy import exp
 
-        grid = self.grid
-        nx = grid.nx
-        dx = grid.Lx/grid.nx
-
-        # Wave numbers for real-to-complex transforms
-        kx = 2*pi*rfftfreq(grid.nx)/dx
+        # Number of active grid points in x
+        nx = self.grid.nx
 
         # Translate in real space by phase shifting in spectral space
-        self[iy, :nx] = irfft(exp(-1j*kx*trans)*rfft(self[iy, :nx]))
+        self[iy, :nx] = irfft(exp(-1j*self.kx*trans)*rfft(self[iy, :nx]))
 
         # Set boundary condition
         self[iy, -2] = self[iy, 0]
@@ -151,24 +166,14 @@ class ShearField(Field):
 
     def translate(self, St):
         """Translation using numpy's fft."""
-        from numpy.fft import rfft, irfft, rfftfreq
-        from numpy import pi, exp, outer
-
-        # dx should be a property of the grid
-        dx = self.grid.Lx/self.grid.nx
-
-        # Wave numbers for real-to-complex transforms
-        kx = 2*pi*rfftfreq(self.grid.nx)/dx
+        from numpy.fft import rfft, irfft
+        from numpy import exp
 
         # Fourier transform along x
         fx_hat = rfft(self[:-1, :-2], axis=1)
 
-        # Required translation
-        trans = -self.grid.y*St
-        # Phase corresponds to translation
-        phase = outer(trans, -1j*kx)
-
-        fx_hat *= exp(phase)
+        # Translate along x by an amount -S*t*y
+        fx_hat *= exp(1j*St*self.y_kx)
 
         # Inverse Fourier transform along x
         self[:-1, :-2] = irfft(fx_hat, axis=1)
