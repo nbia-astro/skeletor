@@ -1,6 +1,6 @@
 # distutils: sources = picksc/ppic2/pplib2.c picksc/ppic2/ppush2.c
 
-from ctypes cimport complex_t, complex2_t, float_t, float2_t, particle_t
+from ctypes cimport complex_t, complex2_t, real_t, real2_t, particle_t
 from dtypes import Float, Int
 cimport pplib2, ppush2
 from numpy cimport ndarray
@@ -19,7 +19,7 @@ cdef int idps = 2
 # Number of particle phase space coordinates
 cdef int idimp = 4
 # Particle boundary condition: 1 = periodic
-cdef int ipbc = 1
+cdef int ipbc = 0
 # Not sure what this is for
 cdef int ntpose = 1
 
@@ -29,7 +29,7 @@ cdef class grid_t(object):
     This is inherited by the Grid class (see grid.py)."""
     cdef public int nx, ny
     cdef public int kstrt, nvp
-    cdef public float_t edges[2]
+    cdef public real_t edges[2]
     cdef public int nyp, noff, nypmx, nypmn
 
 
@@ -57,7 +57,7 @@ def cppexit():
 def cpdicomp(int ny, int kstrt, int nvp):
     # edges[0] = lower boundary of particle partition
     # edges[1] = upper boundary of particle partition
-    cdef float_t edges[2]
+    cdef real_t edges[2]
     # nyp = number of primary (complete) gridpoints in particle partition
     # noff = lowermost global gridpoint in particle partition
     # nypmx = maximum size of particle partition, including guard cells
@@ -69,10 +69,10 @@ def cpdicomp(int ny, int kstrt, int nvp):
 
 
 def cppgpush2l(
-        particle_t[:] particles, float2_t[:,:] fxy,
-        int npp, int[:] ihole, float_t qm, float_t dt, grid_t grid):
+        particle_t[:] particles, real2_t[:,:] fxy,
+        int npp, int[:] ihole, real_t qm, real_t dt, grid_t grid):
 
-    cdef float_t ek = 0.0
+    cdef real_t ek = 0.0
     cdef int npmax = particles.shape[0]
     cdef int nxe = fxy.shape[1]
     cdef int ntmax = ihole.shape[0] - 1
@@ -85,10 +85,10 @@ def cppgpush2l(
     return ek
 
 def cppgbpush2l(
-        particle_t[:] particles, float2_t[:,:] fxy, float_t bz,
-        int npp, int[:] ihole, float_t qm, float_t dt, grid_t grid):
+        particle_t[:] particles, real2_t[:,:] fxy, real_t bz,
+        int npp, int[:] ihole, real_t qm, real_t dt, grid_t grid):
 
-    cdef float_t ek = 0.0
+    cdef real_t ek = 0.0
     cdef int npmax = particles.shape[0]
     cdef int nxe = fxy.shape[1]
     cdef int ntmax = ihole.shape[0] - 1
@@ -120,8 +120,8 @@ def cppmove2(
     return npp
 
 def cppgpost2l(
-        particle_t[:] particles, float_t[:,:] rho, int np, int noff,
-        float_t charge, int npmax):
+        particle_t[:] particles, real_t[:,:] rho, int np, int noff,
+        real_t charge, int npmax):
 
     cdef int nxe = rho.shape[1]
     cdef int nypmx = rho.shape[0]
@@ -129,7 +129,7 @@ def cppgpost2l(
     ppush2.cppgpost2l(&particles[0].x, &rho[0,0], np, noff, charge, idimp,
             npmax, nxe, nypmx)
 
-def cppaguard2xl(float_t[:,:] rho, grid_t grid):
+def cppaguard2xl(real_t[:,:] rho, grid_t grid):
 
     cdef int nxe = rho.shape[1]
 
@@ -137,7 +137,7 @@ def cppaguard2xl(float_t[:,:] rho, grid_t grid):
 
 
 def cppnaguard2l(
-        float_t[:,:] rho, float_t[:,:] scr, grid_t grid):
+        real_t[:,:] rho, real_t[:,:] scr, grid_t grid):
 
     cdef int nxe = rho.shape[1]
 
@@ -146,14 +146,14 @@ def cppnaguard2l(
             grid.kstrt, grid.nvp, nxe, grid.nypmx)
 
 
-def cppcguard2xl(float2_t[:,:] fxy, grid_t grid):
+def cppcguard2xl(real2_t[:,:] fxy, grid_t grid):
 
     cdef int nxe = fxy.shape[1]
 
     ppush2.cppcguard2xl(&fxy[0,0].x, grid.nyp, grid.nx, ndim, nxe, grid.nypmx)
 
 
-def cppncguard2l(float2_t[:,:] fxy, grid_t grid):
+def cppncguard2l(real2_t[:,:] fxy, grid_t grid):
 
     cdef int nxe = fxy.shape[1]
 
@@ -168,7 +168,7 @@ def cwpfft2rinit(int[:] mixup, complex_t[:] sct, int indx, int indy):
     ppush2.cwpfft2rinit(&mixup[0], &sct[0], indx, indy, nxhy, nxyh)
 
 def cwppfft2r(
-        float_t[:,:] qe, complex_t[:,:] qt,
+        real_t[:,:] qe, complex_t[:,:] qt,
         complex2_t[:,:] bs, complex2_t[:,:] br,
         int isign, int[:] mixup, complex_t[:] sct,
         int indx, int indy, grid_t grid):
@@ -181,7 +181,7 @@ def cwppfft2r(
     cdef int nxhy = mixup.shape[0]
     cdef int nxyh = sct.shape[0]
 
-    cdef float_t ttp = 0.0
+    cdef real_t ttp = 0.0
 
     ppush2.cwppfft2r(
         <complex_t *>&qe[0,0], &qt[0,0], &bs[0,0].x, &br[0,0].x,
@@ -192,14 +192,14 @@ def cwppfft2r(
 
 def cppois22(
         complex_t[:,:] qt, complex2_t[:,:] fxyt,
-        int isign, complex_t[:,:] ffc, float_t ax, float_t ay, float_t affp,
+        int isign, complex_t[:,:] ffc, real_t ax, real_t ay, real_t affp,
         grid_t grid):
 
     cdef int nye = qt.shape[1]
     cdef int kxp = qt.shape[0]
     cdef int nyh = ffc.shape[1]
 
-    cdef float_t we = 0.0
+    cdef real_t we = 0.0
 
     ppush2.cppois22(
             &qt[0,0], &fxyt[0,0].x, isign, &ffc[0,0], ax, ay, affp,
@@ -208,7 +208,7 @@ def cppois22(
     return we
 
 def cwppfft2r2(
-        float2_t[:,:] fxye, complex2_t[:,:] fxyt,
+        real2_t[:,:] fxye, complex2_t[:,:] fxyt,
         complex2_t[:,:] bs, complex2_t[:,:] br,
         int isign, int[:] mixup, complex_t[:] sct,
         int indx, int indy, grid_t grid):
@@ -221,7 +221,7 @@ def cwppfft2r2(
     cdef int nxhy = mixup.shape[0]
     cdef int nxyh = sct.shape[0]
 
-    cdef float_t ttp = 0.0
+    cdef real_t ttp = 0.0
 
     ppush2.cwppfft2r2(
             <complex_t *>&fxye[0,0].x, &fxyt[0,0].x, &bs[0,0].x, &br[0,0].x,
@@ -240,8 +240,8 @@ def cppdsortp2yl(
             &particles[0].x, &particles2[0].x, &npic[0],
             npp, grid.noff, grid.nyp, idimp, npmax, grid.nypmx)
 
-def cpdistr2(particle_t[:] particles, float_t vtx, float_t vty,
-        float_t vdx, float_t vdy, int npx, int npy, grid_t grid):
+def cpdistr2(particle_t[:] particles, real_t vtx, real_t vty,
+        real_t vdx, real_t vdy, int npx, int npy, grid_t grid):
 
     cdef int nps = 1
     cdef int npp = 0

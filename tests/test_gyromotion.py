@@ -80,7 +80,7 @@ def test_gyromotion(plot=False):
     npmax = np
 
     # Create particle array
-    ions = Particles(npmax, charge, mass)
+    ions = Particles(npmax, charge, mass, bz=bz)
 
     # Assign particles to subdomains
     ions.initialize(x, y, vx, vy, grid)
@@ -114,7 +114,7 @@ def test_gyromotion(plot=False):
     for it in range(nt):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        ions.push(E, dt, bz)
+        ions.push(E, dt)
 
         assert comm.allreduce(ions.np, op=MPI.SUM) == np
 

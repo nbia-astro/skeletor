@@ -1,14 +1,13 @@
-from ctypes cimport particle_t
-from cython cimport floating
+from ctypes cimport real_t, particle_t
 
 def deposit (
-        particle_t[:] particles, floating[:,:] density,
-        floating charge, int noff):
+        particle_t[:] particles, real_t[:,:] density,
+        real_t charge, int noff):
 
     cdef int ix, iy
-    cdef floating x, y
-    cdef floating dx, dy
-    cdef floating tx, ty
+    cdef real_t x, y
+    cdef real_t dx, dy
+    cdef real_t tx, ty
 
     for ip in range(particles.shape[0]):
 
@@ -18,8 +17,8 @@ def deposit (
         ix = <int> x
         iy = <int> y
 
-        dx = x - <floating> ix
-        dy = y - <floating> iy
+        dx = x - <real_t> ix
+        dy = y - <real_t> iy
 
         tx = 1.0 - dx
         ty = 1.0 - dy

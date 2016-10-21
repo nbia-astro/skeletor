@@ -94,6 +94,7 @@ class PoissonMpiFFT4py:
     def __init__(self, grid, ax, ay, np):
 
         from math import log2
+        from skeletor import Float
         from numpy import zeros, sum, where, zeros_like, array, exp
         from mpiFFT4py.line import R2C
         from mpi4py.MPI import COMM_WORLD as comm
@@ -112,12 +113,16 @@ class PoissonMpiFFT4py:
         self.affp = grid.nx*grid.ny/np
 
         # Length vector
-        L = array([grid.Ly, grid.Lx], dtype=float)
+        L = array([grid.Ly, grid.Lx], dtype=Float)
         # Grid size vector
         N = array([grid.ny, grid.nx], dtype=int)
 
         # Create FFT object
-        self.FFT = R2C(N, L, comm, "single")
+        if str(Float) == 'float64':
+            precision = 'double'
+        else:
+            precision = 'single'
+        self.FFT = R2C(N, L, comm, precision)
 
         # Pre-allocate array for Fourier transform and force
         self.rho_hat = zeros(
@@ -134,9 +139,9 @@ class PoissonMpiFFT4py:
         self.ky = k[0]
 
         # Local wavenumber squared
-        k2 = sum(k*k, 0, dtype=float)
+        k2 = sum(k*k, 0, dtype=Float)
         # Inverse of the wavenumber squared
-        self.k21 = 1 / where(k2 == 0, 1, k2).astype(float)
+        self.k21 = 1 / where(k2 == 0, 1, k2).astype(Float)
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 

@@ -1,16 +1,16 @@
-from ctypes cimport complex_t, complex2_t, float_t, float2_t
+from ctypes cimport complex_t, complex2_t, real_t, real2_t
 from libc.math cimport M_PI
 cimport cython
 
 cdef extern from "complex.h":
-    float_t crealf(complex_t) nogil
-    float_t cimagf(complex_t) nogil
-    complex_t conjf(complex_t) nogil
-    complex_t _Complex_I
+    float crealf(float complex) nogil
+    float cimagf(float complex) nogil
+    float complex conjf(float complex) nogil
+    float complex _Complex_I
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
-cpdef float_t grad_inv_del(
+cpdef real_t grad_inv_del(
         complex_t[:,:] qt, complex2_t[:,:] fxyt, complex_t[:,:] ffc,
         int nx, int ny, int kstrt) nogil:
     """
@@ -27,7 +27,7 @@ cpdef float_t grad_inv_del(
     cdef double wp = 0.0
 
     cdef int nxh, nyh, ks, joff, kxps, j, k, k1
-    cdef float_t dnx, dny, dkx, dky, at1, at2, at3
+    cdef real_t dnx, dny, dkx, dky, at1, at2, at3
     cdef complex_t zero, zt1, zt2
 
     nxh = nx/2
@@ -37,8 +37,8 @@ cpdef float_t grad_inv_del(
     kxps = nxh - joff
     kxps = 0 if 0 > kxps else kxps
     kxps = kxp if kxp < kxps else kxps
-    dnx = 2.0*M_PI/<float_t> nx
-    dny = 2.0*M_PI/<float_t> ny
+    dnx = 2.0*M_PI/<real_t> nx
+    dny = 2.0*M_PI/<real_t> ny
     zero = 0.0
 
     if kstrt > nxh:
@@ -46,10 +46,10 @@ cpdef float_t grad_inv_del(
 
     # mode numbers 0 < kx < nx/2 and 0 < ky < ny/2
     for j in range(kxps):
-        dkx = dnx*<float_t> (j + joff)
+        dkx = dnx*<real_t> (j + joff)
         if j + joff > 0:
             for k in range(1, nyh):
-                dky = dny*<float_t> k
+                dky = dny*<real_t> k
                 k1 = ny - k
                 at1 = crealf(ffc[j, k])*cimagf(ffc[j, k])
                 at2 = dkx*at1
@@ -74,7 +74,7 @@ cpdef float_t grad_inv_del(
     # mode numbers kx = 0, nx/2
     if ks == 0:
         for k in range(1, nyh):
-            dky = dny*<float_t> k
+            dky = dny*<real_t> k
             k1 = ny - k
             at1 = crealf(ffc[0, k])*cimagf(ffc[0, k])
             at3 = dky*at1
@@ -89,4 +89,4 @@ cpdef float_t grad_inv_del(
         fxyt[0, nyh].x = zero
         fxyt[0, nyh].y = zero
 
-    return wp*(<float_t> nx)*(<float_t> ny)
+    return wp*(<real_t> nx)*(<real_t> ny)

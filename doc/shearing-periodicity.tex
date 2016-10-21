@@ -23,7 +23,8 @@
 \affiliation{Niels Bohr International Academy}
 \maketitle
 
-\section{Particle dynamics in the shearing sheet}
+\section{Particle dynamics in the shearing sheet}%
+\label{sec:particles}
 
 In a frame rotating with a constant angular velocity, Newton's second law may
 be written as
@@ -116,15 +117,20 @@ the Vlasov equation \labelcref{eq:vlasov} expressed in terms of the phase
 space coordinates $(\vec{r},\tvec{v})$ is
 \begin{equation}
   \label{eq:vlasov-relative}
-  \left(\pder{}{t} - Sy\pder{}{x}\right)f + \tilde{\vec{v}}\cdot\nabla f
+  \mathcal{D}f + \tilde{\vec{v}}\cdot\nabla f
   + (\vec{a} - 2\vec{\Omega}\times\tvec{v} + S\tilde{v}_y\ex - \nu^2 z\ez)
-  \cdot\pder{f}{\tvec{v}} = 0.
+  \cdot\pder{f}{\tvec{v}} = 0,
 \end{equation}
-While this equation appears more complicated than \cref{eq:vlasov}, it has the
-distinct advantage that it depends explicitly on $y$ only through the
-differential operator $\pader{}{t}-Sy\,\pader{}{x}$. This explicit
-$y$-dependence can be eliminated (in favor of an explicit $t$-dependence)
-through a transformation to shearing coordinates, see
+where we have introduced the differential operator
+\begin{equation}
+  \label{eq:shearing-ddt}
+  \mathcal{D} = \pder{}{t} - Sy\pder{}{x}.
+\end{equation}
+While equation \cref{eq:shearing-ddt} appears more complicated than
+\cref{eq:vlasov}, it has the distinct advantage that it depends explicitly on
+$y$ only through the differential operator $\pader{}{t}-Sy\,\pader{}{x}$. This
+explicit $y$-dependence can be eliminated (in favor of an explicit
+$t$-dependence) through a transformation to shearing coordinates, see
 \cref{sec:shearing-coordinates}.
 
 So far we have only considered the motion of particles in a prescribed
@@ -219,13 +225,12 @@ where we have introduced the \emph{relative} electric field
 Expressing Faraday's law \labelcref{eq:faraday} in terms of $\tvec{E}$ yields
 \begin{equation}
   \label{eq:faraday-relative}
-  \left(\pder{}{t} - Sy\pder{}{x}\right)\vec{B} + SB_y\ex
-  + \nabla\times\tvec{E} = 0.
+  \mathcal{D}\vec{B} + SB_y\ex + \nabla\times\tvec{E} = 0,
 \end{equation}
-This form of Faraday's law makes explicit that the magnetic field is advected
-and stretched by the uniform shear flow. Note that the differential operator
-$\pader{}{t}-Sy\,\pader{}{x}$ appearing here is the same as in
-\cref{eq:vlasov-relative}.
+where the differential operator $\mathcal{D}$ is defined in
+\cref{eq:shearing-ddt}. This form of Faraday's law makes explicit that the
+magnetic field is advected (through $\mathcal{D}$) and stretched by the
+uniform shear flow.
 
 \section{Shearing coordinates}\label{sec:shearing-coordinates}
 
@@ -243,7 +248,7 @@ $y'$, $t'$) defined by\footnote{We will often suppress the $z$-coordinate
 From this it follows that
 \begin{equation}
   \pder{}{x} = \pder{}{x'},\quad
-  \pder{}{y} = \pder{}{y'} + St\pder{}{x'},\quad
+  \pder{}{y} = \pder{}{y'} + St'\pder{}{x'},\quad
   \pder{}{t} - Sy\pder{}{x} = \pder{}{t'}.
 \end{equation}
 The second equality shows that an explicit time-dependence arises whenever a
@@ -265,10 +270,10 @@ From \cref{eq:shearing-coordinates} it follows that
 where the laboratory frame wave numbers
 \begin{align}
   k_x &= k_x' \\
-  k_y &= k_y + Stk_x.
+  k_y &= k_y' + St' k_x'.
 \end{align}
 In the ``laboratory coordinates'' ($x$, $y$, $t$) we may thus express
-$\tvec{E}$ as a sum of ``shearing waves'':
+$\tvec{E}$ as a sum of ``sheared disturbances'':
 \begin{equation}
   \tvec{E}(x,y,t) = \sum_{k_x',k_y'}\tvec{E}(k_x',k_y',t)
   e^{ik_x x + ik_y(t) y},
@@ -276,6 +281,96 @@ $\tvec{E}$ as a sum of ``shearing waves'':
 where we have indicated the explicit time-dependence of $k_y$. Because of this
 time-dependence, the relative electric field is not periodic but
 \emph{shearing-periodic} in laboratory coordinates.
+
+\section{Fluid dynamics in the shearing sheet}
+
+Taking the zeroth and first moment of the Vlasov equation yields the
+continuity equation
+\begin{equation}
+  \pder{\rho}{t} + \nabla\cdot(\rho\vec{u}) = 0
+\end{equation}
+and the momentum equation
+\begin{equation}
+  \pder{\vec{u}}{t} + \vec{u}\cdot\nabla\vec{u}
+  + 2\vec{\Omega}\times\vec{u} + \nabla\psi
+  + \frac{\nabla\cdot\mathbf{P}}{\rho} = \vec{a},
+\end{equation}
+respectively. The effective potential $\psi$ is defined in
+\cref{eq:effective-potential}. $\mathbf{P}$ is the pressure tensor and
+$\vec{a}$ is the acceleration due to electromagnetic forces. A steady state
+solution is given by a uniform density and a uniform shear flow as defined in
+\cref{eq:shear-flow}. In analogy with the analysis of \cref{sec:particles} it
+is useful to define the \emph{relative} bulk velocity $\tvec{u}$ through
+\begin{equation}
+  \vec{u} = -Sy\ex + \tvec{u},
+\end{equation}
+cf.~\cref{eq:relative-velocity}. Expressed in terms of $\tvec{u}$ the
+continuity equation and momentum equation are given by
+\begin{equation}
+  \label{eq:continuity}
+  \mathcal{D}\rho + \nabla\cdot(\rho\tvec{u}) = 0
+\end{equation}
+and
+\begin{equation}
+  \label{eq:momentum}
+  \mathcal{D}\tvec{u} + \tvec{u}\cdot\nabla\tvec{u}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex
+  + \rho^{-1}\nabla\cdot\mathbf{P} = \vec{a}.
+\end{equation}
+
+\subsection{Non-linear evolution of sheared disturbances}
+
+Let us consider a cold, neutral fluid. The momentum equation in this case
+reduces to
+\begin{equation}
+  \label{eq:momentum-cold-neutral}
+  \mathcal{D}\tvec{u} + \tvec{u}\cdot\nabla\tvec{u}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0.
+\end{equation}
+The continuity equation \labelcref{eq:continuity} is unmodified but purely
+diagnostic in the sense that the dynamics are completely determined by
+\cref{eq:momentum-cold-neutral}.
+
+In order to study the evolution of sheared disturbances, we now transform the
+equations of motion to the sheared coordinate frame defined in
+\cref{sec:shearing-coordinates}. Doing so yields
+\begin{equation}
+  \label{eq:continuity-shearing}
+  \pader{\rho}{t'} + \nabla\cdot(\rho\tvec{u}) = 0
+\end{equation}
+and
+\begin{equation}
+  \label{eq:momentum-cold-neutral-shearing}
+  \pader{\tvec{u}}{t'} + \tvec{u}\cdot\nabla\tvec{u}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0,
+\end{equation}
+where it is understood that $\nabla$ is now to be evaluated at fixed $x'$.
+This means
+\begin{equation}
+  \label{eq:nabla-shearing}
+  % \nabla = \nabla' + St\pder{}{x'}\ey
+  \nabla = \pder{}{x'}\ex + \left(\pder{}{y'} + St'\pder{}{x'}\right)\ey.
+\end{equation}
+As we remarked in the section \cref{sec:shearing-coordinates}, the equations
+of motion are spatially homogeneous in shearing coordinates: the coefficients
+in \cref{eq:continuity-shearing,eq:momentum-cold-neutral-shearing} depend on
+$t'$ through \cref{eq:nabla-shearing}, but not on either $x'$ or $y'$. This
+symmetry implies that if the system is in a state that is independent of, say,
+$y'$ at any given time, then it will remain independent of $y'$ for all time.
+Because of this, studying the nonlinear evolution of sheared disturbances
+becomes a one-dimensional problem.
+
+Setting $\pader{}{y'}=0$, the continuity equation
+\labelcref{eq:continuity-shearing} and the momentum equation
+\labelcref{eq:momentum-cold-neutral-shearing} reduce to
+\begin{equation}
+  \pder{\rho}{t'} + \pder{}{x'}[\rho(\tilde{u}_x + St'\tilde{u}_y)] = 0
+\end{equation}
+and
+\begin{equation}
+  \pder{\tvec{u}}{t'} + (\tilde{u}_x + St\tilde{u}_y)\pder{\tvec{u}}{x'}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0.
+\end{equation}
 
 \bibliography{shearing-periodicity}
 

@@ -6,6 +6,7 @@ class Ohm:
 
         from numpy import zeros, zeros_like, array
         from math import log2
+        from skeletor import Float
         from mpiFFT4py.line import R2C
         from mpi4py.MPI import COMM_WORLD as comm
 
@@ -24,10 +25,14 @@ class Ohm:
 
         # Grid dimensions
         N = array([grid.ny, grid.nx], dtype=int)
-        L = array([grid.Ly, grid.Lx], dtype=float)
+        L = array([grid.Ly, grid.Lx], dtype=Float)
 
         # Create FFT object
-        self.FFT = R2C(N, L, comm, "single")
+        if str(Float) == 'float64':
+            precision = 'double'
+        else:
+            precision = 'single'
+        self.FFT = R2C(N, L, comm, precision)
 
         # Pre-allocate array for Fourier transform and force
         self.lnrho_hat = zeros(
