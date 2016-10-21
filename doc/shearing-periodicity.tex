@@ -116,15 +116,20 @@ the Vlasov equation \labelcref{eq:vlasov} expressed in terms of the phase
 space coordinates $(\vec{r},\tvec{v})$ is
 \begin{equation}
   \label{eq:vlasov-relative}
-  \left(\pder{}{t} - Sy\pder{}{x}\right)f + \tilde{\vec{v}}\cdot\nabla f
+  \mathcal{D}f + \tilde{\vec{v}}\cdot\nabla f
   + (\vec{a} - 2\vec{\Omega}\times\tvec{v} + S\tilde{v}_y\ex - \nu^2 z\ez)
-  \cdot\pder{f}{\tvec{v}} = 0.
+  \cdot\pder{f}{\tvec{v}} = 0,
 \end{equation}
-While this equation appears more complicated than \cref{eq:vlasov}, it has the
-distinct advantage that it depends explicitly on $y$ only through the
-differential operator $\pader{}{t}-Sy\,\pader{}{x}$. This explicit
-$y$-dependence can be eliminated (in favor of an explicit $t$-dependence)
-through a transformation to shearing coordinates, see
+where we have introduced the differential operator
+\begin{equation}
+  \label{eq:shearing-ddt}
+  \mathcal{D} = \pder{}{t} - Sy\pder{}{x}.
+\end{equation}
+While equation \cref{eq:shearing-ddt} appears more complicated than
+\cref{eq:vlasov}, it has the distinct advantage that it depends explicitly on
+$y$ only through the differential operator $\pader{}{t}-Sy\,\pader{}{x}$. This
+explicit $y$-dependence can be eliminated (in favor of an explicit
+$t$-dependence) through a transformation to shearing coordinates, see
 \cref{sec:shearing-coordinates}.
 
 So far we have only considered the motion of particles in a prescribed
@@ -219,13 +224,12 @@ where we have introduced the \emph{relative} electric field
 Expressing Faraday's law \labelcref{eq:faraday} in terms of $\tvec{E}$ yields
 \begin{equation}
   \label{eq:faraday-relative}
-  \left(\pder{}{t} - Sy\pder{}{x}\right)\vec{B} + SB_y\ex
-  + \nabla\times\tvec{E} = 0.
+  \mathcal{D}\vec{B} + SB_y\ex + \nabla\times\tvec{E} = 0,
 \end{equation}
-This form of Faraday's law makes explicit that the magnetic field is advected
-and stretched by the uniform shear flow. Note that the differential operator
-$\pader{}{t}-Sy\,\pader{}{x}$ appearing here is the same as in
-\cref{eq:vlasov-relative}.
+where the differential operator $\mathcal{D}$ is defined in
+\cref{eq:shearing-ddt}. This form of Faraday's law makes explicit that the
+magnetic field is advected (through $\mathcal{D}$) and stretched by the
+uniform shear flow.
 
 \section{Shearing coordinates}\label{sec:shearing-coordinates}
 
