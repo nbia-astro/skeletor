@@ -1,6 +1,6 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
 from skeletor import Ohm
-from skeletor import OperatorsMpiFFT4py as Operators
+from skeletor.operators.mpifft4py import Operators
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
