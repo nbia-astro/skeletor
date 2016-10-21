@@ -54,20 +54,18 @@ class Operators:
 
     def gradient(self, f, grad):
         """Calculate the gradient of f"""
-        self.f_hat = self.FFT.fft2(f.trim(), self.f_hat)
-        self.fx_hat[:] = 1j*self.kx*self.f_hat[:]
-        self.fy_hat[:] = 1j*self.ky*self.f_hat[:]
-        grad["x"][:-1, :-2] = self.FFT.ifft2(self.fx_hat, grad["x"][:-1, :-2])
-        grad["y"][:-1, :-2] = self.FFT.ifft2(self.fy_hat, grad["y"][:-1, :-2])
+        self.FFT.fft2(f.trim(), self.f_hat)
+        self.fx_hat[:] = 1j*self.kx*self.f_hat
+        self.fy_hat[:] = 1j*self.ky*self.f_hat
+        self.FFT.ifft2(self.fx_hat, grad['x'][:-1, :-2])
+        self.FFT.ifft2(self.fy_hat, grad['y'][:-1, :-2])
 
     def grad_inv_del(self, f, grad_inv_del):
         """ """
-        self.f_hat[:] = self.FFT.fft2(f.trim(), self.f_hat)
+        self.FFT.fft2(f.trim(), self.f_hat)
 
         self.fx_hat[:] = -1j*self.kx*self.k21_eff*self.f_hat
         self.fy_hat[:] = -1j*self.ky*self.k21_eff*self.f_hat
 
-        grad_inv_del['x'][:-1, :-2] = self.FFT.ifft2(
-            self.fx_hat, grad_inv_del['x'][:-1, :-2])
-        grad_inv_del['y'][:-1, :-2] = self.FFT.ifft2(
-            self.fy_hat, grad_inv_del['y'][:-1, :-2])
+        self.FFT.ifft2(self.fx_hat, grad_inv_del['x'][:-1, :-2])
+        self.FFT.ifft2(self.fy_hat, grad_inv_del['y'][:-1, :-2])
