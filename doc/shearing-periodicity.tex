@@ -23,7 +23,8 @@
 \affiliation{Niels Bohr International Academy}
 \maketitle
 
-\section{Particle dynamics in the shearing sheet}
+\section{Particle dynamics in the shearing sheet}%
+\label{sec:particles}
 
 In a frame rotating with a constant angular velocity, Newton's second law may
 be written as
@@ -280,6 +281,96 @@ $\tvec{E}$ as a sum of ``sheared disturbances'':
 where we have indicated the explicit time-dependence of $k_y$. Because of this
 time-dependence, the relative electric field is not periodic but
 \emph{shearing-periodic} in laboratory coordinates.
+
+\section{Fluid dynamics in the shearing sheet}
+
+Taking the zeroth and first moment of the Vlasov equation yields the
+continuity equation
+\begin{equation}
+  \pder{\rho}{t} + \nabla\cdot(\rho\vec{u}) = 0
+\end{equation}
+and the momentum equation
+\begin{equation}
+  \pder{\vec{u}}{t} + \vec{u}\cdot\nabla\vec{u}
+  + 2\vec{\Omega}\times\vec{u} + \nabla\psi
+  + \frac{\nabla\cdot\mathbf{P}}{\rho} = \vec{a},
+\end{equation}
+respectively. The effective potential $\psi$ is defined in
+\cref{eq:effective-potential}. $\mathbf{P}$ is the pressure tensor and
+$\vec{a}$ is the acceleration due to electromagnetic forces. A steady state
+solution is given by a uniform density and a uniform shear flow as defined in
+\cref{eq:shear-flow}. In analogy with the analysis of \cref{sec:particles} it
+is useful to define the \emph{relative} bulk velocity $\tvec{u}$ through
+\begin{equation}
+  \vec{u} = -Sy\ex + \tvec{u},
+\end{equation}
+cf.~\cref{eq:relative-velocity}. Expressed in terms of $\tvec{u}$ the
+continuity equation and momentum equation are given by
+\begin{equation}
+  \label{eq:continuity}
+  \mathcal{D}\rho + \nabla\cdot(\rho\tvec{u}) = 0
+\end{equation}
+and
+\begin{equation}
+  \label{eq:momentum}
+  \mathcal{D}\tvec{u} + \tvec{u}\cdot\nabla\tvec{u}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex
+  + \rho^{-1}\nabla\cdot\mathbf{P} = \vec{a}.
+\end{equation}
+
+\subsection{Non-linear evolution of sheared disturbances}
+
+Let us consider a cold, neutral fluid. The momentum equation in this case
+reduces to
+\begin{equation}
+  \label{eq:momentum-cold-neutral}
+  \mathcal{D}\tvec{u} + \tvec{u}\cdot\nabla\tvec{u}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0.
+\end{equation}
+The continuity equation \labelcref{eq:continuity} is unmodified but purely
+diagnostic in the sense that the dynamics are completely determined by
+\cref{eq:momentum-cold-neutral}.
+
+In order to study the evolution of sheared disturbances, we now transform the
+equations of motion to the sheared coordinate frame defined in
+\cref{sec:shearing-coordinates}. Doing so yields
+\begin{equation}
+  \label{eq:continuity-shearing}
+  \pader{\rho}{t'} + \nabla\cdot(\rho\tvec{u}) = 0
+\end{equation}
+and
+\begin{equation}
+  \label{eq:momentum-cold-neutral-shearing}
+  \pader{\tvec{u}}{t'} + \tvec{u}\cdot\nabla\tvec{u}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0,
+\end{equation}
+where it is understood that $\nabla$ is now to be evaluated at fixed $x'$.
+This means
+\begin{equation}
+  \label{eq:nabla-shearing}
+  % \nabla = \nabla' + St\pder{}{x'}\ey
+  \nabla = \pder{}{x'}\ex + \left(\pder{}{y'} + St'\pder{}{x'}\right)\ey.
+\end{equation}
+As we remarked in the section \cref{sec:shearing-coordinates}, the equations
+of motion are spatially homogeneous in shearing coordinates: the coefficients
+in \cref{eq:continuity-shearing,eq:momentum-cold-neutral-shearing} depend on
+$t'$ through \cref{eq:nabla-shearing}, but not on either $x'$ or $y'$. This
+symmetry implies that if the system is in a state that is independent of, say,
+$y'$ at any given time, then it will remain independent of $y'$ for all time.
+Because of this, studying the nonlinear evolution of sheared disturbances
+becomes a one-dimensional problem.
+
+Setting $\pader{}{y'}=0$, the continuity equation
+\labelcref{eq:continuity-shearing} and the momentum equation
+\labelcref{eq:momentum-cold-neutral-shearing} reduce to
+\begin{equation}
+  \pder{\rho}{t'} + \pder{}{x'}[\rho(\tilde{u}_x + St'\tilde{u}_y)] = 0
+\end{equation}
+and
+\begin{equation}
+  \pder{\tvec{u}}{t'} + (\tilde{u}_x + St\tilde{u}_y)\pder{\tvec{u}}{x'}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0.
+\end{equation}
 
 \bibliography{shearing-periodicity}
 
