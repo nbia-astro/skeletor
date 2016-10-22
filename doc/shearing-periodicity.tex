@@ -108,27 +108,26 @@ Let us introduce the \emph{relative} velocity $\tvec{v}$ through
   \label{eq:relative-velocity}
   \vec{v} = -Sy\ex + \tvec{v}.
 \end{equation}
-Because
-\begin{equation}
-  \left.\pder{}{y}\right|_{\vec{v}} =
-  \left.\pder{}{y}\right|_{\tvec{v}} + S\pder{}{\tilde{v}_x},
-\end{equation}
-the Vlasov equation \labelcref{eq:vlasov} expressed in terms of the phase
-space coordinates $(\vec{r},\tvec{v})$ is
+Expressed in terms of the phase space coordinates $(\vec{r},\tvec{v})$,
+the Vlasov equation \labelcref{eq:vlasov} is
 \begin{equation}
   \label{eq:vlasov-relative}
-  \mathcal{D}f + \tilde{\vec{v}}\cdot\nabla f
+  \pder{f}{t'} + \tilde{\vec{v}}\cdot\nabla f
   + (\vec{a} - 2\vec{\Omega}\times\tvec{v} + S\tilde{v}_y\ex - \nu^2 z\ez)
   \cdot\pder{f}{\tvec{v}} = 0,
 \end{equation}
-where we have introduced the differential operator
+where it is understood that $\pader{}{y}$ is now to be evaluated at fixed
+$\tilde{v}_x$. The differential operator
 \begin{equation}
   \label{eq:shearing-ddt}
-  \mathcal{D} = \pder{}{t} - Sy\pder{}{x}.
+  \pder{}{t'} = \pder{}{t} - Sy\pder{}{x}.
 \end{equation}
-While equation \cref{eq:shearing-ddt} appears more complicated than
+We will see in \cref{sec:shearing-coordinates} that $\pader{}{t'}$ is the time
+derivative in shearing coordinates.
+
+While \cref{eq:vlasov-relative} appears more complicated than
 \cref{eq:vlasov}, it has the distinct advantage that it depends explicitly on
-$y$ only through the differential operator $\pader{}{t}-Sy\,\pader{}{x}$. This
+$y$ only through $\pader{}{t'}$ defined in \cref{eq:shearing-ddt}. This
 explicit $y$-dependence can be eliminated (in favor of an explicit
 $t$-dependence) through a transformation to shearing coordinates, see
 \cref{sec:shearing-coordinates}.
@@ -225,11 +224,11 @@ where we have introduced the \emph{relative} electric field
 Expressing Faraday's law \labelcref{eq:faraday} in terms of $\tvec{E}$ yields
 \begin{equation}
   \label{eq:faraday-relative}
-  \mathcal{D}\vec{B} + SB_y\ex + \nabla\times\tvec{E} = 0,
+  \pder{\vec{B}}{t'} + SB_y\ex + \nabla\times\tvec{E} = 0,
 \end{equation}
-where the differential operator $\mathcal{D}$ is defined in
+where the differential operator $\pader{}{t'}$ is defined in
 \cref{eq:shearing-ddt}. This form of Faraday's law makes explicit that the
-magnetic field is advected (through $\mathcal{D}$) and stretched by the
+magnetic field is advected (through $\pader{}{t'}$) and stretched by the
 uniform shear flow.
 
 \section{Shearing coordinates}\label{sec:shearing-coordinates}
@@ -308,14 +307,14 @@ cf.~\cref{eq:relative-velocity}. Expressed in terms of $\tvec{u}$ the
 continuity equation and momentum equation are given by
 \begin{equation}
   \label{eq:continuity}
-  \mathcal{D}\rho + \nabla\cdot(\rho\tvec{u}) = 0
+  \pder{\rho}{t'} + \nabla\cdot(\rho\tvec{u}) = 0
 \end{equation}
 and
 \begin{equation}
   \label{eq:momentum}
-  \mathcal{D}\tvec{u} + \tvec{u}\cdot\nabla\tvec{u}
+  \pder{\tvec{u}}{t'} + \tvec{u}\cdot\nabla\tvec{u}
   + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex
-  + \rho^{-1}\nabla\cdot\mathbf{P} = \vec{a}.
+  + \frac{\nabla\cdot\mathbf{P}}{\rho} = \vec{a}.
 \end{equation}
 
 \subsection{Non-linear evolution of sheared disturbances}
@@ -324,7 +323,7 @@ Let us consider a cold, neutral fluid. The momentum equation in this case
 reduces to
 \begin{equation}
   \label{eq:momentum-cold-neutral}
-  \mathcal{D}\tvec{u} + \tvec{u}\cdot\nabla\tvec{u}
+  \pder{\tvec{u}}{t'} + \tvec{u}\cdot\nabla\tvec{u}
   + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0.
 \end{equation}
 The continuity equation \labelcref{eq:continuity} is unmodified but purely
@@ -332,37 +331,24 @@ diagnostic in the sense that the dynamics are completely determined by
 \cref{eq:momentum-cold-neutral}.
 
 In order to study the evolution of sheared disturbances, we now transform the
-equations of motion to the sheared coordinate frame defined in
-\cref{sec:shearing-coordinates}. Doing so yields
-\begin{equation}
-  \label{eq:continuity-shearing}
-  \pader{\rho}{t'} + \nabla\cdot(\rho\tvec{u}) = 0
-\end{equation}
-and
-\begin{equation}
-  \label{eq:momentum-cold-neutral-shearing}
-  \pader{\tvec{u}}{t'} + \tvec{u}\cdot\nabla\tvec{u}
-  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0,
-\end{equation}
-where it is understood that $\nabla$ is now to be evaluated at fixed $x'$.
-This means
+equations of motion \labelcref{eq:continuity,eq:momentum-cold-neutral} to the
+sheared coordinate frame defined in \cref{sec:shearing-coordinates}. All this
+amounts to is evaluating $\pader{}{y}$ at fixed $x'$. Doing so yields
 \begin{equation}
   \label{eq:nabla-shearing}
-  % \nabla = \nabla' + St\pder{}{x'}\ey
-  \nabla = \pder{}{x'}\ex + \left(\pder{}{y'} + St'\pder{}{x'}\right)\ey.
+  \nabla = (\ex + St'\ey)\pder{}{x'} + \ey\pder{}{y'}.
 \end{equation}
 As we remarked in the section \cref{sec:shearing-coordinates}, the equations
 of motion are spatially homogeneous in shearing coordinates: the coefficients
-in \cref{eq:continuity-shearing,eq:momentum-cold-neutral-shearing} depend on
-$t'$ through \cref{eq:nabla-shearing}, but not on either $x'$ or $y'$. This
-symmetry implies that if the system is in a state that is independent of, say,
-$y'$ at any given time, then it will remain independent of $y'$ for all time.
-Because of this, studying the nonlinear evolution of sheared disturbances
-becomes a one-dimensional problem.
+in \cref{eq:continuity,eq:momentum-cold-neutral} depend on $t'$ through
+\cref{eq:nabla-shearing}, but neither on $x'$ nor on $y'$. This symmetry
+implies that if the system is in a state that is independent of, say, $y'$ at
+any given time, then it will remain independent of $y'$ for all time. Because
+of this, studying the nonlinear evolution of sheared disturbances becomes a
+one-dimensional problem.
 
-Setting $\pader{}{y'}=0$, the continuity equation
-\labelcref{eq:continuity-shearing} and the momentum equation
-\labelcref{eq:momentum-cold-neutral-shearing} reduce to
+Setting $\pader{}{y'}=0$, the continuity equation \labelcref{eq:continuity}
+and the momentum equation \labelcref{eq:momentum-cold-neutral} reduce to
 \begin{equation}
   \pder{\rho}{t'} + \pder{}{x'}[\rho(\tilde{u}_x + St'\tilde{u}_y)] = 0
 \end{equation}
