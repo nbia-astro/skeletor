@@ -345,19 +345,96 @@ in \cref{eq:continuity,eq:momentum-cold-neutral} depend on $t'$ through
 implies that if the system is in a state that is independent of, say, $y'$ at
 any given time, then it will remain independent of $y'$ for all time. Because
 of this, studying the nonlinear evolution of sheared disturbances becomes a
-one-dimensional problem.
-
-Setting $\pader{}{y'}=0$, the continuity equation \labelcref{eq:continuity}
-and the momentum equation \labelcref{eq:momentum-cold-neutral} reduce to
+one-dimensional problem. Setting $\pader{}{y'}=0$, the continuity equation
+\labelcref{eq:continuity} and the momentum equation
+\labelcref{eq:momentum-cold-neutral} reduce to
 \begin{equation}
-  \pder{\rho}{t'} + \pder{}{x'}[\rho(\tilde{u}_x + St'\tilde{u}_y)] = 0
+  \label{eq:continuity-1D}
+  \pder{\rho}{t'} + \pder{}{x'}(\rho\tilde{u}_{x'}) = 0
 \end{equation}
 and
 \begin{equation}
-  \pder{\tvec{u}}{t'} + (\tilde{u}_x + St\tilde{u}_y)\pder{\tvec{u}}{x'}
-  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0.
+  \label{eq:momentum-1D}
+  \pder{\tvec{u}}{t'} + \tilde{u}_{x'}\pder{\tvec{u}}{x'}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0,
 \end{equation}
+where
+\begin{equation}
+  \tilde{u}_{x'} = \tilde{u}_x + St'\tilde{u}_y
+\end{equation}
+is the $x'$-component of $\tvec{u}$.
 
-\bibliography{shearing-periodicity}
+In \cref{eq:momentum-1D}, the only nonlinear term is the advection term. This
+can be eliminated via yet another coordinate transformation, this time to a
+\emph{Lagrangian} coordinate system. To do this, we suppose that the
+\emph{Eulerian} coordinate $x'$ is itself a field $x'(a,\tau)$, where
+$\tau=t'$ but $\pader{}{\tau}$ indicates that $a$ (not $x'$) is held fixed.
+The spatial coordinate $a$ may be thought of as a continuous label of
+individual fluid elements \citep[see the beautiful review of Hamiltonian fluid
+mechanics by][]{Salmon1988}. With this in mind, we define $a$ implicitly
+through
+\begin{equation}
+  \label{eq:dx/dtau}
+  \pder{x'}{\tau} = \tilde{u}_{x'}
+\end{equation}
+with initial condition
+\begin{equation}
+  \label{eq:initial-x}
+  x'(a,0) = a.
+\end{equation}
+Given the definition of $a$ as a label of fluid elements, \cref{eq:dx/dtau}
+makes the reasonable statement that the rate of change of a fluid elements
+coordinate is equal to its velocity.
+
+From \cref{eq:dx/dtau} it follows that
+\begin{equation}
+  \label{eq:d/dtau}
+  \pder{}{\tau} = \pder{}{t'} + u_{x'}\pder{}{x'}.
+\end{equation}
+The momentum equation \labelcref{eq:momentum-1D} in Lagrangian coordinates is
+thus given by
+\begin{equation}
+  \label{eq:momentum-lagrangian}
+  \pder{\tvec{u}}{\tau} + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0.
+\end{equation}
+This equation is linear and it depends on $a$ only parametrically. The exact
+solution is thus elementary.
+
+In order to find the solution for the mass density $\rho$, we first note that
+since $\tau=t'$, partial derivatives with respect to $x'$ and $a$ are related
+by
+\begin{equation}
+  \label{eq:d/dx}
+  \pder{}{x'} = \left(\pder{x'}{a}\right)^{-1}\pder{}{a}.
+\end{equation}
+We will verify a posteriori that $\pader{x'}{a}>0$. From \cref{eq:d/dx}
+together with \cref{eq:continuity-1D,eq:dx/dtau,eq:d/dtau} it follows that
+\begin{equation}
+  \pder{\rho}{\tau} = -\rho\pder{\tilde{u}_{x'}}{x'} =
+  -\rho\left(\pder{x'}{a}\right)^{-1}\pder{\tilde{u}_{x'}}{a} =
+  -\rho\left(\pder{x'}{a}\right)^{-1}\pder{}{\tau}\pder{x'}{a}
+\end{equation}
+or
+\begin{equation}
+  \pder{}{\tau}\ln\left(\rho\pder{x'}{a}\right) = 0.
+\end{equation}
+It follows that
+\begin{equation}
+  \label{eq:rho}
+  \rho = \rho_0\left(\pder{x'}{a}\right)^{-1}
+\end{equation}
+where $\rho_0$ is independent of $\tau$. \Cref{eq:initial-x} implies that
+$\rho_0$ is the mass density at $t=0$. Since the mass density is greater than
+zero at all times, \cref{eq:rho} shows that $\pader{x'}{a}>0$ as assumed
+earlier.
+
+The set of equations
+\labelcref{eq:momentum-lagrangian,eq:dx/dtau,eq:initial-x,eq:rho} allows us to
+find the complete solution of the problem in Lagrangian coordinates. Because
+this solution contains the Eulerian coordinate $x'$, we can simply plot
+$\rho$, $\tilde{u}_x$, or $\tilde{u}_y$ versus $x'$ to visualize the solution
+in Eulerian coordinates and to make a direct comparison with simulations.
+
+\bibliography{mendeley}
 
 \end{document}
