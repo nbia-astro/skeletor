@@ -360,6 +360,7 @@ and
 \end{equation}
 where
 \begin{equation}
+  \label{eq:ux-prime}
   \tilde{u}_{x'} = \tilde{u}_x + St'\tilde{u}_y
 \end{equation}
 is the $x'$-component of $\tvec{u}$.
@@ -429,11 +430,46 @@ zero at all times, \cref{eq:rho} shows that $\pader{x'}{a}>0$ as assumed
 earlier.
 
 The set of equations
-\labelcref{eq:momentum-lagrangian,eq:dx/dtau,eq:initial-x,eq:rho} allows us to
-find the complete solution of the problem in Lagrangian coordinates. Because
-this solution contains the Eulerian coordinate $x'$, we can simply plot
-$\rho$, $\tilde{u}_x$, or $\tilde{u}_y$ versus $x'$ to visualize the solution
-in Eulerian coordinates and to make a direct comparison with simulations.
+\labelcref{eq:ux-prime,eq:momentum-lagrangian,eq:dx/dtau,eq:initial-x,eq:rho}
+allows us to find the complete solution of the problem in Lagrangian
+coordinates as follows. The components of the momentum equation
+\labelcref{eq:momentum-lagrangian} are
+\begin{align}
+  \label{eq:dux/dtau}
+  \pader{\tilde{u}_x}{\tau} - 2\Omega\tilde{u}_y &= S\tilde{u}_y \\
+  \label{eq:duy/dtau}
+  \pader{\tilde{u}_y}{\tau} + 2\Omega\tilde{u}_x &= 0
+\end{align}
+Eliminating $\tilde{u}_y$ by differentiating \cref{eq:dux/dtau} with respect
+to $\tau$ and assuming a harmonic dependence of $\tilde{u}_x$ on space and
+time, i.e.
+\begin{equation}
+  \tilde{u}_x(a,\tau) = U\exp(ika - i\omega\tau),
+\end{equation}
+leads to the dispersion relation
+\begin{equation}
+  \omega^2 = \kappa^2 = 2\Omega(2\Omega + S).
+\end{equation}
+Integrating \cref{eq:duy/dtau} yields
+\begin{equation}
+  \tilde{u}_y(a,\tau) = \frac{2\Omega}{i\omega}\tilde{u}_x(a,\tau).
+\end{equation}
+The sheared Eulerian coordinate is obtained by integrating \cref{eq:dx/dtau}
+and using \cref{eq:ux-prime,eq:initial-x}. This yields
+\begin{equation}
+  x'(a,\tau) =
+  a - \frac{1}{i\omega}\Big[\tilde{u}_{x'}(a,\tau) - \tilde{u}_{x'}(a,0)\Big]
+  + \frac{S}{\omega^2}\Big[\tilde{u}_y(a,\tau) - \tilde{u}_y(a,0)\Big].
+\end{equation}
+Finally, given $x'$, it follows from \cref{eq:rho} that
+\begin{equation}
+  \frac{\rho_0}{\rho(a,\tau)} = 1 + ik[x'(a,\tau) - a].
+\end{equation}
+
+Note that because we have an expression for the Eulerian coordinate $x'$ (in
+terms of the Lagrangian coordinate $a$ and time), we can simply plot $\rho$,
+$\tilde{u}_x$, or $\tilde{u}_y$ versus $x'$ to visualize the solution in
+Eulerian coordinates in order to make a direct comparison with simulations.
 
 \bibliography{mendeley}
 
