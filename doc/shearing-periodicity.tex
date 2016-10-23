@@ -441,10 +441,9 @@ coordinates as follows. The components of the momentum equation
   \pader{\tilde{u}_y}{\tau} + 2\Omega\tilde{u}_x &= 0
 \end{align}
 Eliminating $\tilde{u}_y$ by differentiating \cref{eq:dux/dtau} with respect
-to $\tau$ and assuming a harmonic dependence of $\tilde{u}_x$ on space and
-time, i.e.
+to $\tau$ and assuming a harmonic dependence of $\tilde{u}_x$ on time, i.e.
 \begin{equation}
-  \tilde{u}_x(a,\tau) = U\exp(ika - i\omega\tau),
+  \tilde{u}_x(a,\tau) = U(a)\exp(-i\omega\tau),
 \end{equation}
 leads to the dispersion relation
 \begin{equation}
@@ -463,7 +462,7 @@ and using \cref{eq:ux-prime,eq:initial-x}. This yields
 \end{equation}
 Finally, given $x'$, it follows from \cref{eq:rho} that
 \begin{equation}
-  \frac{\rho_0}{\rho(a,\tau)} = 1 + ik[x'(a,\tau) - a].
+  \frac{\rho_0}{\rho(a,\tau)} = 1 + \der{\ln U}{a}[x'(a,\tau) - a].
 \end{equation}
 
 Note that because we have an expression for the Eulerian coordinate $x'$ (in
