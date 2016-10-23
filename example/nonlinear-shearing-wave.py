@@ -1,12 +1,8 @@
 import numpy as np
 
 
-def theta(a, t, phi=0):
-    return kx*a - kappa*t + phi
-
-
 def ux(a, t):
-    return ampl*np.exp(1j*theta(a, t))
+    return ampl*np.exp(1j*(kx*a - kappa*t))
 
 
 def uy(a, t):
@@ -18,21 +14,20 @@ def uxp(a, t):
 
 
 def xp(a, t):
-    A = a - 1/(1j*kappa)*(uxp(a, t) - uxp(a, 0))
-    B = S/kappa**2*(uy(a, t) - uy(a, 0))
-    return A + B
-
-
-def alpha(a, t):
-    y = 1 + 1j*kx*(xp(a, t) - a)
-    return y
+    duxp = uxp(a, t) - uxp(a, 0)
+    duy = uy(a, t) - uy(a, 0)
+    return a - duxp/(1j*kappa) + S*duy/(kappa*kappa)
 
 
 def rho(a, t):
-    return 1/alpha(a, t)
+    dxp = xp(a, t) - a
+    return rho0/(1 + 1j*kx*dxp)
+
 
 if __name__ == '__main__':
+
     import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
 
     nx = 64
 
@@ -40,20 +35,69 @@ if __name__ == '__main__':
 
     kx = 2*np.pi/nx
 
-    S = -3/2
     Omega = 1
+    S = -3/2*Omega
     kappa = np.sqrt(2*Omega*(2*Omega+S))
-    ampl = 1e-1
+    ampl = 0.1
+    dt = 0.01/Omega
 
-    nt = 500
-    t = np.linspace(0, 20*np.pi, nt)
+    # Initial time
+    tstart = -5/Omega
+    # Duration
+    time = 10/Omega
 
+    nt = int(time/dt)
+
+    plt.ion()
     plt.figure(1)
     plt.clf()
     fig, ax = plt.subplots(num=1, ncols=1)
-    im = ax.plot(xp(a, 0), rho(a, 0) - 1)
-    ax.set_ylim(-20*ampl, 20*ampl)
 
-    for it in range(nt):
-        im[0].set_data(xp(a, t[it]).real, rho(a, t[it]).real - 1)
-        plt.pause(1e-2)
+    def real_fundamental(x, y):
+        """
+        This function does two things:
+        * Apply periodic boundary conditions to x-a and y
+        * Take the real value
+        """
+        j = 0
+        while x[j] < 0.0:
+            x[j] += nx
+            j += 1
+        x = np.roll(x, -j)
+        y = np.roll(y, -j)
+
+        j = -1
+        while x[j] > nx:
+            x[j] -= nx
+            j -= 1
+        x = np.roll(x, -j-1)
+        y = np.roll(y, -j-1)
+
+        return x.real, y.real
+
+    # Determine what the density profile needs to be at t=0 (i.e. the time of
+    # the swing) in order for it to be uniform at t=tstart
+    rho0 = 1
+    rho0 = 1/rho(a, tstart)
+
+    # Plot initial density
+    t = tstart
+    line, = ax.plot(*real_fundamental(xp(a, t), rho(a, t)))
+    title = ax.set_title('t = {:.2f}'.format(t))
+    ax.set_xlim(0, nx)
+    ax.set_ylim(0.7, 1.3)
+    fig.set_tight_layout(True)
+
+    def animate(it):
+
+        t = tstart + (it+1)*dt
+
+        line.set_data(*real_fundamental(xp(a, t), rho(a, t)))
+        title.set_text('t = {:.2f}'.format(t))
+
+        return line, title
+
+    ani = animation.FuncAnimation(
+            fig, animate, frames=nt, interval=25, repeat=False)
+
+    plt.show()
