@@ -13,15 +13,14 @@ def uxp(a, t):
     return ux(a, t) + S*t*uy(a, t)
 
 
-def xp(a, t):
+def dxp(a, t):
     duxp = uxp(a, t) - uxp(a, 0)
     duy = uy(a, t) - uy(a, 0)
-    return a - duxp/(1j*kappa) + S*duy/(kappa*kappa)
+    return (S*duy/kappa + 1j*duxp)/kappa
 
 
 def rho(a, t):
-    dxp = xp(a, t) - a
-    return rho0/(1 + 1j*kx*dxp)
+    return rho0/(1 + 1j*kx*dxp(a, t))
 
 
 if __name__ == '__main__':
@@ -82,7 +81,7 @@ if __name__ == '__main__':
 
     # Plot initial density
     t = tstart
-    line, = ax.plot(*real_fundamental(xp(a, t), rho(a, t)))
+    line, = ax.plot(*real_fundamental(a + dxp(a, t), rho(a, t)))
     title = ax.set_title('t = {:.2f}'.format(t))
     ax.set_xlim(0, nx)
     ax.set_ylim(0.7, 1.3)
@@ -92,7 +91,7 @@ if __name__ == '__main__':
 
         t = tstart + (it+1)*dt
 
-        line.set_data(*real_fundamental(xp(a, t), rho(a, t)))
+        line.set_data(*real_fundamental(a + dxp(a, t), rho(a, t)))
         title.set_text('t = {:.2f}'.format(t))
 
         return line, title
