@@ -40,6 +40,8 @@ if __name__ == '__main__':
     ampl = 0.1
     dt = 0.01/Omega
 
+    # Density profile at t=0
+    rho0 = 1
     # Initial time
     tstart = -5/Omega
     # Duration
@@ -73,11 +75,6 @@ if __name__ == '__main__':
         y = np.roll(y, -j-1)
 
         return x.real, y.real
-
-    # Determine what the density profile needs to be at t=0 (i.e. the time of
-    # the swing) in order for it to be uniform at t=tstart
-    rho0 = 1
-    rho0 = 1/rho(a, tstart)
 
     # Plot initial density
     t = tstart
