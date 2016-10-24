@@ -116,6 +116,7 @@ assert numpy.isclose(sources.rho.sum(), ions.np*charge)
 sources.rho.add_guards(St=0)
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+sources.rho.copy_guards(0)
 
 
 def theta(a, t, phi=0):
@@ -172,10 +173,15 @@ if comm.rank == 0:
     plt.rc('image', origin='lower', interpolation='nearest', cmap='coolwarm')
     plt.figure(1)
     plt.clf()
-    fig, axes = plt.subplots(num=1, ncols=2)
-    im1 = axes[0].imshow(global_rho)
-    im2 = axes[1].imshow(global_rho)
-    title = axes[0].set_title('it = {}'.format(0))
+    # fig, axes = plt.subplots(num=1, ncols=2)
+    # im1 = axes[0].imshow(global_rho)
+    # im2 = axes[1].imshow(global_rho)
+    # title = axes[0].set_title('it = {}'.format(0))
+    fig, axes = plt.subplots(num=1)
+    lines = axes.plot(sources.rho[-1, :-1], 'b', sources.rho[-2, :-1], 'g',
+                      sources.rho[0, :-1], 'r', sources.rho[1, :-1], 'k')
+    axes.set_ylim(15, 17)
+    title = axes.set_title('it = {}'.format(0))
 
 t = dt/2
 
@@ -214,10 +220,14 @@ def animate(it):
 
     # Make figures
     if comm.rank == 0:
-        im1.set_data(sources.rho[:grid.nyp+1, :nx+1])
-        im2.set_data(rho_periodic[:grid.nyp+1, :nx+1])
-        im1.autoscale()
-        im2.autoscale()
+        # im1.set_data(sources.rho[:grid.nyp+1, :nx+1])
+        # im2.set_data(rho_periodic[:grid.nyp+1, :nx+1])
+        # im1.autoscale()
+        # im2.autoscale()
+        lines[0].set_ydata(sources.rho[-1, :-1])
+        lines[1].set_ydata(sources.rho[-2, :-1])
+        lines[2].set_ydata(sources.rho[0, :-1])
+        lines[3].set_ydata(sources.rho[1, :-1])
         title.set_text('it = {}'.format(it))
 
 anim = animation.FuncAnimation(
