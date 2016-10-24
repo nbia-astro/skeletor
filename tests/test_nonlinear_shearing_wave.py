@@ -197,8 +197,8 @@ def animate(it):
     sources.rho.copy_guards(S*t)
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
-    ions.push(E_star, dt, t=t)
-    # ions.push_epicycle(E_star, dt, t=t)
+    # ions.push(E_star, dt, t=t)
+    ions.push_epicycle(E_star, dt, t=t+dt)
 
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
@@ -223,8 +223,8 @@ def animate(it):
 anim = animation.FuncAnimation(
         fig, animate, frames=nt, interval=25, repeat=False)
 
-anim.save(
-        'animation.mp4', writer='ffmpeg',
-        fps=25, codec='libx264', extra_args=['-pix_fmt', 'yuv420p'])
+# anim.save(
+#         'animation.mp4', writer='ffmpeg',
+#         fps=25, codec='libx264', extra_args=['-pix_fmt', 'yuv420p'])
 
-# plt.show()
+plt.show()
