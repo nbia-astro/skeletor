@@ -98,14 +98,12 @@ class Particles(numpy.ndarray):
         self.np = npp
 
     def periodic_x(self, grid):
-        """Periodic boundaries in x
+        from .cython.particle_boundary import periodic_x
 
-        This function will not work with MPI along x.
-        """
-        from numpy import mod
-        self["x"] = mod(self["x"], grid.nx)
+        periodic_x(self[:self.np], grid.nx)
+        return 0.0
 
-    def shear_periodic_y(self, grid, t):
+    def shear_periodic_y(self, grid, S, t):
         """Shearing periodic boundaries along y.
 
            This function modifies x and vx and subsequently applies periodic
@@ -114,20 +112,10 @@ class Particles(numpy.ndarray):
            The periodic boundaries on y are handled by ppic2 *after* we have
            used the values of y to update x and vx.
         """
-        from numpy import where
 
-        # Left
-        ind1 = where(self["y"] < 0)
-        # Right
-        ind2 = where(self["y"] >= grid.Ly)
-
-        # Left to right
-        self["x"][ind1] -= self.S*grid.Ly*t
-        self["vx"][ind1] -= self.S*grid.Ly
-
-        # Right to left
-        self["x"][ind2] += self.S*grid.Ly*t
-        self["vx"][ind2] += self.S*grid.Ly
+        from .cython.particle_boundary import shear_periodic_y
+        shear_periodic_y(self[:self.np], grid.ny, S, t)
+        return 0.0
 
     def push(self, fxy, dt, t=0):
 
@@ -141,7 +129,7 @@ class Particles(numpy.ndarray):
 
         # Shearing periodicity
         if self.shear:
-            self.shear_periodic_y(grid, t+dt)
+            self.shear_periodic_y(grid, self.S, t+dt)
 
         # Apply periodicity in x
         self.periodic_x(grid)
