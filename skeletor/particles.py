@@ -161,3 +161,20 @@ class Particles(numpy.ndarray):
         assert all(self["y"][:self.np] < grid.edges[1])
 
         return ek
+
+    def push_epicycle(self, fxy, dt, t=0):
+
+        from .cython.push_epicycle import push_epicycle as push
+        from numpy import mod
+
+        push(self[:self.np], dt)
+
+        # Shearing periodicity
+        if self.shear:
+            self.shear_periodic_y(fxy.grid, t+dt)
+
+        # Apply periodicity in x
+        self["x"] = mod(self["x"], fxy.grid.nx)
+        self["y"] = mod(self["y"], fxy.grid.ny)
+
+        return 0.0

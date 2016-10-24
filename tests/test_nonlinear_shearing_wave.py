@@ -3,6 +3,8 @@ from skeletor import ShearField
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 # Quiet start
 quiet = True
@@ -17,7 +19,8 @@ dt = 0.5e-3
 tend = 2*numpy.pi
 
 # Number of time steps
-nt = int(tend/dt)
+# nt = int(tend/dt)
+nt = 1273
 
 # Particle charge and mass
 charge = 1
@@ -162,26 +165,17 @@ def concatenate(arr):
 
 
 # Make initial figure
-if plot:
-    import matplotlib.pyplot as plt
 
-    global_rho = concatenate(sources.rho[:grid.nyp+1, :nx+1])
+global_rho = concatenate(sources.rho[:grid.nyp+1, :nx+1])
 
-    if comm.rank == 0:
-        plt.rc('image', origin='upper', interpolation='nearest',
-               cmap='coolwarm')
-        plt.figure(1)
-        plt.clf()
-        fig, axes = plt.subplots(num=1, ncols=2)
-        im1 = axes[0].imshow(global_rho)
-        im2 = axes[1].imshow(global_rho)
-        plt.figure(2)
-        plt.clf()
-        fig2, ax1 = plt.subplots(num=2, ncols=1)
-        im4 = ax1.plot(grid.x, (rho_periodic[:grid.nyp, :nx].
-                                mean(axis=0)-npc)/npc, 'b',
-                       xp(a, 0), rho(a, 0) - 1, 'r')
-        ax1.set_ylim(-4*ampl, 4*ampl)
+if comm.rank == 0:
+    plt.rc('image', origin='lower', interpolation='nearest', cmap='coolwarm')
+    plt.figure(1)
+    plt.clf()
+    fig, axes = plt.subplots(num=1, ncols=2)
+    im1 = axes[0].imshow(global_rho)
+    im2 = axes[1].imshow(global_rho)
+    title = axes[0].set_title('it = {}'.format(0))
 
 t = dt/2
 
@@ -189,7 +183,10 @@ t = dt/2
 # Main loop over time                                                    #
 ##########################################################################
 
-for it in range(nt):
+
+# for it in range(nt):
+def animate(it):
+    global t
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
@@ -201,6 +198,7 @@ for it in range(nt):
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
     ions.push(E_star, dt, t=t)
+    # ions.push_epicycle(E_star, dt, t=t)
 
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
@@ -215,14 +213,18 @@ for it in range(nt):
     rho_periodic.copy_guards(0)
 
     # Make figures
-    if plot:
-        if (it % 60 == 0):
-            if comm.rank == 0:
-                im1.set_data(sources.rho[:grid.nyp+1, :nx+1])
-                im2.set_data(rho_periodic[:grid.nyp+1, :nx+1])
-                im1.autoscale()
-                im2.autoscale()
-                im4[0].set_ydata((rho_periodic[:grid.nyp, :nx].
-                                 mean(axis=0)-npc)/npc)
-                im4[1].set_data(xp(a, t), rho(a, t) - 1)
-                plt.pause(1e-7)
+    if comm.rank == 0:
+        im1.set_data(sources.rho[:grid.nyp+1, :nx+1])
+        im2.set_data(rho_periodic[:grid.nyp+1, :nx+1])
+        im1.autoscale()
+        im2.autoscale()
+        title.set_text('it = {}'.format(it))
+
+anim = animation.FuncAnimation(
+        fig, animate, frames=nt, interval=25, repeat=False)
+
+anim.save(
+        'animation.mp4', writer='ffmpeg',
+        fps=25, codec='libx264', extra_args=['-pix_fmt', 'yuv420p'])
+
+# plt.show()
