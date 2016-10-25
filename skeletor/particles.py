@@ -125,7 +125,15 @@ class Particles(numpy.ndarray):
 
         qm = self.charge/self.mass
 
+        ihole2 = self.ihole.copy()
+
         ek = cppgbpush2l(self, fxy, self.bz, self.np, self.ihole, qm, dt, grid)
+
+        # Compare
+        from numpy import array_equal, array
+        from .cython.particle_boundary import calculate_ihole
+        calculate_ihole(self[:self.np], ihole2, array(grid.edges))
+        assert(array_equal(ihole2, self.ihole))
 
         # Shearing periodicity
         if self.shear:
