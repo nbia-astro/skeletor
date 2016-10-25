@@ -39,7 +39,7 @@ kappa = numpy.sqrt(2*Omega*(2*Omega+S))
 ampl = 0.1
 
 # Number of grid points in x- and y-direction
-nx, ny = 32, 64
+nx, ny = 64, 64
 
 # Average number of particles per cell
 npc = 16
