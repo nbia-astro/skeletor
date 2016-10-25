@@ -39,7 +39,7 @@ kappa = numpy.sqrt(2*Omega*(2*Omega+S))
 ampl = 0.1
 
 # Number of grid points in x- and y-direction
-nx, ny = 64, 64
+nx, ny = 32, 64
 
 # Average number of particles per cell
 npc = 16
@@ -239,12 +239,37 @@ anim = animation.FuncAnimation(
 
 plt.show()
 
-t = nt*dt + dt/2
 # Add along x
 sources.rho[-1, 0] += sources.rho[-1, -2]
 sources.rho[0, 0] += sources.rho[0, -2]
 sources.rho[1, 0] += sources.rho[1, -2]
 sources.rho[-2, 0] += sources.rho[1, -2]
+
+
+def translate(g1, trans):
+    g1[-1] = g1[0]
+    trans %= grid.Ly
+    grid.dx = grid.Lx/grid.nx
+
+    # Distance in unit of the grid spacing
+    ntrans = trans/grid.dx
+
+    # Integer part
+    itrans = numpy.int(numpy.floor(ntrans))
+
+    # Fractional part
+    ftrans = ntrans - itrans
+
+    # Fractional shift
+    g2 = numpy.empty_like (g1)
+    g2[1:] = ftrans*g1[0:-1] + (1 - ftrans)*g1[1:]
+
+    # Boundary
+    g2[0] = g2[-1]
+    # Integer shift
+    return numpy.roll(g2[0:nx], itrans)
+
+t = nt*dt + dt/2
 
 plt.figure(2)
 plt.plot(sources.rho[0, :nx])
@@ -254,13 +279,16 @@ from numpy.fft import rfft, irfft, rfftfreq
 kx = 2*numpy.pi*rfftfreq(grid.nx)*grid.Lx/grid.nx
 trans = S*grid.Ly*t
 shifted = irfft(numpy.exp(-1j*kx*trans)*rfft(sources.rho[-1, :nx]))
+shifted2 = translate(sources.rho[-1, :nx+1], trans)
 plt.figure(3)
 plt.plot(sources.rho[-1, :nx], label='guard')
-plt.plot(shifted, label='Shifted guard')
+# plt.plot(shifted, label='Shifted guard - fft')
+plt.plot(shifted2, label='Shifted guard - 1st order')
 plt.plot(sources.rho[0, :nx], label='Active layer')
 plt.legend()
 
 plt.figure(4)
-plt.plot(shifted+sources.rho[0, :nx], label='Sum')
-plt.plot(sources.rho[1, :nx])
+plt.plot(shifted2+sources.rho[0, :nx], label='Sum')
+plt.plot(sources.rho[1, :nx], label='Active layer')
+plt.legend()
 plt.show()
