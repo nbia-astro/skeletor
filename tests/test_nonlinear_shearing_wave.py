@@ -112,10 +112,10 @@ rho_periodic = ShearField(grid, comm, dtype=Float)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+# assert numpy.isclose(sources.rho.sum(), ions.np*charge)
 sources.rho.add_guards(St=0)
-assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+# assert numpy.isclose(comm.allreduce(
+    # sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 sources.rho.copy_guards(0)
 
 
@@ -180,7 +180,7 @@ if comm.rank == 0:
     fig, axes = plt.subplots(num=1)
     lines = axes.plot(sources.rho[-1, :-1], 'b', sources.rho[-2, :-1], 'g',
                       sources.rho[0, :-1], 'r', sources.rho[1, :-1], 'k')
-    axes.set_ylim(15, 17)
+    axes.set_ylim(6, 17)
     title = axes.set_title('it = {}'.format(0))
 
 t = dt/2
@@ -195,12 +195,12 @@ def animate(it):
     global t
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-    sources.rho.add_guards(S*t)
-    assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+    # assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+    # sources.rho.add_guards(S*t)
+    # assert numpy.isclose(comm.allreduce(
+    #     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
-    sources.rho.copy_guards(S*t)
+    # sources.rho.copy_guards(S*t)
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
     # ions.push(E_star, dt, t=t)
