@@ -13,17 +13,23 @@ def periodic_x(particle_t[:] particles, int nx):
             particles[ip].x -= Lx
 
 
-def periodic_y(particle_t[:] particles, int ny):
-
-    cdef real_t Ly = <real_t> ny
+def calculate_ihole(particle_t[:] particles, int[:] ihole, real_t[:] edges):
+    cdef int ih = 0
+    cdef int nh = 0
+    cdef int ntmax = ihole.shape[0] - 1
+    cdef int ip
 
     for ip in range(particles.shape[0]):
-
-        while particles[ip].y < 0.0:
-            particles[ip].y += Ly
-        while particles[ip].y >= Ly:
-            particles[ip].y -= Ly
-
+        if (particles[ip].y < edges[0]) or (particles[ip].y >= edges[1]):
+            if ih < ntmax:
+                ihole[ih+1] = ip + 1
+            else:
+                nh = 1
+            ih += 1
+    # set end of file flag
+    if nh > 0:
+        ih = -ih
+    ihole[0] = ih
 
 def shear_periodic_y(particle_t[:] particles, int ny, real_t S, real_t t):
     """Shearing periodic boundaries along y.
