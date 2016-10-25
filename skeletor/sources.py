@@ -9,14 +9,17 @@ class Sources:
 
         self.rho = Field(grid, comm, **kwds)
 
-    def deposit(self, particles, erase=True):
+    def deposit(self, particles, St=0, erase=True):
 
         if erase:
             self.rho.fill(0.0)
 
+        grid = self.rho.grid
+
         cython_deposit(
                 particles[:particles.np], self.rho,
-                particles.charge, self.rho.grid.noff)
+                particles.charge, self.rho.grid.noff,
+                grid.nx, grid.ny, St)
 
     def deposit_ppic2(self, particles, erase=True):
 
