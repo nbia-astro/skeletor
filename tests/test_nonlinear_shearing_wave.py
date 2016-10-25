@@ -238,3 +238,29 @@ anim = animation.FuncAnimation(
 #         fps=25, codec='libx264', extra_args=['-pix_fmt', 'yuv420p'])
 
 plt.show()
+
+t = nt*dt + dt/2
+# Add along x
+sources.rho[-1, 0] += sources.rho[-1, -2]
+sources.rho[0, 0] += sources.rho[0, -2]
+sources.rho[1, 0] += sources.rho[1, -2]
+sources.rho[-2, 0] += sources.rho[1, -2]
+
+plt.figure(2)
+plt.plot(sources.rho[0, :nx])
+plt.plot(sources.rho[-1, :nx])
+
+from numpy.fft import rfft, irfft, rfftfreq
+kx = 2*numpy.pi*rfftfreq(grid.nx)*grid.Lx/grid.nx
+trans = S*grid.Ly*t
+shifted = irfft(numpy.exp(-1j*kx*trans)*rfft(sources.rho[-1, :nx]))
+plt.figure(3)
+plt.plot(sources.rho[-1, :nx], label='guard')
+plt.plot(shifted, label='Shifted guard')
+plt.plot(sources.rho[0, :nx], label='Active layer')
+plt.legend()
+
+plt.figure(4)
+plt.plot(shifted+sources.rho[0, :nx], label='Sum')
+plt.plot(sources.rho[1, :nx])
+plt.show()
