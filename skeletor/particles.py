@@ -97,42 +97,11 @@ class Particles(numpy.ndarray):
             raise RuntimeError(msg.format(ierr))
         self.np = npp
 
-    def periodic_x(self, grid):
-        from .cython.particle_boundary import periodic_x
+    def move(self, grid):
+        """Uses ppic2's cppmove2 routine for moving particles
+           between processors."""
 
-        periodic_x(self[:self.np], grid.nx)
-        return 0.0
-
-    def shear_periodic_y(self, grid, S, t):
-        """Shearing periodic boundaries along y.
-
-           This function modifies x and vx and subsequently applies periodic
-           boundaries on x.
-
-           The periodic boundaries on y are handled by ppic2 *after* we have
-           used the values of y to update x and vx.
-        """
-
-        from .cython.particle_boundary import shear_periodic_y
-        shear_periodic_y(self[:self.np], grid.ny, S, t)
-        return 0.0
-
-    def push(self, fxy, dt, t=0):
-
-        from .cython.ppic2_wrapper import cppgbpush2l, cppmove2
-
-        grid = fxy.grid
-
-        qm = self.charge/self.mass
-
-        ek = cppgbpush2l(self, fxy, self.bz, self.np, self.ihole, qm, dt, grid)
-
-        # Shearing periodicity
-        if self.shear:
-            self.shear_periodic_y(grid, self.S, t+dt)
-
-        # Apply periodicity in x
-        self.periodic_x(grid)
+        from .cython.ppic2_wrapper import cppmove2
 
         # Check for ihole overflow error
         if self.ihole[0] < 0:
@@ -147,5 +116,56 @@ class Particles(numpy.ndarray):
         # Make sure particles actually reside in the local subdomain
         assert all(self["y"][:self.np] >= grid.edges[0])
         assert all(self["y"][:self.np] < grid.edges[1])
+
+    def periodic_x(self, grid):
+        """Applies periodic boundaries on particles along x"""
+        from .cython.particle_boundary import periodic_x
+
+        periodic_x(self[:self.np], grid.nx)
+
+    def periodic_y(self, grid):
+        """Applies periodic boundaries on particles along y
+
+           Calculates ihole and then calls ppic2's cppmove2 routine for moving
+           particles between processors.
+        """
+        from .cython.particle_boundary import calculate_ihole
+        from numpy import array
+
+        calculate_ihole(self[:self.np], self.ihole, array(grid.edges))
+
+        self.move(grid)
+
+    def shear_periodic_y(self, grid, S, t):
+        """Shearing periodic boundaries along y.
+
+           Modifies x and vx and applies periodic boundaries
+           along y.
+        """
+
+        from .cython.particle_boundary import shear_periodic_y
+
+        shear_periodic_y(self[:self.np], grid.ny, S, t)
+
+        self.periodic_y(grid)
+
+    def push(self, fxy, dt, t=0):
+
+        from .cython.ppic2_wrapper import cppgbpush2l
+
+        grid = fxy.grid
+
+        qm = self.charge/self.mass
+
+        ek = cppgbpush2l(self, fxy, self.bz, self.np, self.ihole, qm, dt, grid)
+
+        # Shearing periodicity
+        if self.shear:
+            self.shear_periodic_y(grid, self.S, t+dt)
+        else:
+            self.periodic_y(grid)
+
+        # Apply periodicity in x
+        self.periodic_x(grid)
 
         return ek
