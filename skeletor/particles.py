@@ -149,7 +149,7 @@ class Particles(numpy.ndarray):
 
         self.periodic_y(grid)
 
-    def push(self, fxy, dt, t=0):
+    def push_ppic2(self, fxy, dt, t=0):
 
         from .cython.ppic2_wrapper import cppgbpush2l
 
@@ -170,19 +170,18 @@ class Particles(numpy.ndarray):
 
         return ek
 
-    def push_epicycle(self, fxy, dt, t=0):
+    def push(self, fxy, dt, t=0):
+        from .cython.push_epicycle import push
 
-        from .cython.push_epicycle import push_epicycle as push
-        from numpy import mod
-
-        push(self[:self.np], dt)
+        grid = fxy.grid
+        qtmh = self.charge/self.mass*dt/2
+        push(self[:self.np], fxy, self.bz, qtmh, dt, grid.noff)
 
         # Shearing periodicity
         if self.shear:
-            self.shear_periodic_y(fxy.grid, t+dt)
+            self.shear_periodic_y(grid, self.S, t+dt)
+        else:
+            self.periodic_y(grid)
 
         # Apply periodicity in x
-        self["x"] = mod(self["x"], fxy.grid.nx)
-        self["y"] = mod(self["y"], fxy.grid.ny)
-
-        return 0.0
+        self.periodic_x(grid)
