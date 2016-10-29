@@ -62,6 +62,13 @@ class Field(ndarray):
         # upper active cells to lower guard layers
         self[:, :lbx] = self[:, ubx-lbx:ubx]
 
+        # PPIC2 setup
+        if nubx == 2 and nuby == 1 and lbx == 0 and lby == 0:
+            # Set the extra guard layer in x to zero
+            # TODO: Get rid of this extra guard layer in PPIC2
+            # That is, make PPIC2's FFT work with the extended grid
+            self[:, -1] = 0.0
+
 
     def add_guards(self):
         lbx = self.grid.lbx
