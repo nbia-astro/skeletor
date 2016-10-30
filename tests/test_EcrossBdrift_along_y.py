@@ -73,7 +73,7 @@ def test_EcrossBdrift(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    grid = Grid(nx, ny, comm)
+    grid = Grid(nx, ny, comm, nlbx=1, nubx=2, nlby=1, nuby=2)
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(grid.x, grid.y)
@@ -83,7 +83,7 @@ def test_EcrossBdrift(plot=False):
     npmax = np
 
     # Create particle array
-    ions = Particles(npmax, charge, mass, bz=bz)
+    ions = Particles(npmax, charge, mass, bz=bz, order='tsc')
 
     # Assign particles to subdomains
     ions.initialize(x, y, vx, vy, grid)

@@ -8,6 +8,8 @@ from mpi4py.MPI import COMM_WORLD as comm
 
 def test_ionacoustic(plot=False):
 
+    # Order of interpolation used for deposition and push
+    order = 'tsc'
     # Quiet start
     quiet = True
     # Number of grid points in x- and y-direction
@@ -72,8 +74,8 @@ def test_ionacoustic(plot=False):
         assert sqrt_npc**2 == npc
         dx = dy = 1/sqrt_npc
         x, y = numpy.meshgrid(
-                numpy.arange(0, nx, dx),
-                numpy.arange(0, ny, dy))
+                numpy.arange(dx/2, nx+dx/2, dx),
+                numpy.arange(dx/2, ny+dx/2, dy))
         x = x.flatten()
         y = y.flatten()
     else:
@@ -88,9 +90,18 @@ def test_ionacoustic(plot=False):
     vx += vtx*numpy.random.normal(size=np).astype(Float)
     vy += vty*numpy.random.normal(size=np).astype(Float)
 
+    x += vx*dt/2
+    y += vy*dt/2
+
+    x = numpy.mod(x, nx)
+    y = numpy.mod(y, ny)
+
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    grid = Grid(nx, ny, comm)
+    if order == 'tsc':
+        grid = Grid(nx, ny, comm, nlbx=1, nubx=1, nlby=1, nuby=1)
+    else:
+        grid = Grid(nx, ny, comm, nlbx=0, nubx=2, nlby=0, nuby=1)
 
     ax = 0
     ay = 0
@@ -104,7 +115,7 @@ def test_ionacoustic(plot=False):
     npmax = int(1.5*np/comm.size)
 
     # Create particle array
-    ions = Particles(npmax, charge, mass)
+    ions = Particles(npmax, charge, mass, order=order)
 
     # Assign particles to subdomains
     ions.initialize(x, y, vx, vy, grid)
@@ -118,7 +129,7 @@ def test_ionacoustic(plot=False):
     E.fill((0.0, 0.0))
 
     # Initialize sources
-    sources = Sources(grid, dtype=Float)
+    sources = Sources(grid, order=order, dtype=Float)
 
     # Initialize Ohm's law solver
     ohm = Ohm(grid, npc, temperature=Te, charge=charge)
@@ -128,14 +139,14 @@ def test_ionacoustic(plot=False):
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-    sources.rho.add_guards_ppic2()
+    sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     # Calculate electric field (Solve Ohm's law)
     ohm(sources.rho, E, destroy_input=False)
     # Set boundary condition
-    E.copy_guards_ppic2()
+    E.copy_guards()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -179,15 +190,15 @@ def test_ionacoustic(plot=False):
         t += dt
 
         # Deposit sources
-        sources.deposit_ppic2(ions)
+        sources.deposit(ions)
 
         # Boundary calls
-        sources.rho.add_guards_ppic2()
+        sources.rho.add_guards()
 
         # Calculate forces (Solve Ohm's law)
         ohm(sources.rho, E, destroy_input=False)
         # Set boundary condition
-        E.copy_guards_ppic2()
+        E.copy_guards()
 
         # Difference between numerical and analytic solution
         local_rho = sources.rho.trim()
@@ -209,8 +220,11 @@ def test_ionacoustic(plot=False):
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
 
+    val = numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt)
+    tol = 6e-5*charge*npc
+
     # Check if test has passed
-    assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge*npc
+    assert (val < tol), (val, tol)
 
 if __name__ == "__main__":
     import argparse
