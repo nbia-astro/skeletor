@@ -44,7 +44,6 @@ def deposit_tsc(
     cdef int ix, iy
     cdef real_t x, y
     cdef real_t dx, dy
-    cdef real_t tx, ty
 
     cdef real_t wmx, w0x, wpx, wmy, w0y, wpy
 
