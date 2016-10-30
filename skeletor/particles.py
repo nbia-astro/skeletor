@@ -185,7 +185,8 @@ class Particles(numpy.ndarray):
 
         grid = fxy.grid
         qtmh = self.charge/self.mass*dt/2
-        push(self[:self.np], fxy, self.bz, qtmh, dt, grid.noff)
+        push(self[:self.np], fxy, self.bz, qtmh, dt, grid.noff,
+             grid.lbx, grid.lby)
 
         # Shearing periodicity
         if self.shear:
