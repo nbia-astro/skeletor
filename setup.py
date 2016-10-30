@@ -5,8 +5,7 @@ from distutils.extension import Extension
 from numpy import get_include
 
 Options.annotate = False
-Options.directive_defaults["boundscheck"] = True
-Options.directive_defaults["cdivision"] = False
+compiler_directives = {"boundscheck": True, "cdivision": False}
 cflags = ["-Wno-unused-function", "-Wno-#warnings"]
 
 extensions = [Extension(
@@ -18,4 +17,6 @@ setup(
     name='skeletor',
     version='0.0.1',
     packages=['skeletor'],
-    ext_modules=cythonize(extensions))
+    ext_modules=cythonize(
+        extensions,
+        compiler_directives=compiler_directives))
