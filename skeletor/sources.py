@@ -1,5 +1,6 @@
 from .field import Field
 from .cython.deposit import deposit as cython_deposit
+from .cython.deposit import deposit_tsc as cython_deposit_tsc
 from .cython.ppic2_wrapper import cppgpost2l
 
 
@@ -15,6 +16,15 @@ class Sources:
             self.rho.fill(0.0)
 
         cython_deposit(
+                particles[:particles.np], self.rho, particles.charge,
+                self.rho.grid.noff, self.rho.grid.lbx, self.rho.grid.lby)
+
+    def deposit_tsc(self, particles, erase=True):
+
+        if erase:
+            self.rho.fill(0.0)
+
+        cython_deposit_tsc(
                 particles[:particles.np], self.rho, particles.charge,
                 self.rho.grid.noff, self.rho.grid.lbx, self.rho.grid.lby)
 
