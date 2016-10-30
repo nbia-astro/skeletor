@@ -6,7 +6,8 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, npmax, charge=1.0, mass=1.0, S=0, Omega=0, bz=0):
+    def __new__(cls, npmax, charge=1.0, mass=1.0, S=0, Omega=0, bz=0,
+        order='cic'):
 
         from .cython.dtypes import Int, Particle
 
@@ -48,6 +49,9 @@ class Particles(numpy.ndarray):
 
         # Info array used for checking errors in particle move
         obj.info = numpy.zeros(7, Int)
+
+        # Order of particle interpolation
+        obj.order = order
 
         return obj
 
@@ -171,7 +175,13 @@ class Particles(numpy.ndarray):
         return ek
 
     def push(self, fxy, dt, t=0):
-        from .cython.push_epicycle import push
+        if self.order == 'cic':
+            from .cython.push_epicycle import push_cic as push
+        elif self.order == 'tsc':
+            from .cython.push_epicycle import push_tsc as push
+        else:
+            raise RuntimeError('Interpolation order not supported.')
+
 
         grid = fxy.grid
         qtmh = self.charge/self.mass*dt/2

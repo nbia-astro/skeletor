@@ -1,6 +1,6 @@
 from ctypes cimport real_t, particle_t
 
-def deposit (
+def deposit_cic (
         particle_t[:] particles, real_t[:,:] density,
         real_t charge, int noff, int lbx, int lby):
 
