@@ -52,11 +52,14 @@ def deposit_tsc(
         x = particles[ip].x
         y = particles[ip].y
 
+        x += 0.5
+        y += 0.5
+
         ix = <int> x
         iy = <int> y
 
-        dx = x - <real_t> ix
-        dy = y - <real_t> iy
+        dx = x - <real_t> ix - 0.5
+        dy = y - <real_t> iy - 0.5
 
         w0x = 0.75 - dx*dx
         wpx = 0.5*(0.5 + dx)**2
