@@ -99,7 +99,7 @@ def test_ionacoustic(plot=False):
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     if order == 'tsc':
-        grid = Grid(nx, ny, comm, nlbx=1, nubx=1, nlby=1, nuby=1)
+        grid = Grid(nx, ny, comm, nlbx=1, nubx=2, nlby=1, nuby=2)
     else:
         grid = Grid(nx, ny, comm, nlbx=0, nubx=2, nlby=0, nuby=1)
 
