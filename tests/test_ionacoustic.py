@@ -1,6 +1,6 @@
 from skeletor import Float, Float2, Grid, Field, Particles, Sources
 from skeletor import Ohm
-from skeletor.operators.mpifft4py import Operators
+from skeletor.operators.second_order import Operators
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -134,6 +134,10 @@ def test_ionacoustic(plot=False):
     # Initialize Ohm's law solver
     ohm = Ohm(grid, npc, temperature=Te, charge=charge)
 
+    operators = Operators(grid, 0, 0, np)
+
+    alpha = Te/charge
+
     # Calculate initial density and force
 
     # Deposit sources
@@ -142,9 +146,13 @@ def test_ionacoustic(plot=False):
     sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
-
+    sources.rho.copy_guards()
     # Calculate electric field (Solve Ohm's law)
-    ohm(sources.rho, E, destroy_input=False)
+    # ohm(sources.rho, E, destroy_input=False)
+    operators.gradient(numpy.log(sources.rho), E)
+    E['x'] *= - alpha
+    E['y'] *= - alpha
+
     # Set boundary condition
     E.copy_guards()
 
@@ -196,7 +204,11 @@ def test_ionacoustic(plot=False):
         sources.rho.add_guards()
 
         # Calculate forces (Solve Ohm's law)
-        ohm(sources.rho, E, destroy_input=False)
+        # ohm(sources.rho, E, destroy_input=False)
+        sources.rho.copy_guards()
+        operators.gradient(numpy.log(sources.rho), E)
+        E['x'] *= - alpha
+        E['y'] *= - alpha
         # Set boundary condition
         E.copy_guards()
 
