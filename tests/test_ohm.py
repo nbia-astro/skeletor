@@ -20,7 +20,7 @@ def test_ohm(plot=False):
     np = npc*nx*ny
 
     #############################################
-    # Solve Ohm's law with mpifft5py            #
+    # Solve Ohm's law with mpifft4py            #
     #############################################
 
     # Start parallel processing.

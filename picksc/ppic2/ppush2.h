@@ -1,68 +1,73 @@
 /* header file for ppush2.c */
 
-#include <complex.h>
+#include "precision.h"
 
 double ranorm();
 
-void cpdicomp2l(float edges[], int *nyp, int *noff, int *nypmx,
+void cpdicomp2l(real_t edges[], int *nyp, int *noff, int *nypmx,
                 int *nypmn, int ny, int kstrt, int nvp, int idps);
 
-void cpdistr2(float part[], float edges[], int *npp, int nps, float vtx,
-              float vty, float vdx, float vdy, int npx, int npy, int nx,
+void cpdistr2(real_t part[], real_t edges[], int *npp, int nps, real_t vtx,
+              real_t vty, real_t vdx, real_t vdy, int npx, int npy, int nx,
               int ny, int idimp, int npmax, int idps, int ipbc, int *ierr);
 
-void cppgpush2l(float part[], float fxy[], float edges[], int npp,
-                int noff, int ihole[], float qbm, float dt, float *ek,
+void cppgpush2l(real_t part[], real_t fxy[], real_t edges[], int npp,
+                int noff, int ihole[], real_t qbm, real_t dt, real_t *ek,
                 int nx, int ny, int idimp, int npmax, int nxv,
                 int nypmx, int idps, int ntmax, int ipbc);
 
-void cppgpost2l(float part[], float q[], int npp, int noff, float qm,
+void cppgbpush2l(real_t part[], real_t fxy[], real_t bz, real_t edges[], int npp,
+                int noff, int ihole[], real_t qbm, real_t dt, real_t *ek,
+                int nx, int ny, int idimp, int npmax, int nxv,
+                int nypmx, int idps, int ntmax, int ipbc);
+
+void cppgpost2l(real_t part[], real_t q[], int npp, int noff, real_t qm,
                 int idimp, int npmax, int nxv, int nypmx);
 
-void cppdsortp2yl(float parta[], float partb[], int npic[], int npp,
+void cppdsortp2yl(real_t parta[], real_t partb[], int npic[], int npp,
                   int noff, int nyp, int idimp, int npmax, int nypm1);
 
-void cppcguard2xl(float fxy[], int nyp, int nx, int ndim, int nxe,
+void cppcguard2xl(real_t fxy[], int nyp, int nx, int ndim, int nxe,
                   int nypmx);
 
-void cppaguard2xl(float q[], int nyp, int nx, int nxe, int nypmx);
+void cppaguard2xl(real_t q[], int nyp, int nx, int nxe, int nypmx);
 
-void cppois22(float complex q[], float complex fxy[], int isign,
-              float complex ffc[], float ax, float ay, float affp,
-              float *we, int nx, int ny, int kstrt, int nyv, int kxp,
+void cppois22(complex_t q[], complex_t fxy[], int isign,
+              complex_t ffc[], real_t ax, real_t ay, real_t affp,
+              real_t *we, int nx, int ny, int kstrt, int nyv, int kxp,
               int nyhd);
 
-void cwpfft2rinit(int mixup[], float complex sct[], int indx, int indy,
+void cwpfft2rinit(int mixup[], complex_t sct[], int indx, int indy,
                   int nxhyd, int nxyhd);
 
-void cppfft2rxx(float complex f[], int isign, int mixup[],
-                float complex sct[], int indx, int indy, int kstrt,
+void cppfft2rxx(complex_t f[], int isign, int mixup[],
+                complex_t sct[], int indx, int indy, int kstrt,
                 int kypi, int kypp, int nxvh, int kypd, int nxhyd,
                 int nxyhd);
 
-void cppfft2rxy(float complex g[], int isign, int mixup[],
-                float complex sct[], int indx, int indy, int kstrt,
+void cppfft2rxy(complex_t g[], int isign, int mixup[],
+                complex_t sct[], int indx, int indy, int kstrt,
                 int kxpi, int kxpp, int nyv, int kxp, int nxhyd,
                 int nxyhd);
 
-void cppfft2r2xx(float complex f[], int isign, int mixup[],
-                 float complex sct[], int indx, int indy, int kstrt,
+void cppfft2r2xx(complex_t f[], int isign, int mixup[],
+                 complex_t sct[], int indx, int indy, int kstrt,
                  int kypi, int kypp, int nxvh, int kypd, int nxhyd,
                  int nxyhd);
 
-void cppfft2r2xy(float complex g[], int isign, int mixup[],
-                 float complex sct[], int indx, int indy, int kstrt,
+void cppfft2r2xy(complex_t g[], int isign, int mixup[],
+                 complex_t sct[], int indx, int indy, int kstrt,
                  int kxpi, int kxpp, int nyv, int kxp, int nxhyd,
                  int nxyhd);
 
-void cwppfft2r(float complex f[], float complex g[], float complex bs[],
-               float complex br[], int isign, int ntpose, int mixup[],
-               float complex sct[], float *ttp, int indx, int indy,
+void cwppfft2r(complex_t f[], complex_t g[], complex_t bs[],
+               complex_t br[], int isign, int ntpose, int mixup[],
+               complex_t sct[], real_t *ttp, int indx, int indy,
                int kstrt, int nvp, int nxvh, int nyv, int kxp, int kyp,
                int kypd, int nxhyd, int nxyhd);
 
-void cwppfft2r2(float complex f[], float complex g[], float complex bs[],
-                float complex br[], int isign, int ntpose, int mixup[],
-                float complex sct[], float *ttp, int indx, int indy,
+void cwppfft2r2(complex_t f[], complex_t g[], complex_t bs[],
+                complex_t br[], int isign, int ntpose, int mixup[],
+                complex_t sct[], real_t *ttp, int indx, int indy,
                 int kstrt, int nvp, int nxvh, int nyv, int kxp, int kyp,
                 int kypd, int nxhyd, int nxyhd);

@@ -1,0 +1,483 @@
+\documentclass[aps,pre,notitlepage,amsmath,amssymb,amsfonts,nobibnotes,nofootinbib,superscriptaddress,onecolumn,a4paper,10pt]{revtex4-1}
+\setcitestyle{authoryear,round}
+\bibliographystyle{apsrev4-1}
+% Use the same section numbering as ApJ
+% See http://tex.stackexchange.com/questions/87131/numbering-sections
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+% Fix references
+\makeatletter
+\def\p@subsection{}
+\def\p@subsubsection{}
+\makeatother
+
+\input{preamble}
+\newcommand{\tvec}[1]{\tilde{\vec{#1}}}
+
+\begin{document}
+
+\title{Notes on shearing periodicity}
+\author{Tobias Heinemann}
+\author{Thomas Berlok}
+\affiliation{Niels Bohr International Academy}
+\maketitle
+
+\section{Particle dynamics in the shearing sheet}%
+\label{sec:particles}
+
+In a frame rotating with a constant angular velocity, Newton's second law may
+be written as
+\begin{equation}
+  \label{eq:eom}
+  \ddot{\vec{r}} + 2\vec{\Omega}\times\dot{\vec{r}} + \nabla\psi = \vec{a}.
+\end{equation}
+Here, $\vec{a}$ is the acceleration due to the Lorentz force, which we will
+discuss in \cref{sec:electric,sec:magnetic}. For now let us ignore $\vec{a}$
+and focus on the left hand side.
+
+In standard shearing sheet coordinates, the angular velocity of the rotating
+frame is $\vec{\Omega}=\Omega\ez$ and the effective potential is
+$\psi=S\Omega x^2 + \nu^2 z^2/2$. For numerical reasons it is advantageous to
+adopt a coordinate system that is rotated clock-wise around the $z$-axis by 90
+degrees ($x\to y, y\to-x$). In the new coordinate system, the angular velocity
+is the same but the effective potential is now
+\begin{equation}
+  \label{eq:effective-potential}
+  \psi = S\Omega y^2 + \frac{1}{2}\nu^2 z^2.
+\end{equation}
+
+The horizontal components of \cref{eq:eom} upon substitution of
+\cref{eq:effective-potential} are given by
+\begin{align}
+  \ddot{x} - 2\Omega\dot{y} &= a_x \\
+  \label{eq:eom-y}
+  \ddot{y} + 2\Omega(\dot{x} + Sy) &= a_y.
+\end{align}
+It follows immediately that the system is invariant under translations along
+$x$:
+\begin{equation}
+  \label{eq:trans-x}
+  \begin{aligned}
+    x &\to x + \Delta x \\
+    y &\to y
+  \end{aligned}
+\end{equation}
+The system is also invariant under translations along $y$ if such translations
+are followed by a boost along $x$:
+\begin{equation}
+  \label{eq:trans-y}
+  \begin{aligned}
+    y &\to y + \Delta y \\
+    x &\to x - St\Delta y
+  \end{aligned}
+\end{equation}
+The symmetries \labelcref{eq:trans-x,eq:trans-y} imply that in spite of the
+glaring inhomogeneity in \cref{eq:effective-potential}, the system is in a
+certain sense still homogeneous in the horizontal directions. In the words of
+\citet{Wisdom1988}, ``the dynamics of the [linearized] model are independent
+of the choice of origin, except for a uniform shear that is a consequence of
+the differential rotation in a Keplerian disk.'' The uniform shear in question
+is given by
+\begin{equation}
+  \label{eq:shear-flow}
+  \vec{u} = -Sy\ex.
+\end{equation}
+This flow has the very special property that it appears the same to every
+observer that is locally at rest with respect to it. In Galilean invariant
+theories, only flows that depend linearly on the coordinates have this
+property.
+
+In terms of the one-particle distribution function $f(\vec{r},\vec{v},t)$ with
+$\vec{v}=\dot{\vec{r}}$, the system of equations \labelcref{eq:eom} for many
+particles may equivalently be written as
+\begin{equation}
+  \label{eq:vlasov}
+  \pder{f}{t} + \vec{v}\cdot\nabla f
+  + (\vec{a} - 2\vec{\Omega}\times\vec{v} - \nabla\psi)\cdot\pder{f}{\vec{v}}
+  = 0.
+\end{equation}
+Depending on whether $f$ is the microscopic or macroscopic distribution
+function, \cref{eq:vlasov} is either the Klimontovich or the Vlasov equation.
+The former is exact while the latter only holds if the plasma is
+collisionless. For our present discussion the distinction is not important and
+we will refer to \cref{eq:vlasov} as the Vlasov equation.
+
+Let us introduce the \emph{relative} velocity $\tvec{v}$ through
+\begin{equation}
+  \label{eq:relative-velocity}
+  \vec{v} = -Sy\ex + \tvec{v}.
+\end{equation}
+Expressed in terms of the phase space coordinates $(\vec{r},\tvec{v})$,
+the Vlasov equation \labelcref{eq:vlasov} is
+\begin{equation}
+  \label{eq:vlasov-relative}
+  \pder{f}{t'} + \tilde{\vec{v}}\cdot\nabla f
+  + (\vec{a} - 2\vec{\Omega}\times\tvec{v} + S\tilde{v}_y\ex - \nu^2 z\ez)
+  \cdot\pder{f}{\tvec{v}} = 0,
+\end{equation}
+where it is understood that $\pader{}{y}$ is now to be evaluated at fixed
+$\tilde{v}_x$. The differential operator
+\begin{equation}
+  \label{eq:shearing-ddt}
+  \pder{}{t'} = \pder{}{t} - Sy\pder{}{x}.
+\end{equation}
+We will see in \cref{sec:shearing-coordinates} that $\pader{}{t'}$ is the time
+derivative in shearing coordinates.
+
+While \cref{eq:vlasov-relative} appears more complicated than
+\cref{eq:vlasov}, it has the distinct advantage that it depends explicitly on
+$y$ only through $\pader{}{t'}$ defined in \cref{eq:shearing-ddt}. This
+explicit $y$-dependence can be eliminated (in favor of an explicit
+$t$-dependence) through a transformation to shearing coordinates, see
+\cref{sec:shearing-coordinates}.
+
+So far we have only considered the motion of particles in a prescribed
+effective potential. Let us now turn to the electromagnetic force and the
+field equations governing the electromagnetic field (i.e.\ Maxwell's
+equations). As pointed out by \citet{LeBellac1973}, it is essential for this
+discussion to consider the two distinct non-relativistic limits of Maxwell's
+equations.
+
+\subsection{Electric limit}\label{sec:electric}
+
+In the electric limit, the magnetic field plays an entirely passive role and
+the Lorentz acceleration is simply
+\begin{equation}
+  \label{eq:electric-accel}
+  \vec{a} = \frac{e}{m}\vec{E}.
+\end{equation}
+The system of equations is closed with Gauss' law
+\begin{equation}
+  \epsilon_0\nabla\cdot\vec{E} = \sum e\int\!d^3v\,f.
+\end{equation}
+
+In the electric limit, the electric field is invariant under Galilean
+transformations:
+\begin{equation}
+  \vec{E}' = \vec{E}
+\end{equation}
+From this it follows that \cref{eq:vlasov} with $\vec{a}$ as given in
+\cref{eq:electric-accel} is manifestly invariant under
+\cref{eq:trans-x,eq:trans-y}.
+
+\subsection{Magnetic limit}\label{sec:magnetic}
+
+The magnetic field is not passive in this limit and the Lorentz acceleration
+is given by
+\begin{equation}
+  \label{eq:magnetic-accel}
+  \vec{a} = \frac{e}{m}(\vec{E} + \vec{v}\times\vec{B}).
+\end{equation}
+The system of equations is closed with Ampère's law
+\begin{equation}
+  \label{eq:ampere}
+  \mu_0^{-1}\nabla\times\vec{B} = \sum e\int\!d^3v\,f\vec{v}
+\end{equation}
+and Faraday's law
+\begin{equation}
+  \label{eq:faraday}
+  \pder{\vec{B}}{t} + \nabla\times\vec{E} = 0.
+\end{equation}
+
+The transformation law for the electromagnetic field in this limit is
+\begin{equation}
+  \label{eq:magnetic-transform}
+  \begin{aligned}
+    \vec{E}' &= \vec{E} + \Delta\vec{v}\times\vec{B} \\
+    \vec{B}' &= \vec{B},
+  \end{aligned}
+\end{equation}
+where $\Delta\vec{v}$ is the boost velocity. Since the transformation law for
+the velocity itself is $\vec{v}'=\vec{v}-\Delta\vec{v}$, it is clear that the
+Lorentz acceleration as given in \cref{eq:magnetic-accel} is Galilean
+invariant. From \cref{eq:magnetic-transform} it also follows that the plasma
+has to be strictly neutral in the magnetic limit. This is because if $\vec{B}$
+is invariant (meaning $\vec{B}'=\vec{B}$), then so is its curl and hence the
+left hand side of Ampère's law \labelcref{eq:ampere}. The right hand side is,
+however, not invariant in general. This can only be reconciled by demanding
+that
+\begin{equation}
+  \label{eq:strict-neutrality}
+  \sum e\int\!d^3v\,f = 0,
+\end{equation}
+i.e.\ by demanding that the plasma is \emph{strictly} neutral. In this case
+the right hand side of \cref{eq:ampere} is also invariant.
+
+Let us now express \cref{eq:magnetic-accel,eq:ampere,eq:faraday} in terms of
+the relative velocity $\tvec{v}$ defined in \cref{eq:relative-velocity}. This
+will cast the equations in a form that is manifestly invariant under
+\labelcref{eq:trans-x,eq:trans-y}. We start with Ampère's law
+\labelcref{eq:ampere}. From \cref{eq:strict-neutrality} it follows that
+\begin{equation}
+  \mu_0^{-1}\nabla\times\vec{B} = \sum e\int\!d^3v\,f\tvec{v}.
+\end{equation}
+That is all. Next we consider the Lorentz acceleration defined in
+\cref{eq:magnetic-accel}, which may be written as
+\begin{equation}
+  \vec{a} = \frac{e}{m}(\tvec{E} + \tvec{v}\times\vec{B}),
+\end{equation}
+where we have introduced the \emph{relative} electric field
+\begin{equation}
+  \tvec{E} = \vec{E} - Sy\ex\times\vec{B}.
+\end{equation}
+Expressing Faraday's law \labelcref{eq:faraday} in terms of $\tvec{E}$ yields
+\begin{equation}
+  \label{eq:faraday-relative}
+  \pder{\vec{B}}{t'} + SB_y\ex + \nabla\times\tvec{E} = 0,
+\end{equation}
+where the differential operator $\pader{}{t'}$ is defined in
+\cref{eq:shearing-ddt}. This form of Faraday's law makes explicit that the
+magnetic field is advected (through $\pader{}{t'}$) and stretched by the
+uniform shear flow.
+
+\section{Shearing coordinates}\label{sec:shearing-coordinates}
+
+Both the Vlasov equation and Faraday's law in the form of
+\cref{eq:vlasov-relative,eq:faraday-relative}, respectively, do not explicitly
+depend on $x$. They do explicitly depend on $y$ in exactly the same way. This
+$y$-dependence can, however, be eliminated through a transformation from
+``laboratory coordinates'' ($x$, $y$, $t$) to shearing coordinates ($x'$,
+$y'$, $t'$) defined by\footnote{We will often suppress the $z$-coordinate
+  because it does not affect this discussion in any way.}
+\begin{equation}
+  \label{eq:shearing-coordinates}
+  x' = x + Sty,\quad y' = y,\quad t' = t.
+\end{equation}
+From this it follows that
+\begin{equation}
+  \pder{}{x} = \pder{}{x'},\quad
+  \pder{}{y} = \pder{}{y'} + St'\pder{}{x'},\quad
+  \pder{}{t} - Sy\pder{}{x} = \pder{}{t'}.
+\end{equation}
+The second equality shows that an explicit time-dependence arises whenever a
+partial derivative with respect to $y$ is taken. On the plus side, the third
+equality shows that the explicit $y$-dependence is indeed eliminated.
+
+In shearing coordinates, the system is thus homogeneous in the horizontal
+directions. This means that we can impose periodic boundary conditions in
+shearing coordinates. In turn this means that we can expand any field, say
+$\tvec{E}$ in a double Fourier series:
+\begin{equation}
+  \tvec{E}(x',y',t') = \sum_{k_x',k_y'}\tvec{E}(k_x',k_y',t')
+  e^{ik_x' x' + ik_y' y'}
+\end{equation}
+From \cref{eq:shearing-coordinates} it follows that
+\begin{equation}
+  k_x' x' + k_y' y' = k_x x + k_y y,
+\end{equation}
+where the laboratory frame wave numbers
+\begin{align}
+  k_x &= k_x' \\
+  k_y &= k_y' + St' k_x'.
+\end{align}
+In the ``laboratory coordinates'' ($x$, $y$, $t$) we may thus express
+$\tvec{E}$ as a sum of ``sheared disturbances'':
+\begin{equation}
+  \tvec{E}(x,y,t) = \sum_{k_x',k_y'}\tvec{E}(k_x',k_y',t)
+  e^{ik_x x + ik_y(t) y},
+\end{equation}
+where we have indicated the explicit time-dependence of $k_y$. Because of this
+time-dependence, the relative electric field is not periodic but
+\emph{shearing-periodic} in laboratory coordinates.
+
+\section{Fluid dynamics in the shearing sheet}
+
+Taking the zeroth and first moment of the Vlasov equation yields the
+continuity equation
+\begin{equation}
+  \pder{\rho}{t} + \nabla\cdot(\rho\vec{u}) = 0
+\end{equation}
+and the momentum equation
+\begin{equation}
+  \pder{\vec{u}}{t} + \vec{u}\cdot\nabla\vec{u}
+  + 2\vec{\Omega}\times\vec{u} + \nabla\psi
+  + \frac{\nabla\cdot\mathbf{P}}{\rho} = \vec{a},
+\end{equation}
+respectively. The effective potential $\psi$ is defined in
+\cref{eq:effective-potential}. $\mathbf{P}$ is the pressure tensor and
+$\vec{a}$ is the acceleration due to electromagnetic forces. A steady state
+solution is given by a uniform density and a uniform shear flow as defined in
+\cref{eq:shear-flow}. In analogy with the analysis of \cref{sec:particles} it
+is useful to define the \emph{relative} bulk velocity $\tvec{u}$ through
+\begin{equation}
+  \vec{u} = -Sy\ex + \tvec{u},
+\end{equation}
+cf.~\cref{eq:relative-velocity}. Expressed in terms of $\tvec{u}$ the
+continuity equation and momentum equation are given by
+\begin{equation}
+  \label{eq:continuity}
+  \pder{\rho}{t'} + \nabla\cdot(\rho\tvec{u}) = 0
+\end{equation}
+and
+\begin{equation}
+  \label{eq:momentum}
+  \pder{\tvec{u}}{t'} + \tvec{u}\cdot\nabla\tvec{u}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex
+  + \frac{\nabla\cdot\mathbf{P}}{\rho} = \vec{a}.
+\end{equation}
+
+\subsection{Non-linear evolution of sheared disturbances}
+
+Let us consider a cold, neutral fluid. The momentum equation in this case
+reduces to
+\begin{equation}
+  \label{eq:momentum-cold-neutral}
+  \pder{\tvec{u}}{t'} + \tvec{u}\cdot\nabla\tvec{u}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0.
+\end{equation}
+The continuity equation \labelcref{eq:continuity} is unmodified but purely
+diagnostic in the sense that the dynamics are completely determined by
+\cref{eq:momentum-cold-neutral}.
+
+In order to study the evolution of sheared disturbances, we now transform the
+equations of motion \labelcref{eq:continuity,eq:momentum-cold-neutral} to the
+sheared coordinate frame defined in \cref{sec:shearing-coordinates}. All this
+amounts to is evaluating $\pader{}{y}$ at fixed $x'$. Doing so yields
+\begin{equation}
+  \label{eq:nabla-shearing}
+  \nabla = (\ex + St'\ey)\pder{}{x'} + \ey\pder{}{y'}.
+\end{equation}
+As we remarked in the section \cref{sec:shearing-coordinates}, the equations
+of motion are spatially homogeneous in shearing coordinates: the coefficients
+in \cref{eq:continuity,eq:momentum-cold-neutral} depend on $t'$ through
+\cref{eq:nabla-shearing}, but neither on $x'$ nor on $y'$. This symmetry
+implies that if the system is in a state that is independent of, say, $y'$ at
+any given time, then it will remain independent of $y'$ for all time. Because
+of this, studying the nonlinear evolution of sheared disturbances becomes a
+one-dimensional problem. Setting $\pader{}{y'}=0$, the continuity equation
+\labelcref{eq:continuity} and the momentum equation
+\labelcref{eq:momentum-cold-neutral} reduce to
+\begin{equation}
+  \label{eq:continuity-1D}
+  \pder{\rho}{t'} + \pder{}{x'}(\rho\tilde{u}_{x'}) = 0
+\end{equation}
+and
+\begin{equation}
+  \label{eq:momentum-1D}
+  \pder{\tvec{u}}{t'} + \tilde{u}_{x'}\pder{\tvec{u}}{x'}
+  + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0,
+\end{equation}
+where
+\begin{equation}
+  \label{eq:ux-prime}
+  \tilde{u}_{x'} = \tilde{u}_x + St'\tilde{u}_y
+\end{equation}
+is the $x'$-component of $\tvec{u}$.
+
+In \cref{eq:momentum-1D}, the only nonlinear term is the advection term. This
+can be eliminated via yet another coordinate transformation, this time to a
+\emph{Lagrangian} coordinate system. To do this, we suppose that the
+\emph{Eulerian} coordinate $x'$ is itself a field $x'(a,\tau)$, where
+$\tau=t'$ but $\pader{}{\tau}$ indicates that $a$ (not $x'$) is held fixed.
+The spatial coordinate $a$ may be thought of as a continuous label of
+individual fluid elements \citep[see the beautiful review of Hamiltonian fluid
+mechanics by][]{Salmon1988}. With this in mind, we define $a$ implicitly
+through
+\begin{equation}
+  \label{eq:dx/dtau}
+  \pder{x'}{\tau} = \tilde{u}_{x'}
+\end{equation}
+with initial condition
+\begin{equation}
+  \label{eq:initial-x}
+  x'(a,0) = a.
+\end{equation}
+Given the definition of $a$ as a label of fluid elements, \cref{eq:dx/dtau}
+makes the reasonable statement that the rate of change of a fluid elements
+coordinate is equal to its velocity.
+
+From \cref{eq:dx/dtau} it follows that
+\begin{equation}
+  \label{eq:d/dtau}
+  \pder{}{\tau} = \pder{}{t'} + u_{x'}\pder{}{x'}.
+\end{equation}
+The momentum equation \labelcref{eq:momentum-1D} in Lagrangian coordinates is
+thus given by
+\begin{equation}
+  \label{eq:momentum-lagrangian}
+  \pder{\tvec{u}}{\tau} + 2\vec{\Omega}\times\tvec{u} - S\tilde{u}_y\ex = 0.
+\end{equation}
+This equation is linear and it depends on $a$ only parametrically. The exact
+solution is thus elementary.
+
+In order to find the solution for the mass density $\rho$, we first note that
+since $\tau=t'$, partial derivatives with respect to $x'$ and $a$ are related
+by
+\begin{equation}
+  \label{eq:d/dx}
+  \pder{}{x'} = \left(\pder{x'}{a}\right)^{-1}\pder{}{a}.
+\end{equation}
+We will verify a posteriori that $\pader{x'}{a}>0$. From \cref{eq:d/dx}
+together with \cref{eq:continuity-1D,eq:dx/dtau,eq:d/dtau} it follows that
+\begin{equation}
+  \pder{\rho}{\tau} = -\rho\pder{\tilde{u}_{x'}}{x'} =
+  -\rho\left(\pder{x'}{a}\right)^{-1}\pder{\tilde{u}_{x'}}{a} =
+  -\rho\left(\pder{x'}{a}\right)^{-1}\pder{}{\tau}\pder{x'}{a}
+\end{equation}
+or
+\begin{equation}
+  \pder{}{\tau}\ln\left(\rho\pder{x'}{a}\right) = 0.
+\end{equation}
+It follows that
+\begin{equation}
+  \label{eq:rho}
+  \rho = \rho_0\left(\pder{x'}{a}\right)^{-1}
+\end{equation}
+where $\rho_0$ is independent of $\tau$. \Cref{eq:initial-x} implies that
+$\rho_0$ is the mass density at $t=0$. Since the mass density is greater than
+zero at all times, \cref{eq:rho} shows that $\pader{x'}{a}>0$ as assumed
+earlier.
+
+The set of equations
+\labelcref{eq:ux-prime,eq:momentum-lagrangian,eq:dx/dtau,eq:initial-x,eq:rho}
+allows us to find the complete solution of the problem in Lagrangian
+coordinates as follows. The components of the momentum equation
+\labelcref{eq:momentum-lagrangian} are
+\begin{align}
+  \label{eq:dux/dtau}
+  \pader{\tilde{u}_x}{\tau} - 2\Omega\tilde{u}_y &= S\tilde{u}_y \\
+  \label{eq:duy/dtau}
+  \pader{\tilde{u}_y}{\tau} + 2\Omega\tilde{u}_x &= 0
+\end{align}
+Eliminating $\tilde{u}_y$ by differentiating \cref{eq:dux/dtau} with respect
+to $\tau$ and assuming a harmonic dependence of $\tilde{u}_x$ on time, i.e.
+\begin{equation}
+  \tilde{u}_x(a,\tau) = U(a)\exp(-i\omega\tau),
+\end{equation}
+leads to the dispersion relation
+\begin{equation}
+  \omega^2 = \kappa^2 = 2\Omega(2\Omega + S).
+\end{equation}
+Integrating \cref{eq:duy/dtau} yields
+\begin{equation}
+  \tilde{u}_y = \frac{2\Omega}{i\omega}\tilde{u}_x.
+\end{equation}
+The sheared Eulerian coordinate is obtained by integrating \cref{eq:dx/dtau}
+and using \cref{eq:ux-prime,eq:initial-x}. This yields
+\begin{equation}
+%   x'(a,\tau) =
+%   a - \frac{1}{i\omega}\Big[\tilde{u}_{x'}(a,\tau) - \tilde{u}_{x'}(a,0)\Big]
+%   + \frac{S}{\omega^2}\Big[\tilde{u}_y(a,\tau) - \tilde{u}_y(a,0)\Big].
+  -i\omega\Delta x' = \Delta\tilde{u}_{x'}
+  + \frac{S\Delta\tilde{u}_y}{i\omega},
+\end{equation}
+where the operator $\Delta$ is defined through
+\begin{equation}
+  \Delta\psi(a,\tau) = \psi(a,\tau) - \psi(a,0)
+\end{equation}
+for arbitrary $\psi(a,\tau)$.
+Finally, given $x'$, it follows from \cref{eq:rho} that
+\begin{equation}
+  % \frac{\rho_0}{\rho(a,\tau)} = 1 + \der{\ln U}{a}[x'(a,\tau) - a].
+  \frac{\rho_0}{\rho} = 1 + \der{\ln U}{a}\Delta x'.
+\end{equation}
+
+Note that because we have an expression for the Eulerian coordinate $x'$ (in
+terms of the Lagrangian coordinate $a$ and time), we can simply plot $\rho$,
+$\tilde{u}_x$, or $\tilde{u}_y$ versus $x'$ to visualize the solution in
+Eulerian coordinates in order to make a direct comparison with simulations.
+
+\bibliography{mendeley}
+
+\end{document}

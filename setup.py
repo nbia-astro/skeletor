@@ -10,7 +10,9 @@ cflags = ["-Wno-unused-function", "-Wno-#warnings"]
 
 extensions = [Extension(
     "*", ["skeletor/cython/*.pyx"],
-    include_dirs=[get_include()], extra_compile_args=cflags)]
+    include_dirs=[get_include()], extra_compile_args=cflags,
+    depends=["picksc/ppic2/precision.h"])]
+
 setup(
     name='skeletor',
     version='0.0.1',

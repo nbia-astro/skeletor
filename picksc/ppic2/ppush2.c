@@ -73,7 +73,7 @@ local data                                                              */
 }
 
 /*--------------------------------------------------------------------*/
-void cpdicomp2l(float edges[], int *nyp, int *noff, int *nypmx,
+void cpdicomp2l(real_t edges[], int *nyp, int *noff, int *nypmx,
                 int *nypmn, int ny, int kstrt, int nvp, int idps) {
 /* this subroutine determines spatial boundaries for uniform particle
    decomposition, calculates number of grid points in each spatial
@@ -94,18 +94,18 @@ void cpdicomp2l(float edges[], int *nyp, int *noff, int *nypmx,
    idps = number of partition boundaries
 local data                                                            */
    int kb, kyp;
-   float at1, any;
+   real_t at1, any;
    int mypm[2], iwork2[2];
-   any = (float) ny;
+   any = (real_t) ny;
 /* determine decomposition */
    kb = kstrt - 1;
    kyp = (ny - 1)/nvp + 1;
-   at1 = (float) kyp;
-   edges[0] = at1*(float) kb;
+   at1 = (real_t) kyp;
+   edges[0] = at1*(real_t) kb;
    if (edges[0] > any)
       edges[0] = any;
    *noff = edges[0];
-   edges[1] = at1*(float) (kb + 1);
+   edges[1] = at1*(real_t) (kb + 1);
    if (edges[1] > any)
       edges[1] = any;
    kb = edges[1];
@@ -120,8 +120,8 @@ local data                                                            */
 }
 
 /*--------------------------------------------------------------------*/
-void cpdistr2(float part[], float edges[], int *npp, int nps, float vtx,
-              float vty, float vdx, float vdy, int npx, int npy, int nx,
+void cpdistr2(real_t part[], real_t edges[], int *npp, int nps, real_t vtx,
+              real_t vty, real_t vdx, real_t vdy, int npx, int npy, int nx,
               int ny, int idimp, int npmax, int idps, int ipbc, int *ierr) {
 /* for 2d code, this subroutine calculates initial particle co-ordinates
    and velocities with uniform density and maxwellian velocity with drift
@@ -149,7 +149,7 @@ void cpdistr2(float part[], float edges[], int *npp, int nps, float vtx,
    with spatial decomposition
 local data                                                            */
    int j, k, npt, k1, npxyp;
-   float edgelx, edgely, at1, at2, xt, yt, vxt, vyt;
+   real_t edgelx, edgely, at1, at2, xt, yt, vxt, vyt;
    double dnpx, dnpxy, dt1;
    int ierr1[1], iwork1[1];
    double sum3[3], work3[3];
@@ -159,24 +159,24 @@ local data                                                            */
 /* set boundary values */
    edgelx = 0.0;
    edgely = 0.0;
-   at1 = (float) nx/(float) npx;
-   at2 = (float) ny/(float) npy;
+   at1 = (real_t) nx/(real_t) npx;
+   at2 = (real_t) ny/(real_t) npy;
    if (ipbc==2) {
       edgelx = 1.0;
       edgely = 1.0;
-      at1 = (float) (nx-2)/(float) npx;
-      at2 = (float) (ny-2)/(float) npy;
+      at1 = (real_t) (nx-2)/(real_t) npx;
+      at2 = (real_t) (ny-2)/(real_t) npy;
    }
    else if (ipbc==3) {
       edgelx = 1.0;
-      at1 = (float) (nx-2)/(float) npx;
+      at1 = (real_t) (nx-2)/(real_t) npx;
    }
    npt = *npp;
 /* uniform density profile */
    for (k = 0; k < npy; k++) {
-      yt = edgely + at2*(((float) k) + 0.5);
+      yt = edgely + at2*(((real_t) k) + 0.5);
       for (j = 0; j < npx; j++) {
-         xt = edgelx + at1*(((float) j) + 0.5);
+         xt = edgelx + at1*(((real_t) j) + 0.5);
 /* maxwellian velocity distribution */
          vxt = vtx*ranorm();
          vyt = vty*ranorm();
@@ -225,8 +225,8 @@ local data                                                            */
 }
 
 /*--------------------------------------------------------------------*/
-void cppgpush2l(float part[], float fxy[], float edges[], int npp,
-                int noff, int ihole[], float qbm, float dt, float *ek,
+void cppgpush2l(real_t part[], real_t fxy[], real_t edges[], int npp,
+                int noff, int ihole[], real_t qbm, real_t dt, real_t *ek,
                 int nx, int ny, int idimp, int npmax, int nxv,
                 int nypmx, int idps, int ntmax, int ipbc) {
 /* for 2d code, this subroutine updates particle co-ordinates and
@@ -276,8 +276,8 @@ void cppgpush2l(float part[], float fxy[], float edges[], int npp,
    (none,2d periodic,2d reflecting,mixed reflecting/periodic)
 local data                                                            */
    int mnoff, j, nn, mm, np, mp, ih, nh, nxv2;
-   float qtm, edgelx, edgely, edgerx, edgery, dxp, dyp, amx, amy;
-   float dx, dy, vx, vy;
+   real_t qtm, edgelx, edgely, edgerx, edgery, dxp, dyp, amx, amy;
+   real_t dx, dy, vx, vy;
    double sum1;
    nxv2 = 2*nxv;
    qtm = qbm*dt;
@@ -285,11 +285,11 @@ local data                                                            */
 /* set boundary values */
    edgelx = 0.0;
    edgely = 1.0;
-   edgerx = (float) nx;
-   edgery = (float) (ny-1);
+   edgerx = (real_t) nx;
+   edgery = (real_t) (ny-1);
    if ((ipbc==2) || (ipbc==3)) {
       edgelx = 1.0;
-      edgerx = (float) (nx-1);
+      edgerx = (real_t) (nx-1);
    }
    mnoff = noff;
    ih = 0;
@@ -298,8 +298,8 @@ local data                                                            */
 /* find interpolation weights */
       nn = part[idimp*j];
       mm = part[1+idimp*j];
-      dxp = part[idimp*j] - (float) nn;
-      dyp = part[1+idimp*j] - (float) mm;
+      dxp = part[idimp*j] - (real_t) nn;
+      dyp = part[1+idimp*j] - (real_t) mm;
       nn = 2*nn;
       mm = nxv2*(mm - mnoff);
       amx = 1.0 - dxp;
@@ -370,7 +370,160 @@ local data                                                            */
 }
 
 /*--------------------------------------------------------------------*/
-void cppgpost2l(float part[], float q[], int npp, int noff, float qm,
+void cppgbpush2l(real_t part[], real_t fxy[], real_t bz, real_t edges[], int npp,
+                int noff, int ihole[], real_t qbm, real_t dt, real_t *ek,
+                int nx, int ny, int idimp, int npmax, int nxv,
+                int nypmx, int idps, int ntmax, int ipbc) {
+/* for 2d code, this subroutine updates particle co-ordinates and
+   velocities using leap-frog scheme in time and first-order linear
+   interpolation in space, with various boundary conditions
+   also determines list of particles which are leaving this processor
+   scalar version using guard cells, for distributed data
+   42 flops/particle, 12 loads, 4 stores
+   input: all except ihole, output: part, ihole, ek
+   equations used are:
+   vx(t+dt/2) = vx(t-dt/2) + (q/m)*fx(x(t),y(t))*dt,
+   vy(t+dt/2) = vy(t-dt/2) + (q/m)*fy(x(t),y(t))*dt,
+   where q/m is charge/mass, and
+   x(t+dt) = x(t) + vx(t+dt/2)*dt, y(t+dt) = y(t) + vy(t+dt/2)*dt
+   fx(x(t),y(t)) and fy(x(t),y(t)) are approximated by interpolation from
+   the nearest grid points:
+   fx(x,y) = (1-dy)*((1-dx)*fx(n,m)+dx*fx(n+1,m)) + dy*((1-dx)*fx(n,m+1)
+      + dx*fx(n+1,m+1))
+   fy(x,y) = (1-dy)*((1-dx)*fy(n,m)+dx*fy(n+1,m)) + dy*((1-dx)*fy(n,m+1)
+      + dx*fy(n+1,m+1))
+   where n,m = leftmost grid points and dx = x-n, dy = y-m
+   part[n][0] = position x of particle n in partition
+   part[n][1] = position y of particle n in partition
+   part[n][2] = velocity vx of particle n in partition
+   part[n][3] = velocity vy of particle n in partition
+   fxy[k][j][0] = x component of force/charge at grid (j,kk)
+   fxy[k][j][1] = y component of force/charge at grid (j,kk)
+   in other words, fxy are the convolutions of the electric field
+   over the particle shape, where kk = k + noff
+   edges[0:1] = lower:upper boundary of particle partition
+   npp = number of particles in partition
+   noff = lowermost global gridpoint in particle partition.
+   ihole = location of hole left in particle arrays
+   ihole[0] = ih, number of holes left (error, if negative)
+   qbm = particle charge/mass
+   dt = time interval between successive calculations
+   kinetic energy/mass at time t is also calculated, using
+   ek = .125*sum((vx(t+dt/2)+vx(t-dt/2))**2+(vy(t+dt/2)+vy(t-dt/2))**2)
+   nx/ny = system length in x/y direction
+   idimp = size of phase space = 4
+   npmax = maximum number of particles in each partition
+   nxv = first dimension of field array, must be >= nx+1
+   nypmx = maximum size of particle partition, including guard cells.
+   idps = number of partition boundaries
+   ntmax = size of hole array for particles leaving processors
+   ipbc = particle boundary condition = (0,1,2,3) =
+   (none,2d periodic,2d reflecting,mixed reflecting/periodic)
+local data                                                            */
+   int mnoff, j, nn, mm, np, mp, ih, nh, nxv2;
+   real_t qtm, qtmh, edgelx, edgely, edgerx, edgery, dxp, dyp, amx, amy;
+   real_t dx, dy;
+   double sum1;
+   nxv2 = 2*nxv;
+   qtm = qbm*dt;
+   qtmh = 0.5*qbm*dt;
+   double dtc = dt;
+   double omzt, fac, vpx, vpy, vmx, vmy;
+   sum1 = 0.0;
+/* set boundary values */
+   edgelx = 0.0;
+   edgely = 1.0;
+   edgerx = (real_t) nx;
+   edgery = (real_t) (ny-1);
+   if ((ipbc==2) || (ipbc==3)) {
+      edgelx = 1.0;
+      edgerx = (real_t) (nx-1);
+   }
+   mnoff = noff;
+   ih = 0;
+   nh = 0;
+   for (j = 0; j < npp; j++) {
+/* find interpolation weights */
+      nn = part[idimp*j];
+      mm = part[1+idimp*j];
+      dxp = part[idimp*j] - (real_t) nn;
+      dyp = part[1+idimp*j] - (real_t) mm;
+      nn = 2*nn;
+      mm = nxv2*(mm - mnoff);
+      amx = 1.0 - dxp;
+      mp = mm + nxv2;
+      amy = 1.0 - dyp;
+      np = nn + 2;
+/* find acceleration */
+      dx = dyp*(dxp*fxy[np+mp] + amx*fxy[nn+mp])
+         + amy*(dxp*fxy[np+mm] + amx*fxy[nn+mm]);
+      dy = dyp*(dxp*fxy[1+np+mp] + amx*fxy[1+nn+mp])
+         + amy*(dxp*fxy[1+np+mm] + amx*fxy[1+nn+mm]);
+/* calculate half impulse */
+      dx *= qtmh;
+      dy *= qtmh;
+/* half acceleration */
+      vmx = part[2+idimp*j] + dx;
+      vmy = part[3+idimp*j] + dy;
+/* time-centered kinetic energy */
+      sum1 += vmx*vmx + vmy*vmy;
+/* calculate cyclotron frequency */
+      omzt = qtmh*bz;
+      fac = 2.0/(1.0 + omzt*omzt);
+/* new velocity */
+      vpx = vmx + omzt*vmy;
+      vpy = vmy - omzt*vmx;
+      part[2+idimp*j] = vmx + fac*vpy*omzt + dx;
+      part[3+idimp*j] = vmy - fac*vpx*omzt + dy;
+/* new position */
+      dx = part[idimp*j]   + part[2+idimp*j]*dtc;
+      dy = part[1+idimp*j] + part[3+idimp*j]*dtc;
+/* periodic boundary conditions in x */
+      if (ipbc==1) {
+         if (dx < edgelx) dx += edgerx;
+         if (dx >= edgerx) dx -= edgerx;
+      }
+/* reflecting boundary conditions */
+      else if (ipbc==2) {
+         if ((dx < edgelx) || (dx >= edgerx)) {
+            dx = part[idimp*j];
+            part[2+idimp*j] = -part[2+idimp*j];
+         }
+         if ((dy < edgely) || (dy >= edgery)) {
+            dy = part[1+idimp*j];
+            part[3+idimp*j] = -part[3+idimp*j];
+         }
+      }
+/* mixed reflecting/periodic boundary conditions */
+      else if (ipbc==3) {
+         if ((dx < edgelx) || (dx >= edgerx)) {
+            dx = part[idimp*j];
+            part[2+idimp*j] = -part[2+idimp*j];
+         }
+      }
+/* find particles out of bounds */
+      if ((dy < edges[0]) || (dy >= edges[1])) {
+         if (ih < ntmax)
+            ihole[ih+1] = j + 1;
+         else
+            nh = 1;
+         ih += 1;
+      }
+/* set new position */
+      part[idimp*j] = dx;
+      part[1+idimp*j] = dy;
+   }
+/* set end of file flag */
+      if (nh > 0)
+         ih = -ih;
+      ihole[0] = ih;
+/* normalize kinetic energy */
+   *ek += 0.125*sum1;
+   return;
+}
+
+/*--------------------------------------------------------------------*/
+void cppgpost2l(real_t part[], real_t q[], int npp, int noff, real_t qm,
                 int idimp, int npmax, int nxv, int nypmx) {
 /* for 2d code, this subroutine calculates particle charge density
    using first-order linear interpolation, periodic boundaries
@@ -396,14 +549,14 @@ void cppgpost2l(float part[], float q[], int npp, int noff, float qm,
    nypmx = maximum size of particle partition, including guard cells.
 local data                                                            */
    int  mnoff, j, nn, np, mm, mp;
-   float dxp, dyp, amx, amy;
+   real_t dxp, dyp, amx, amy;
    mnoff = noff;
    for (j = 0; j < npp; j++) {
 /* find interpolation weights */
       nn = part[idimp*j];
       mm = part[1+idimp*j];
-      dxp = qm*(part[idimp*j] - (float) nn);
-      dyp = part[1+idimp*j] - (float) mm;
+      dxp = qm*(part[idimp*j] - (real_t) nn);
+      dyp = part[1+idimp*j] - (real_t) mm;
       mm = nxv*(mm - mnoff);
       amx = qm - dxp;
       mp = mm + nxv;
@@ -419,7 +572,7 @@ local data                                                            */
 }
 
 /*--------------------------------------------------------------------*/
-void cppdsortp2yl(float parta[], float partb[], int npic[], int npp,
+void cppdsortp2yl(real_t parta[], real_t partb[], int npic[], int npp,
                   int noff, int nyp, int idimp, int npmax, int nypm1) {
 /* this subroutine sorts particles by y grid
    linear interpolation, spatial decomposition in y direction
@@ -467,7 +620,7 @@ local data                                                            */
 }
 
 /*--------------------------------------------------------------------*/
-void cppcguard2xl(float fxy[], int nyp, int nx, int ndim, int nxe,
+void cppcguard2xl(real_t fxy[], int nyp, int nx, int ndim, int nxe,
                   int nypmx) {
 /* replicate extended periodic vector field in x direction
    linear interpolation, for distributed data
@@ -490,7 +643,7 @@ local data                                                 */
 }
 
 /*--------------------------------------------------------------------*/
-void cppaguard2xl(float q[], int nyp, int nx, int nxe, int nypmx) {
+void cppaguard2xl(real_t q[], int nyp, int nx, int nxe, int nypmx) {
 /* accumulate extended periodic scalar field in x direction
    linear interpolation, for distributed data
    nyp = number of primary (complete) gridpoints in particle partition
@@ -507,11 +660,11 @@ local data                                                 */
    }
    return;
 }
-      
+
 /*--------------------------------------------------------------------*/
-void cppois22(float complex q[], float complex fxy[], int isign,
-              float complex ffc[], float ax, float ay, float affp,
-              float *we, int nx, int ny, int kstrt, int nyv, int kxp,
+void cppois22(complex_t q[], complex_t fxy[], int isign,
+              complex_t ffc[], real_t ax, real_t ay, real_t affp,
+              real_t *we, int nx, int ny, int kstrt, int nyv, int kxp,
               int nyhd) {
 /* this subroutine solves 2d poisson's equation in fourier space for
    force/charge (or convolution of electric field over particle shape)
@@ -550,8 +703,8 @@ void cppois22(float complex q[], float complex fxy[], int isign,
    nyhd = first dimension of form factor array, must be >= nyh
 local data                                                 */
    int nxh, nyh, ks, joff, kxps, j, jj, jk, k, k1;
-   float dnx, dny, dkx, dky, at1, at2, at3, at4;
-   float complex zero, zt1, zt2;
+   real_t dnx, dny, dkx, dky, at1, at2, at3, at4;
+   complex_t zero, zt1, zt2;
    double wp;
    nxh = nx/2;
    nyh = 1 > ny/2 ? 1 : ny/2;
@@ -560,20 +713,20 @@ local data                                                 */
    kxps = nxh - joff;
    kxps = 0 > kxps ? 0 : kxps;
    kxps = kxp < kxps ? kxp : kxps;
-   dnx = 6.28318530717959/(float) nx;
-   dny = 6.28318530717959/(float) ny;
+   dnx = 6.28318530717959/(real_t) nx;
+   dny = 6.28318530717959/(real_t) ny;
    zero = 0.0 + 0.0*_Complex_I;
    if (isign != 0)
       goto L30;
    if (kstrt > nxh) return;
 /* prepare form factor array */
    for (j = 0; j < kxps; j++) {
-      dkx = dnx*(float) (j + joff);
+      dkx = dnx*(real_t) (j + joff);
       jj = nyhd*j;
       at1 = dkx*dkx;
       at2 = pow((dkx*ax),2);
       for (k = 0; k < nyh; k++) {
-         dky = dny*(float) k;
+         dky = dny*(real_t) k;
          at3 = dky*dky + at1;
          at4 = exp(-.5*(pow((dky*ay),2) + at2));
          if (at3==0.0) {
@@ -591,7 +744,7 @@ L30: wp = 0.0;
       goto L70;
 /* mode numbers 0 < kx < nx/2 and 0 < ky < ny/2 */
    for (j = 0; j < kxps; j++) {
-      dkx = dnx*(float) (j + joff);
+      dkx = dnx*(real_t) (j + joff);
       jj = nyhd*j;
       jk = nyv*j;
       if ((j+joff) > 0) {
@@ -599,7 +752,7 @@ L30: wp = 0.0;
             k1 = ny - k;
             at1 = crealf(ffc[k+jj])*cimagf(ffc[k+jj]);
             at2 = dkx*at1;
-            at3 = dny*at1*(float) k;
+            at3 = dny*at1*(real_t) k;
             zt1 = cimagf(q[k+jk]) - crealf(q[k+jk])*_Complex_I;
             zt2 = cimagf(q[k1+jk]) - crealf(q[k1+jk])*_Complex_I;
             fxy[2*k+2*jk] = at2*zt1;
@@ -626,7 +779,7 @@ L30: wp = 0.0;
       for (k = 1; k < nyh; k++) {
          k1 = ny - k;
          at1 = crealf(ffc[k])*cimagf(ffc[k]);
-         at2 = dny*at1*(float) k;
+         at2 = dny*at1*(real_t) k;
          zt1 = cimagf(q[k]) - crealf(q[k])*_Complex_I;
          fxy[2*k] = zero;
          fxy[1+2*k] = at2*zt1;
@@ -641,12 +794,12 @@ L30: wp = 0.0;
       fxy[1+k1] = zero;
    }
 L70:
-   *we = wp*((float) nx)*((float) ny);
+   *we = wp*((real_t) nx)*((real_t) ny);
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cwpfft2rinit(int mixup[], float complex sct[], int indx, int indy,
+void cwpfft2rinit(int mixup[], complex_t sct[], int indx, int indy,
                   int nxhyd, int nxyhd) {
 /* this subroutine calculates tables needed by a two dimensional
    real to complex fast fourier transform and its inverse.
@@ -662,7 +815,7 @@ void cwpfft2rinit(int mixup[], float complex sct[], int indx, int indy,
 local data                                                            */
    int indx1, indx1y, nx, ny, nxy, nxhy, nxyh;
    int  j, k, lb, ll, jb, it;
-   float dnxy, arg;
+   real_t dnxy, arg;
    indx1 = indx - 1;
    indx1y = indx1 > indy ? indx1 : indy;
    nx = 1L<<indx;
@@ -683,17 +836,17 @@ local data                                                            */
    }
 /* sine/cosine table for the angles 2*n*pi/nxy */
    nxyh = nxy/2;
-   dnxy = 6.28318530717959/(float) nxy;
+   dnxy = 6.28318530717959/(real_t) nxy;
    for (j = 0; j < nxyh; j++) {
-      arg = dnxy*(float) j;
+      arg = dnxy*(real_t) j;
       sct[j] = cosf(arg) - sinf(arg)*_Complex_I;
    }
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cppfft2rxx(float complex f[], int isign, int mixup[],
-                float complex sct[], int indx, int indy, int kstrt,
+void cppfft2rxx(complex_t f[], int isign, int mixup[],
+                complex_t sct[], int indx, int indy, int kstrt,
                 int kypi, int kypp, int nxvh, int kypd, int nxhyd,
                 int nxyhd) {
 /* this subroutine performs the x part of a two dimensional real to
@@ -733,8 +886,8 @@ local data                                                            */
    int indx1, indx1y, nx, nxh, nxhh, ny;
    int nxy, nxhy, kypt, j, k, nrx;
    int i, m, ns, ns2, km, kmr, k1, k2, j1, j2, joff;
-   float ani;
-   float complex s, t, t1;
+   real_t ani;
+   complex_t s, t, t1;
    indx1 = indx - 1;
    indx1y = indx1 > indy ? indx1 : indy;
    nx = 1L<<indx;
@@ -749,7 +902,7 @@ local data                                                            */
    if (isign > 0)
       goto L100;
 /* inverse fourier transform */
-   ani = 0.5/(((float) nx)*((float) ny));
+   ani = 0.5/(((real_t) nx)*((real_t) ny));
    nrx = nxhy/nxh;
 /* bit-reverse array elements in x */
    for (j = 0; j < nxh; j++) {
@@ -871,8 +1024,8 @@ L100: kmr = nxy/nx;
 }
 
 /*--------------------------------------------------------------------*/
-void cppfft2rxy(float complex g[], int isign, int mixup[],
-                float complex sct[], int indx, int indy, int kstrt,
+void cppfft2rxy(complex_t g[], int isign, int mixup[],
+                complex_t sct[], int indx, int indy, int kstrt,
                 int kxpi, int kxpp, int nyv, int kxp, int nxhyd,
                 int nxyhd) {
 /* this subroutine performs the y part of a two dimensional real to
@@ -913,7 +1066,7 @@ local data                                                            */
    int indx1, indx1y, nx, nxh, ny, nyh;
    int nxy, nxhy, ks, kxpt, j, k, nry;
    int i, m, ns, ns2, km, kmr, k1, k2, j1, j2, koff;
-   float complex s, t;
+   complex_t s, t;
    indx1 = indx - 1;
    indx1y = indx1 > indy ? indx1 : indy;
    nx = 1L<<indx;
@@ -1029,8 +1182,8 @@ L80: if (ks==0) {
 }
 
 /*--------------------------------------------------------------------*/
-void cppfft2r2xx(float complex f[], int isign, int mixup[],
-                 float complex sct[], int indx, int indy, int kstrt,
+void cppfft2r2xx(complex_t f[], int isign, int mixup[],
+                 complex_t sct[], int indx, int indy, int kstrt,
                  int kypi, int kypp, int nxvh, int kypd, int nxhyd,
                  int nxyhd) {
 /* this subroutine performs the x part of 2 two dimensional real to
@@ -1071,8 +1224,8 @@ local data                                                            */
    int indx1, indx1y, nx, nxh, nxhh, ny;
    int nxy, nxhy, kypt, j, k, nrx;
    int i, m, ns, ns2, km, kmr, k1, k2, j1, j2, joff;
-   float ani, at1;
-   float complex s, t, t1, t2;
+   real_t ani, at1;
+   complex_t s, t, t1, t2;
    indx1 = indx - 1;
    indx1y = indx1 > indy ? indx1 : indy;
    nx = 1L<<indx;
@@ -1087,7 +1240,7 @@ local data                                                            */
    if (isign > 0)
       goto L140;
 /* inverse fourier transform */
-   ani = 0.5/(((float) nx)*((float) ny));
+   ani = 0.5/(((real_t) nx)*((real_t) ny));
    nrx = nxhy/nxh;
 /* swap complex components */
    for (k = kypi-1; k < kypt; k++) {
@@ -1249,8 +1402,8 @@ L140: kmr = nxy/nx;
 }
 
 /*--------------------------------------------------------------------*/
-void cppfft2r2xy(float complex g[], int isign, int mixup[],
-                 float complex sct[], int indx, int indy, int kstrt,
+void cppfft2r2xy(complex_t g[], int isign, int mixup[],
+                 complex_t sct[], int indx, int indy, int kstrt,
                  int kxpi, int kxpp, int nyv, int kxp, int nxhyd,
                  int nxyhd) {
 /* this subroutine performs the y part of 2 two dimensional real to
@@ -1290,7 +1443,7 @@ local data                                                            */
    int indx1, indx1y, nx, nxh, ny, nyh;
    int nxy, nxhy, ks, kxpt, j, k, nry;
    int i, m, ns, ns2, km, kmr, k1, k2, j1, j2, koff;
-   float complex s, t1, t2;
+   complex_t s, t1, t2;
    indx1 = indx - 1;
    indx1y = indx1 > indy ? indx1 : indy;
    nx = 1L<<indx;
@@ -1425,9 +1578,9 @@ L90: if (ks==0) {
 }
 
 /*--------------------------------------------------------------------*/
-void cwppfft2r(float complex f[], float complex g[], float complex bs[],
-               float complex br[], int isign, int ntpose, int mixup[],
-               float complex sct[], float *ttp, int indx, int indy,
+void cwppfft2r(complex_t f[], complex_t g[], complex_t bs[],
+               complex_t br[], int isign, int ntpose, int mixup[],
+               complex_t sct[], real_t *ttp, int indx, int indy,
                int kstrt, int nvp, int nxvh, int nyv, int kxp, int kyp,
                int kypd, int nxhyd, int nxyhd) {
 /* wrapper function for 2d real to complex fft, with packed data */
@@ -1435,7 +1588,7 @@ void cwppfft2r(float complex f[], float complex g[], float complex bs[],
 /* local data */
    int nxh, ny, ks, kxpp, kypp;
    static int kxpi = 1, kypi = 1;
-   float tf;
+   real_t tf;
    double dtime;
 /* calculate range of indices */
    nxh = 1L<<(indx - 1);
@@ -1491,9 +1644,9 @@ void cwppfft2r(float complex f[], float complex g[], float complex bs[],
 }
 
 /*--------------------------------------------------------------------*/
-void cwppfft2r2(float complex f[], float complex g[], float complex bs[],
-                float complex br[], int isign, int ntpose, int mixup[],
-                float complex sct[], float *ttp, int indx, int indy,
+void cwppfft2r2(complex_t f[], complex_t g[], complex_t bs[],
+                complex_t br[], int isign, int ntpose, int mixup[],
+                complex_t sct[], real_t *ttp, int indx, int indy,
                 int kstrt, int nvp, int nxvh, int nyv, int kxp, int kyp,
                 int kypd, int nxhyd, int nxyhd) {
 /* wrapper function for 2 2d real to complex ffts, with packed data */
@@ -1501,7 +1654,7 @@ void cwppfft2r2(float complex f[], float complex g[], float complex bs[],
 /* local data */
    int nxh, ny, ks, kxpp, kypp;
    static int kxpi = 1, kypi = 1;
-   float tf;
+   real_t tf;
    double dtime;
 /* calculate range of indices */
    nxh = 1L<<(indx - 1);
@@ -1561,15 +1714,15 @@ void cwppfft2r2(float complex f[], float complex g[], float complex bs[],
 /* Interfaces to Fortran */
 
 /*--------------------------------------------------------------------*/
-void cpdicomp2l_(float *edges, int *nyp, int *noff, int *nypmx,
+void cpdicomp2l_(real_t *edges, int *nyp, int *noff, int *nypmx,
                  int *nypmn, int *ny, int *kstrt, int *nvp, int *idps) {
    cpdicomp2l(edges,nyp,noff,nypmx,nypmn,*ny,*kstrt,*nvp,*idps);
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cpdistr2_(float *part, float *edges, int *npp, int *nps, float *vtx,
-               float *vty, float *vdx, float *vdy, int *npx, int *npy,
+void cpdistr2_(real_t *part, real_t *edges, int *npp, int *nps, real_t *vtx,
+               real_t *vty, real_t *vdx, real_t *vdy, int *npx, int *npy,
                int *nx, int *ny, int *idimp, int *npmax, int *idps,
                int *ipbc, int *ierr) {
    cpdistr2(part,edges,npp,*nps,*vtx,*vty,*vdx,*vdy,*npx,*npy,*nx,*ny,
@@ -1578,8 +1731,8 @@ void cpdistr2_(float *part, float *edges, int *npp, int *nps, float *vtx,
 }
 
 /*--------------------------------------------------------------------*/
-void cppgpush2l_(float *part, float *fxy, float *edges, int *npp,
-                 int *noff, int *ihole, float *qbm, float *dt, float *ek,
+void cppgpush2l_(real_t *part, real_t *fxy, real_t *edges, int *npp,
+                 int *noff, int *ihole, real_t *qbm, real_t *dt, real_t *ek,
                  int *nx, int *ny, int *idimp, int *npmax, int *nxv,
                  int *nypmx, int *idps, int *ntmax, int *ipbc) {
    cppgpush2l(part,fxy,edges,*npp,*noff,ihole,*qbm,*dt,ek,*nx,*ny,*idimp,
@@ -1588,14 +1741,24 @@ void cppgpush2l_(float *part, float *fxy, float *edges, int *npp,
 }
 
 /*--------------------------------------------------------------------*/
-void cppgpost2l_(float *part, float *q, int *npp, int *noff, float *qm,
+void cppgbpush2l_(real_t *part, real_t *fxy, real_t *bz, real_t *edges, int *npp,
+                 int *noff, int *ihole, real_t *qbm, real_t *dt, real_t *ek,
+                 int *nx, int *ny, int *idimp, int *npmax, int *nxv,
+                 int *nypmx, int *idps, int *ntmax, int *ipbc) {
+   cppgbpush2l(part,fxy,*bz,edges,*npp,*noff,ihole,*qbm,*dt,ek,*nx,*ny,*idimp,
+              *npmax,*nxv,*nypmx,*idps,*ntmax,*ipbc);
+   return;
+}
+
+/*--------------------------------------------------------------------*/
+void cppgpost2l_(real_t *part, real_t *q, int *npp, int *noff, real_t *qm,
                  int *idimp, int *npmax, int *nxv, int *nypmx) {
    cppgpost2l(part,q,*npp,*noff,*qm,*idimp,*npmax,*nxv,*nypmx);
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cppdsortp2yl_(float *parta, float *partb, int *npic, int *npp,
+void cppdsortp2yl_(real_t *parta, real_t *partb, int *npic, int *npp,
                    int *noff, int *nyp, int *idimp, int *npmax,
                    int *nypm1) {
    cppdsortp2yl(parta,partb,npic,*npp,*noff,*nyp,*idimp,*npmax,*nypm1);
@@ -1603,22 +1766,22 @@ void cppdsortp2yl_(float *parta, float *partb, int *npic, int *npp,
 }
 
 /*--------------------------------------------------------------------*/
-void cppcguard2xl_(float *fxy, int *nyp, int *nx, int *ndim, int *nxe,
+void cppcguard2xl_(real_t *fxy, int *nyp, int *nx, int *ndim, int *nxe,
                    int *nypmx) {
    cppcguard2xl(fxy,*nyp,*nx,*ndim,*nxe,*nypmx);
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cppaguard2xl_(float *q, int *nyp, int *nx, int *nxe, int *nypmx) {
+void cppaguard2xl_(real_t *q, int *nyp, int *nx, int *nxe, int *nypmx) {
    cppaguard2xl(q,*nyp,*nx,*nxe,*nypmx);
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cppois22_(float complex *q, float complex *fxy, int *isign,
-               float complex *ffc, float *ax, float *ay, float *affp,
-               float *we, int *nx, int *ny, int *kstrt, int *nyv,
+void cppois22_(complex_t *q, complex_t *fxy, int *isign,
+               complex_t *ffc, real_t *ax, real_t *ay, real_t *affp,
+               real_t *we, int *nx, int *ny, int *kstrt, int *nyv,
                int *kxp, int *nyhd) {
    cppois22(q,fxy,*isign,ffc,*ax,*ay,*affp,we,*nx,*ny,*kstrt,*nyv,*kxp,
             *nyhd);
@@ -1626,15 +1789,15 @@ void cppois22_(float complex *q, float complex *fxy, int *isign,
 }
 
 /*--------------------------------------------------------------------*/
-void cwpfft2rinit_(int *mixup, float complex *sct, int *indx, int *indy,
+void cwpfft2rinit_(int *mixup, complex_t *sct, int *indx, int *indy,
                    int *nxhyd, int *nxyhd) {
    cwpfft2rinit(mixup,sct,*indx,*indy,*nxhyd,*nxyhd);
    return;
 }
 
 /*--------------------------------------------------------------------*/
-void cppfft2rxx_(float complex *f, int *isign, int *mixup,
-                 float complex *sct, int *indx, int *indy, int *kstrt,
+void cppfft2rxx_(complex_t *f, int *isign, int *mixup,
+                 complex_t *sct, int *indx, int *indy, int *kstrt,
                  int *kypi, int *kypp, int *nxvh, int *kypd, int *nxhyd,
                  int *nxyhd) {
    cppfft2rxx(f,*isign,mixup,sct,*indx,*indy,*kstrt,*kypi,*kypp,*nxvh,
@@ -1643,8 +1806,8 @@ void cppfft2rxx_(float complex *f, int *isign, int *mixup,
 }
 
 /*--------------------------------------------------------------------*/
-void cppfft2rxy_(float complex *g, int *isign, int *mixup,
-                 float complex *sct, int *indx, int *indy, int *kstrt,
+void cppfft2rxy_(complex_t *g, int *isign, int *mixup,
+                 complex_t *sct, int *indx, int *indy, int *kstrt,
                  int *kxpi, int *kxpp, int *nyv, int *kxp, int *nxhyd,
                  int *nxyhd) {
    cppfft2rxy(g,*isign,mixup,sct,*indx,*indy,*kstrt,*kxpi,*kxpp,*nyv,
@@ -1653,8 +1816,8 @@ void cppfft2rxy_(float complex *g, int *isign, int *mixup,
 }
 
 /*--------------------------------------------------------------------*/
-void cppfft2r2xx_(float complex *f, int *isign, int *mixup,
-                  float complex *sct, int *indx, int *indy, int *kstrt,
+void cppfft2r2xx_(complex_t *f, int *isign, int *mixup,
+                  complex_t *sct, int *indx, int *indy, int *kstrt,
                   int *kypi, int *kypp, int *nxvh, int *kypd, int *nxhyd,
                   int *nxyhd) {
    cppfft2r2xx(f,*isign,mixup,sct,*indx,*indy,*kstrt,*kypi,*kypp,*nxvh,
@@ -1663,8 +1826,8 @@ void cppfft2r2xx_(float complex *f, int *isign, int *mixup,
 }
 
 /*--------------------------------------------------------------------*/
-void cppfft2r2xy_(float complex *g, int *isign, int *mixup,
-                  float complex *sct, int *indx, int *indy, int *kstrt,
+void cppfft2r2xy_(complex_t *g, int *isign, int *mixup,
+                  complex_t *sct, int *indx, int *indy, int *kstrt,
                   int *kxpi, int *kxpp, int *nyv, int *kxp, int *nxhyd,
                   int *nxyhd) {
    cppfft2r2xy(g,*isign,mixup,sct,*indx,*indy,*kstrt,*kxpi,*kxpp,*nyv,
@@ -1673,9 +1836,9 @@ void cppfft2r2xy_(float complex *g, int *isign, int *mixup,
 }
 
 /*--------------------------------------------------------------------*/
-void cwppfft2r_(float complex *f, float complex *g, float complex *bs,
-                float complex *br, int *isign, int *ntpose, int *mixup,
-                float complex *sct, float *ttp, int *indx, int *indy,
+void cwppfft2r_(complex_t *f, complex_t *g, complex_t *bs,
+                complex_t *br, int *isign, int *ntpose, int *mixup,
+                complex_t *sct, real_t *ttp, int *indx, int *indy,
                 int *kstrt, int *nvp, int *nxvh, int *nyv, int *kxp,
                 int *kyp, int *kypd, int *nxhyd, int *nxyhd) {
    cwppfft2r(f,g,bs,br,*isign,*ntpose,mixup,sct,ttp,*indx,*indy,*kstrt,
@@ -1684,9 +1847,9 @@ void cwppfft2r_(float complex *f, float complex *g, float complex *bs,
 }
 
 /*--------------------------------------------------------------------*/
-void cwppfft2r2_(float complex *f, float complex *g, float complex *bs,
-                 float complex *br, int *isign, int *ntpose, int *mixup,
-                 float complex *sct, float *ttp, int *indx, int *indy,
+void cwppfft2r2_(complex_t *f, complex_t *g, complex_t *bs,
+                 complex_t *br, int *isign, int *ntpose, int *mixup,
+                 complex_t *sct, real_t *ttp, int *indx, int *indy,
                  int *kstrt, int *nvp, int *nxvh, int *nyv, int *kxp,
                  int *kyp, int *kypd, int *nxhyd, int *nxyhd) {
    cwppfft2r2(f,g,bs,br,*isign,*ntpose,mixup,sct,ttp,*indx,*indy,*kstrt,

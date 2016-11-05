@@ -60,3 +60,9 @@ class Grid(grid_t):
         "One-dimensional y-coordinate array"
         from numpy import arange
         return arange(self.noff, self.noff + self.nyp)
+
+    @property
+    def yg(self):
+        "One-dimensional y-coordinate array including ghost"
+        from numpy import arange
+        return arange(self.noff, self.noff + self.nyp + 1)

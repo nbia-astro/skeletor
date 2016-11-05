@@ -2,7 +2,6 @@ from skeletor import cppinit, Float, Float2, Grid, Field, Poisson
 from skeletor.operators.ppic2 import Operators
 from mpi4py.MPI import COMM_WORLD as comm
 from mpiFFT4py.line import R2C
-from mpi4py import MPI
 
 import numpy
 
@@ -70,7 +69,10 @@ def test_poisson(plot=False):
     # Solve Gauss' law
     poisson(qe, fxye_custom, destroy_input=False, custom_cppois22=True)
 
-    assert numpy.all(fxye == fxye_custom)
+    # Result may differ up to round-off error
+    tol = numpy.finfo(qe.dtype).eps
+    for c in ("x", "y"):
+        assert numpy.allclose(fxye[c], fxye_custom[c], atol=tol, rtol=0.0)
 
     ##############################################
     # Solve Gauss' law with Numpy's built-in FFT #
@@ -119,7 +121,7 @@ def test_poisson(plot=False):
     N = numpy.array([ny, nx], dtype=int)
 
     # Create FFT object
-    FFT = R2C(N, L, MPI.COMM_WORLD, "double")
+    FFT = R2C(N, L, comm, "single")
 
     # Pre-allocate array for Fourier transform and force
     qe_hat = numpy.zeros(FFT.complex_shape(), dtype=FFT.complex)
