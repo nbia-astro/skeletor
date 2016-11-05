@@ -1,3 +1,6 @@
+import warnings
+
+
 class Operators:
 
     """Differential and translation operators using mpiFFT4py"""
@@ -52,16 +55,22 @@ class Operators:
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
-    def gradient(self, f, grad):
+    def gradient(self, f, grad, destroy_input=None):
         """Calculate the gradient of f"""
+        if destroy_input is not None:
+            warnings.warn("Ignoring option 'destroy_input'.")
+
         self.FFT.fft2(f.trim(), self.f_hat)
         self.fx_hat[:] = 1j*self.kx*self.f_hat
         self.fy_hat[:] = 1j*self.ky*self.f_hat
         self.FFT.ifft2(self.fx_hat, grad['x'][:-1, :-2])
         self.FFT.ifft2(self.fy_hat, grad['y'][:-1, :-2])
 
-    def grad_inv_del(self, f, grad_inv_del):
+    def grad_inv_del(self, f, grad_inv_del, destroy_input=None):
         """ """
+        if destroy_input is not None:
+            warnings.warn("Ignoring option 'destroy_input'.")
+
         self.FFT.fft2(f.trim(), self.f_hat)
 
         self.fx_hat[:] = -1j*self.kx*self.k21_eff*self.f_hat
