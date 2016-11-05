@@ -1,6 +1,6 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-# from skeletor import Operators
-from skeletor import OperatorsMpiFFT4py as Operators
+from skeletor import cppinit, Float, Float2
+from skeletor import Grid, Field, Particles, Sources, Poisson
+from skeletor.operators.mpifft4py import Operators
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -114,6 +114,7 @@ def test_twostream(plot=False, fitplot=False):
 
   # Initialize integro-differential operators
   operators = Operators(grid, ax, ay, npar)
+  grid.operators = operators
 
   # Calculate initial density and force
 
@@ -122,8 +123,11 @@ def test_twostream(plot=False, fitplot=False):
   sources.rho.add_guards_ppic2()
   sources.rho += n0*npc
 
+  # Initialize Poisson solver
+  poisson = Poisson(grid, ax, ay, npar)
+
   # Solve Gauss' law
-  operators.poisson(sources.rho, E, destroy_input=False)
+  poisson(sources.rho, E, destroy_input=False)
   # Set boundary condition
   E.copy_guards_ppic2()
 
@@ -177,7 +181,7 @@ def test_twostream(plot=False, fitplot=False):
       sources.rho += n0
 
       # Solve Gauss' law
-      operators.poisson(sources.rho, E, destroy_input=False)
+      poisson(sources.rho, E, destroy_input=False)
 
       # Set boundary condition
       E.copy_guards_ppic2()

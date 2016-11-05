@@ -1,5 +1,6 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-from skeletor import Operators
+from skeletor import cppinit, Float, Float2
+from skeletor import Grid, Field, Particles, Poisson, Sources
+from skeletor.operators.ppic2 import Operators
 import numpy
 from mpi4py import MPI
 
@@ -137,9 +138,13 @@ def test_skeletor():
 
         # Initialize various integro-differential operators
         operators = Operators(grid, ax, ay, np)
+        grid.operators = operators
+
+        # Initialize Poisson solver
+        poisson = Poisson(grid, ax, ay, np)
 
         # Solve Gauss's law
-        operators.poisson(sources.rho, fxy)
+        poisson(sources.rho, fxy)
         fxy2 = fxy.copy()
 
         # Copy data to guard cells from corresponding active cells

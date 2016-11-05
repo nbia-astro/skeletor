@@ -1,4 +1,5 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Operators
+from skeletor import cppinit, Float, Float2, Grid, Field, Poisson
+from skeletor.operators.ppic2 import Operators
 from mpi4py.MPI import COMM_WORLD as comm
 from mpiFFT4py.line import R2C
 from mpi4py import MPI
@@ -35,6 +36,10 @@ def test_poisson(plot=False):
 
     # Initialize integro-differential operators
     operators = Operators(grid, ax, ay, np)
+    grid.operators = operators
+
+    # Initialize Poisson solver
+    poisson = Poisson(grid, ax, ay, np)
 
     # Coordinate arrays
     x = numpy.arange(grid.nx, dtype=Float)
@@ -52,7 +57,7 @@ def test_poisson(plot=False):
     fxye.fill((0.0, 0.0))
 
     # Solve Gauss' law
-    operators.poisson(qe, fxye, destroy_input=False)
+    poisson(qe, fxye, destroy_input=False)
 
     #######################################################
     # Check that custom cppois22() yields the same result #
@@ -63,8 +68,7 @@ def test_poisson(plot=False):
     fxye_custom.fill((0.0, 0.0))
 
     # Solve Gauss' law
-    operators.poisson(
-            qe, fxye_custom, destroy_input=False, custom_cppois22=True)
+    poisson(qe, fxye_custom, destroy_input=False, custom_cppois22=True)
 
     assert numpy.all(fxye == fxye_custom)
 

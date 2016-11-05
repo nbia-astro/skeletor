@@ -1,4 +1,5 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Ohm
+from skeletor.operators.ppic2 import Operators
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
 
@@ -13,6 +14,11 @@ def test_ohm(plot=False):
     nx = 1 << indx
     ny = 1 << indy
 
+    # Number of particles
+    # TODO: Remove because irrelevant for this test
+    npc = 1
+    np = npc*nx*ny
+
     #############################################
     # Solve Ohm's law with mpifft5py            #
     #############################################
@@ -22,6 +28,13 @@ def test_ohm(plot=False):
 
     # Create numerical grid
     grid = Grid(nx, ny, comm)
+
+    # Smoothed particle size
+    ax, ay = 0.0, 0.0
+
+    # Initialize various integro-differential operators
+    operators = Operators(grid, ax, ay, np)
+    grid.operators = operators
 
     # Initialize Ohm's law solver
     ohm = Ohm(grid, npc=1, temperature=1.0, charge=1.0)
