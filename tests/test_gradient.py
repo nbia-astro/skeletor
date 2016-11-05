@@ -87,8 +87,8 @@ def test_gradient(plot=False):
     fy = numpy.fft.irfft2(1j*ky_eff*qt)
 
     # Make sure Numpy gives the same result
-    assert numpy.allclose(fx, global_fxye["x"])
-    assert numpy.allclose(fy, global_fxye["y"])
+    assert numpy.allclose(fx, global_fxye["x"], atol=1e-6)
+    assert numpy.allclose(fy, global_fxye["y"], atol=1e-6)
 
     ###################################
     # Compute gradient with mpiFFT4py #
@@ -138,8 +138,8 @@ def test_gradient(plot=False):
     global_fy_mpi = concatenate(fy_mpi)
 
     # Make sure mpiFFT4py gives the same result
-    assert numpy.allclose(global_fx_mpi, global_fxye["x"])
-    assert numpy.allclose(global_fy_mpi, global_fxye["y"])
+    assert numpy.allclose(global_fx_mpi, global_fxye["x"], atol=1e-6)
+    assert numpy.allclose(global_fy_mpi, global_fxye["y"], atol=1e-6)
 
     #############
     # Visualize #
