@@ -70,9 +70,6 @@ def test_gradient(plot=False):
     ky = 2*numpy.pi*numpy.fft.fftfreq(grid.ny)
     kx, ky = numpy.meshgrid(kx, ky)
 
-    # Normalization constant
-    affp = grid.nx*grid.ny/np
-
     # Finite size particle shape factor
     s = numpy.exp(-((kx*ax)**2 + (ky*ay)**2)/2)
 
@@ -85,8 +82,8 @@ def test_gradient(plot=False):
     qt = numpy.fft.rfft2(global_qe)
 
     # Compute gradient in Fourier space and transform back to real space
-    fx = affp*numpy.fft.irfft2(1j*kx_eff*qt)
-    fy = affp*numpy.fft.irfft2(1j*ky_eff*qt)
+    fx = numpy.fft.irfft2(1j*kx_eff*qt)
+    fy = numpy.fft.irfft2(1j*ky_eff*qt)
 
     # Make sure Numpy gives the same result
     assert numpy.allclose(fx, global_fxye["x"])
@@ -121,9 +118,6 @@ def test_gradient(plot=False):
     fxye = Field(grid, comm, dtype=Float2)
     fxye.fill((0.0, 0.0))
 
-    # Normalization constant
-    affp = grid.nx*grid.ny/np
-
     # Finite size particle shape factor
     s = numpy.exp(-((kx*ax)**2 + (ky*ay)**2)/2)
 
@@ -135,8 +129,8 @@ def test_gradient(plot=False):
     qe_hat = FFT.fft2(qe.trim(), qe_hat)
 
     # Solve Gauss' law in Fourier space and transform back to real space
-    fx_mpi = affp*FFT.ifft2(1j*kx_eff*qe_hat, fx_mpi)
-    fy_mpi = affp*FFT.ifft2(1j*ky_eff*qe_hat, fy_mpi)
+    fx_mpi = FFT.ifft2(1j*kx_eff*qe_hat, fx_mpi)
+    fy_mpi = FFT.ifft2(1j*ky_eff*qe_hat, fy_mpi)
 
     # Find global solution
     global_fx_mpi = concatenate(fx_mpi)

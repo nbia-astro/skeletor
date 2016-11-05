@@ -20,7 +20,7 @@ class Operators:
         self.ay = ay
 
         # Normalization constant
-        self.affp = grid.nx*grid.ny/np
+        self.affp = 1.0
 
         nxh = grid.nx//2
         nyh = (1 if 1 > grid.ny//2 else grid.ny//2)
