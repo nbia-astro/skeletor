@@ -46,13 +46,13 @@ def test_poisson(plot=False):
     xx, yy = numpy.meshgrid(x, y)
 
     # Initialize density field
-    qe = Field(grid, comm, dtype=Float)
+    qe = Field(grid, dtype=Float)
     qe.fill(0.0)
     ikx, iky = 1, 2
     qe[:grid.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
 
     # Initialize force field
-    fxye = Field(grid, comm, dtype=Float2)
+    fxye = Field(grid, dtype=Float2)
     fxye.fill((0.0, 0.0))
 
     # Solve Gauss' law
@@ -63,7 +63,7 @@ def test_poisson(plot=False):
     #######################################################
 
     # Initialize force field
-    fxye_custom = Field(grid, comm, dtype=Float2)
+    fxye_custom = Field(grid, dtype=Float2)
     fxye_custom.fill((0.0, 0.0))
 
     # Solve Gauss' law
@@ -142,7 +142,7 @@ def test_poisson(plot=False):
     k21 = 1 / numpy.where(k2 == 0, 1, k2).astype(float)
 
     # Initialize force field
-    fxye = Field(grid, comm, dtype=Float2)
+    fxye = Field(grid, dtype=Float2)
     fxye.fill((0.0, 0.0))
 
     # Normalization constant

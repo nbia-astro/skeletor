@@ -5,9 +5,9 @@ from .cython.ppic2_wrapper import cppgpost2l
 
 class Sources:
 
-    def __init__(self, grid, comm, **kwds):
+    def __init__(self, grid, **kwds):
 
-        self.rho = Field(grid, comm, **kwds)
+        self.rho = Field(grid, **kwds)
 
     def deposit(self, particles, erase=True):
 

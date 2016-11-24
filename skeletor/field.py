@@ -6,7 +6,7 @@ from .cython.ppic2_wrapper import cppcguard2xl, cppncguard2l
 
 class Field(ndarray):
 
-    def __new__(cls, grid, comm, **kwds):
+    def __new__(cls, grid, **kwds):
 
         # I don't know why PPIC2 uses two guard cells in the x-direction
         # instead of one. Whatever the reason though, let's not change this for
@@ -17,12 +17,9 @@ class Field(ndarray):
         # Store grid
         obj.grid = grid
 
-        # Store MPI communicator
-        obj.comm = comm
-
         # MPI communication
-        obj.above = (comm.rank + 1) % comm.size
-        obj.below = (comm.rank - 1) % comm.size
+        obj.above = (grid.comm.rank + 1) % grid.comm.size
+        obj.below = (grid.comm.rank - 1) % grid.comm.size
 
         # Scratch array needed for PPIC2's "add_guards" routine
         obj.scr = zeros((2, grid.nx + 2), Float)
@@ -35,17 +32,16 @@ class Field(ndarray):
             return
 
         self.grid = getattr(obj, "grid", None)
-        self.comm = getattr(obj, "comm", None)
         self.above = getattr(obj, "above", None)
         self.below = getattr(obj, "below", None)
         self.scr = getattr(obj, "scr", None)
 
     def send_up(self, sendbuf):
-        return self.comm.sendrecv(
+        return self.grid.comm.sendrecv(
                 sendbuf, dest=self.above, source=self.below)
 
     def send_down(self, sendbuf):
-        return self.comm.sendrecv(
+        return self.grid.comm.sendrecv(
                 sendbuf, dest=self.below, source=self.above)
 
     def trim(self):

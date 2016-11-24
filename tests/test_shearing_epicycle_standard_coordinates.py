@@ -102,7 +102,7 @@ def test_shearing_epicycle(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Electric field in x-direction
-    E_star = Field(grid, comm, dtype=Float2)
+    E_star = Field(grid, dtype=Float2)
     E_star.fill((0.0, 0.0))
     E_star['x'][:-1, :-2] = -2*S*(xg-nx/2)*mass/charge*Omega
     E_star.copy_guards_ppic2()

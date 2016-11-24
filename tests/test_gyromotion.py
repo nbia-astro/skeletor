@@ -90,7 +90,7 @@ def test_gyromotion(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(grid, comm, dtype=Float2)
+    E = Field(grid, dtype=Float2)
     E.fill((0.0, 0.0))
     E.copy_guards_ppic2()
 

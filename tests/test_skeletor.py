@@ -84,7 +84,7 @@ def test_skeletor():
         #######################
 
         # Set the force to zero (this will of course change in the future).
-        fxy = Field(grid, comm, dtype=Float2)
+        fxy = Field(grid, dtype=Float2)
         fxy.fill((0.0, 0.0))
 
         for it in range(nt):
@@ -102,8 +102,8 @@ def test_skeletor():
         # Test charge deposition #
         ##########################
 
-        sources = Sources(grid, comm, dtype=Float)
-        sources2 = Sources(grid, comm, dtype=Float)
+        sources = Sources(grid, dtype=Float)
+        sources2 = Sources(grid, dtype=Float)
 
         sources.deposit(electrons)
         sources2.deposit_ppic2(electrons)

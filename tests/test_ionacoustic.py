@@ -117,11 +117,11 @@ def test_ionacoustic(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(grid, comm, dtype=Float2)
+    E = Field(grid, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Initialize sources
-    sources = Sources(grid, comm, dtype=Float)
+    sources = Sources(grid, dtype=Float)
 
     # Initialize Ohm's law solver
     ohm = Ohm(grid, npc, temperature=Te, charge=charge)

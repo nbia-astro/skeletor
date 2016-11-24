@@ -10,24 +10,23 @@ class Grid(grid_t):
         # Number of grid points in x- and y-direction
         self.nx = nx
         self.ny = ny
-
-        self.kstrt = comm.rank + 1
-        self.nvp = comm.size
+        # MPI communicator
+        self.comm = comm
 
         # edges[0:1] = lower:upper boundary of particle partition
         # nyp = number of primary (complete) gridpoints in particle partition
         # noff = lowermost global gridpoint in particle partition
         # nypmx = maximum size of particle partition, including guard cells
         # nypmn = minimum value of nyp
-        edges, nyp, noff, nypmx, nypmn = cpdicomp(ny, self.kstrt, self.nvp)
+        edges, nyp, noff, nypmx, nypmn = cpdicomp(ny)
 
-        if self.nvp > ny:
-            msg = "Too many processors requested: ny={}, nvp={}"
-            raise RuntimeError(msg.format(ny, self.nvp))
+        if comm.size > ny:
+            msg = "Too many processors requested: ny={}, comm.size={}"
+            raise RuntimeError(msg.format(ny, comm.size))
 
         if nypmn < 1:
-            msg = "Combination not supported: ny={}, nvp={}"
-            raise RuntimeError(msg.format(ny, self.nvp))
+            msg = "Combination not supported: ny={}, comm.size={}"
+            raise RuntimeError(msg.format(ny, comm.size))
 
         self.edges = edges
         self.nyp = nyp

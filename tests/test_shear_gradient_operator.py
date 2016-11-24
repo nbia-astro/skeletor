@@ -35,7 +35,7 @@ def test_shear_gradient_operator(plot=False):
         ky = S*t*kx
 
         # Initialize density field
-        rho = Field(grid, comm, dtype=Float)
+        rho = Field(grid, dtype=Float)
         rho.fill(0.0)
 
         A = 0.2
@@ -47,7 +47,7 @@ def test_shear_gradient_operator(plot=False):
         """Analytic electric field as a function of time"""
 
         # Initialize electric field
-        E = Field(grid, comm, dtype=Float2)
+        E = Field(grid, dtype=Float2)
         E.fill((0.0, 0.0))
 
         kx = 2*numpy.pi*ikx/nx
@@ -62,7 +62,7 @@ def test_shear_gradient_operator(plot=False):
         return E
 
     # Initialize electric field
-    E = Field(grid, comm, dtype=Float2)
+    E = Field(grid, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Rate of shear

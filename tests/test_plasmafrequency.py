@@ -121,11 +121,11 @@ def test_plasmafrequency(plot=False):
     assert comm.allreduce(electrons.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(grid, comm, dtype=Float2)
+    E = Field(grid, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Initialize sources
-    sources = Sources(grid, comm, dtype=Float)
+    sources = Sources(grid, dtype=Float)
 
     # Initialize integro-differential operators
     operators = Operators(grid, ax, ay, np)

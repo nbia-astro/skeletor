@@ -86,7 +86,6 @@ class ShearOperators(Operators):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi, zeros
-        from mpi4py.MPI import COMM_WORLD as comm
         from skeletor import Complex
 
         Operators.__init__(self, grid, ax, ay, np)
@@ -96,7 +95,8 @@ class ShearOperators(Operators):
         dx = grid.Lx/grid.nx
         dy = grid.Ly/grid.ny
 
-        self.temp = zeros((grid.ny/comm.size, grid.nx//2+1), dtype=Complex)
+        shape = grid.ny/grid.comm.size, grid.nx//2+1
+        self.temp = zeros(shape, dtype=Complex)
 
         # Wave numbers for real-to-complex transforms
         kx_vec = 2*pi*rfftfreq(grid.nx)/dx

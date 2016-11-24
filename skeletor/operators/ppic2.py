@@ -27,8 +27,8 @@ class Operators:
         nxhy = (nxh if nxh > grid.ny else grid.ny)
         nxyh = (grid.nx if grid.nx > grid.ny else grid.ny)//2
         nye = grid.ny + 2
-        kxp = (nxh - 1)//grid.nvp + 1
-        kyp = (grid.ny - 1)//grid.nvp + 1
+        kxp = (nxh - 1)//grid.comm.size + 1
+        kyp = (grid.ny - 1)//grid.comm.size + 1
 
         self.qt = zeros((kxp, nye), Complex)
         self.fxyt = zeros((kxp, nye), Complex2)
@@ -68,8 +68,8 @@ class Operators:
 
         # Calculate gradient in fourier space
         # updates fxyt
-        grad(self.qt, self.fxyt, self.ffc,
-             self.affp, grid.nx, grid.ny, grid.kstrt)
+        kstrt = grid.comm.rank + 1
+        grad(self.qt, self.fxyt, self.ffc, self.affp, grid.nx, grid.ny, kstrt)
 
         # Transform force to real space with standard procedure:
         # updates fxye, modifies fxyt
@@ -102,8 +102,9 @@ class Operators:
         # Calculate force/charge in fourier space with standard procedure:
         # updates fxyt, we
         if custom_cppois22:
+            kstrt = grid.comm.rank + 1
             we = grad_inv_del(
-                    self.qt, self.fxyt, self.ffc, grid.nx, grid.ny, grid.kstrt)
+                    self.qt, self.fxyt, self.ffc, grid.nx, grid.ny, kstrt)
         else:
             isign = -1
             we = cppois22(

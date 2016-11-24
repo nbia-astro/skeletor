@@ -45,7 +45,7 @@ def test_ohm(plot=False):
     xx, yy = numpy.meshgrid(x, y)
 
     # Initialize density field
-    rho = Field(grid, comm, dtype=Float)
+    rho = Field(grid, dtype=Float)
     rho.fill(0.0)
 
     # Wavenumbers of mode
@@ -58,7 +58,7 @@ def test_ohm(plot=False):
     rho[:grid.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
 
     # Initialize electric field
-    E = Field(grid, comm, dtype=Float2)
+    E = Field(grid, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Solve Ohm's law

@@ -43,13 +43,13 @@ def test_gradient(plot=False):
     xx, yy = numpy.meshgrid(x, y)
 
     # Initialize density field
-    qe = Field(grid, comm, dtype=Float)
+    qe = Field(grid, dtype=Float)
     qe.fill(0.0)
     ikx, iky = 1, 2
     qe[:grid.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
 
     # Initialize force field
-    fxye = Field(grid, comm, dtype=Float2)
+    fxye = Field(grid, dtype=Float2)
     fxye.fill((0.0, 0.0))
 
     # Compute gradient
@@ -116,7 +116,7 @@ def test_gradient(plot=False):
     ky = k[0]
 
     # Initialize force field
-    fxye = Field(grid, comm, dtype=Float2)
+    fxye = Field(grid, dtype=Float2)
     fxye.fill((0.0, 0.0))
 
     # Finite size particle shape factor

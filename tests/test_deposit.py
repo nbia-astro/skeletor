@@ -20,8 +20,8 @@ idproc, nvp = cppinit(comm)
 grid = Grid(nx, ny, comm)
 
 # # Initialize sources
-sources = Sources(grid, comm, dtype=Float)
-sources_ppic2 = Sources(grid, comm, dtype=Float)
+sources = Sources(grid, dtype=Float)
+sources_ppic2 = Sources(grid, dtype=Float)
 
 # Total number of particles
 np = npc*nx*ny
