@@ -21,12 +21,8 @@ class Field(ndarray):
         obj.comm = comm
 
         # MPI communication
-        above = (comm.rank + 1) % comm.size
-        below = (comm.rank - 1) % comm.size
-        up = {'dest': above, 'source': below}
-        down = {'dest': below, 'source': above}
-        obj.send_up = lambda sendbuf: comm.sendrecv(sendbuf, **up)
-        obj.send_down = lambda sendbuf: comm.sendrecv(sendbuf, **down)
+        obj.above = (comm.rank + 1) % comm.size
+        obj.below = (comm.rank - 1) % comm.size
 
         # Scratch array needed for PPIC2's "add_guards" routine
         obj.scr = zeros((2, grid.nx + 2), Float)
@@ -40,9 +36,17 @@ class Field(ndarray):
 
         self.grid = getattr(obj, "grid", None)
         self.comm = getattr(obj, "comm", None)
+        self.above = getattr(obj, "above", None)
+        self.below = getattr(obj, "below", None)
         self.scr = getattr(obj, "scr", None)
-        self.send_up = getattr(obj, "send_up", None)
-        self.send_down = getattr(obj, "send_down", None)
+
+    def send_up(self, sendbuf):
+        return self.comm.sendrecv(
+                sendbuf, dest=self.above, source=self.below)
+
+    def send_down(self, sendbuf):
+        return self.comm.sendrecv(
+                sendbuf, dest=self.below, source=self.above)
 
     def trim(self):
         return asarray(self[:-1, :-2])
