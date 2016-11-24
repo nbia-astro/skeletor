@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
+from skeletor import Float, Float2, Grid, Field, Particles, Sources
 from skeletor import Ohm
 from skeletor.operators.mpifft4py import Operators
 import numpy
@@ -88,9 +88,6 @@ def test_ionacoustic(plot=False):
     vx += vtx*numpy.random.normal(size=np).astype(Float)
     vy += vty*numpy.random.normal(size=np).astype(Float)
 
-    # Start parallel processing
-    idproc, nvp = cppinit(comm)
-
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     grid = Grid(nx, ny, comm)
@@ -104,7 +101,7 @@ def test_ionacoustic(plot=False):
     xg, yg = numpy.meshgrid(grid.x, grid.y)
 
     # Maximum number of electrons in each partition
-    npmax = int(1.5*np/nvp)
+    npmax = int(1.5*np/comm.size)
 
     # Create particle array
     ions = Particles(npmax, charge, mass)

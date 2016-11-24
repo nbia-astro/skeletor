@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field
+from skeletor import Float, Float2, Grid, Field
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
 from skeletor.operators.mpifft4py import ShearOperators
@@ -16,9 +16,6 @@ def test_shear_gradient_operator(plot=False):
     ##################################################
     # Solve Ohm's law in shear coordinates with FFTs #
     ##################################################
-
-    # Start parallel processing.
-    idproc, nvp = cppinit(comm)
 
     # Create numerical grid
     grid = Grid(nx, ny, comm)

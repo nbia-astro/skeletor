@@ -5,13 +5,22 @@ class Grid(grid_t):
 
     def __init__(self, nx, ny, comm):
 
-        from .cython.ppic2_wrapper import cpdicomp
+        from .cython.ppic2_wrapper import cppinit, cpdicomp
 
         # Number of grid points in x- and y-direction
         self.nx = nx
         self.ny = ny
         # MPI communicator
         self.comm = comm
+
+        # Start parallel processing. Calling this function necessary even
+        # though `MPI.Init()` has already been called by importing `MPI` from
+        # `mpi4py`. The reason is that `cppinit()` sets a number of global
+        # variables in the C library source file (`ppic2/pplib2.c`). The
+        # returned variables `idproc` and `nvp` are simply the MPI rank (i.e.
+        # processor id) and size (i.e. total number of processes),
+        # respectively.
+        idproc, nvp = cppinit(comm)
 
         # edges[0:1] = lower:upper boundary of particle partition
         # nyp = number of primary (complete) gridpoints in particle partition

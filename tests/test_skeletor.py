@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2
+from skeletor import Float, Float2
 from skeletor import Grid, Field, Particles, Poisson, Sources
 from skeletor.operators.ppic2 import Operators
 import numpy
@@ -53,21 +53,12 @@ def test_skeletor():
 
     for comm in [MPI.COMM_SELF, MPI.COMM_WORLD]:
 
-        # Start parallel processing. Calling this function necessary even
-        # though `MPI.Init()` has already been called by importing `MPI` from
-        # `mpi4py`. The reason is that `cppinit()` sets a number of global
-        # variables in the C library source file (`ppic2/pplib2.c`). The
-        # returned variables `idproc` and `nvp` are simply the MPI rank (i.e.
-        # processor id) and size (i.e. total number of processes),
-        # respectively.
-        idproc, nvp = cppinit(comm)
-
         # Create numerical grid. This contains information about the extent of
         # the subdomain assigned to each processor.
         grid = Grid(nx, ny, comm)
 
         # Maximum number of electrons in each partition
-        npmax = int(1.5*np/nvp)
+        npmax = int(1.5*np/comm.size)
 
         # Create particle array
         electrons = Particles(npmax, charge, mass)

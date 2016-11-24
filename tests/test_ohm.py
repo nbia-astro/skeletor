@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Ohm
+from skeletor import Float, Float2, Grid, Field, Ohm
 from skeletor.operators.ppic2 import Operators
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
@@ -22,9 +22,6 @@ def test_ohm(plot=False):
     #############################################
     # Solve Ohm's law with mpifft4py            #
     #############################################
-
-    # Start parallel processing.
-    idproc, nvp = cppinit(comm)
 
     # Create numerical grid
     grid = Grid(nx, ny, comm)

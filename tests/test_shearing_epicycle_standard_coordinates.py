@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
+from skeletor import Float, Float2, Grid, Field, Particles, Sources
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -76,9 +76,6 @@ def test_shearing_epicycle(plot=False):
     # Drift forward by dt/2
     x += vx*dt/2
     y += vy*dt/2
-
-    # Start parallel processing
-    idproc, nvp = cppinit(comm)
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.

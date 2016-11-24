@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Poisson
+from skeletor import Float, Float2, Grid, Field, Poisson
 from skeletor.operators.ppic2 import Operators
 from mpi4py.MPI import COMM_WORLD as comm
 from mpiFFT4py.line import R2C
@@ -26,9 +26,6 @@ def test_poisson(plot=False):
     #############################################
     # Solve Gauss' law with PPIC's parallel FFT #
     #############################################
-
-    # Start parallel processing.
-    idproc, nvp = cppinit(comm)
 
     # Create numerical grid
     grid = Grid(nx, ny, comm)

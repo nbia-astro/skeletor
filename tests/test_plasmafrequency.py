@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
+from skeletor import Float, Float2, Grid, Field, Particles, Sources
 from skeletor.operators.mpifft4py import Operators
 from skeletor import Poisson
 import numpy
@@ -100,15 +100,12 @@ def test_plasmafrequency(plot=False):
     vx += vtx*numpy.random.normal(size=np).astype(Float)
     vy += vty*numpy.random.normal(size=np).astype(Float)
 
-    # Start parallel processing
-    idproc, nvp = cppinit(comm)
-
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     grid = Grid(nx, ny, comm)
 
     # Maximum number of electrons in each partition
-    npmax = int(1.5*np/nvp)
+    npmax = int(1.5*np/comm.size)
 
     # Create particle array
     electrons = Particles(npmax, charge, mass)

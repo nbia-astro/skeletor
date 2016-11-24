@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field
+from skeletor import Float, Float2, Grid, Field
 from skeletor.operators.ppic2 import Operators
 from mpi4py.MPI import COMM_WORLD as comm
 from mpiFFT4py.line import R2C
@@ -27,9 +27,6 @@ def test_gradient(plot=False):
     #############################################
     # Compute gradient with PPIC's parallel FFT #
     #############################################
-
-    # Start parallel processing.
-    idproc, nvp = cppinit(comm)
 
     # Create numerical grid
     grid = Grid(nx, ny, comm)
