@@ -96,7 +96,7 @@ class Field(ndarray):
 
     def copy_guards_ppic2(self):
 
-        # This routine *only* works for scalar fields
+        # This routine *only* works for vector fields
         assert self.dtype == dtype(Float2)
 
         cppncguard2l(self, self.grid)
