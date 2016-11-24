@@ -6,6 +6,9 @@
 /skeletor/cython/*.so
 /skeletor/cython/*.html
 
+# Build directory
+/build
+
 # Python cache
 __pycache__
 
