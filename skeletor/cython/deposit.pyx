@@ -2,7 +2,7 @@ from ctypes cimport real_t, particle_t
 
 def deposit (
         particle_t[:] particles, real_t[:,:] density,
-        real_t charge, int noff):
+        real_t charge, int noff, int lbx, int lby):
 
     cdef int ix, iy
     cdef real_t x, y
@@ -24,6 +24,9 @@ def deposit (
         ty = 1.0 - dy
 
         iy -= noff
+
+        ix += lbx
+        iy += lby
 
         density[iy  , ix  ] += ty*tx
         density[iy  , ix+1] += ty*dx

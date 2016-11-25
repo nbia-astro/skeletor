@@ -8,11 +8,8 @@ class Field(ndarray):
 
     def __new__(cls, grid, **kwds):
 
-        # I don't know why PPIC2 uses two guard cells in the x-direction
-        # instead of one. Whatever the reason though, let's not change this for
-        # now.
-        nxv = grid.nx + 2
-        obj = super().__new__(cls, shape=(grid.nypmx, nxv), **kwds)
+        # Field size set accoring to number of guard layes
+        obj = super().__new__(cls, shape=(grid.nypmx, grid.nxpmx), **kwds)
 
         # Store grid
         obj.grid = grid
@@ -45,42 +42,55 @@ class Field(ndarray):
                 sendbuf, dest=self.below, source=self.above)
 
     def trim(self):
-        return asarray(self[:-1, :-2])
+        return asarray(self[self.grid.lby:self.grid.uby,
+                            self.grid.lbx:self.grid.ubx])
 
     def copy_guards(self):
+        lbx = self.grid.lbx
+        lby = self.grid.lby
+        nubx = self.grid.nubx
+        nuby = self.grid.nuby
+        ubx = self.grid.ubx
+        uby = self.grid.uby
 
-        # Copy data to guard cells from corresponding active cells
-        self[:-1, -2] = self[:-1, 0]
-        self[-1, :-2] = self.send_down(self[0, :-2])
-        self[-1, -2] = self.send_down(self[0, 0])
+        # lower active cells to upper guard layers
+        self[uby:, lbx:ubx] = self.send_down(self[lby:lby+nuby, lbx:ubx])
+        # upper active cells to lower guard layers
+        self[:lby, lbx:ubx] = self.send_up(self[uby-lby:uby, lbx:ubx])
+        # lower active cells to upper guard layers
+        self[:, ubx:] = self[:, lbx:lbx+nubx]
+        # upper active cells to lower guard layers
+        self[:, :lbx] = self[:, ubx-lbx:ubx]
+
+        # PPIC2 setup
+        if nubx == 2 and nuby == 1 and lbx == 0 and lby == 0:
+            # Set the extra guard layer in x to zero
+            # TODO: Get rid of this extra guard layer in PPIC2
+            # That is, make PPIC2's FFT work with the extended grid
+            self[:, -1] = 0.0
+
 
     def add_guards(self):
+        lbx = self.grid.lbx
+        lby = self.grid.lby
+        nubx = self.grid.nubx
+        nuby = self.grid.nuby
+        ubx = self.grid.ubx
+        uby = self.grid.uby
 
         # Add data from guard cells to corresponding active cells
-        self[:-1, 0] += self[:-1, -2]
-        self[0, :-2] += self.send_up(self[-1, :-2])
-        self[0, 0] += self.send_up(self[-1, -2])
+        self[:, lbx:lbx+nubx] += self[:, ubx:]
+        self[:, ubx-lbx:ubx] += self[:, :lbx]
 
-        # Erase guard cells (TH: Not sure why PPIC2 does this, but it's OK)
-        self[:-1, -2] = 0.0
-        self[-1, :-2] = 0.0
-        self[-1, -2] = 0.0
+        self[lby:lby+nuby, :] += self.send_up(self[uby:, :])
+        self[uby-lby:uby, :] += self.send_down(self[:lby, :])
 
-    def copy_guards2(self):
+        # Erase guard cells
+        self[:lby, :] = 0.0
+        self[uby:, :] = 0.0
+        self[:, ubx:] = 0.0
+        self[:, :lbx] = 0.0
 
-        # Copy data to guard cells from corresponding active cells
-        self[:, -2] = self[:, 0]
-        self[-1, :] = self.send_down(self[0, :])
-
-    def add_guards2(self):
-
-        # Add data from guard cells to corresponding active cells
-        self[:, 0] += self[:, -2]
-        self[0, :] += self.send_up(self[-1, :])
-
-        # Erase guard cells (TH: Not sure why PPIC2 does this, but it's OK)
-        self[:, -2] = 0.0
-        self[-1, :] = 0.0
 
     def add_guards_ppic2(self):
 

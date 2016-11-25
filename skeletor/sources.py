@@ -15,8 +15,8 @@ class Sources:
             self.rho.fill(0.0)
 
         cython_deposit(
-                particles[:particles.np], self.rho,
-                particles.charge, self.rho.grid.noff)
+                particles[:particles.np], self.rho, particles.charge,
+                self.rho.grid.noff, self.rho.grid.lbx, self.rho.grid.lby)
 
     def deposit_ppic2(self, particles, erase=True):
 
