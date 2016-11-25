@@ -180,7 +180,8 @@ class Particles(numpy.ndarray):
         elif self.order == 'tsc':
             from .cython.push_epicycle import push_tsc as push
         else:
-            raise RuntimeError('Interpolation order not supported.')
+            msg = 'Interpolation order not supported. order = {}'
+            raise RuntimeError(msg.format(self.order))
 
 
         grid = fxy.grid

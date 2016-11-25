@@ -17,7 +17,8 @@ class Sources:
         elif self.order == 'tsc':
             from .cython.deposit import deposit_tsc as cython_deposit
         else:
-            raise RuntimeError('Interpolation order not supported.')
+            msg = 'Interpolation order not supported. order = {}'
+            raise RuntimeError(msg.format(self.order))
 
         if erase:
             self.rho.fill(0.0)
