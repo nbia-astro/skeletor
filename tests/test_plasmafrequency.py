@@ -1,5 +1,5 @@
 from skeletor import Float, Float2, Grid, Field, Particles, Sources
-from skeletor.operators.mpifft4py import Operators
+from skeletor.manifolds.mpifft4py import Operators
 from skeletor import Poisson
 import numpy
 from mpi4py import MPI

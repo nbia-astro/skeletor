@@ -1,5 +1,5 @@
 from skeletor import Float, Float2, Grid, Field, Poisson
-from skeletor.operators.ppic2 import Operators
+from skeletor.manifolds.ppic2 import Operators
 from mpi4py.MPI import COMM_WORLD as comm
 from mpiFFT4py.line import R2C
 

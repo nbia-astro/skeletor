@@ -1,7 +1,7 @@
 from skeletor import Float, Float2, Grid, Field
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
-from skeletor.operators.mpifft4py import ShearOperators
+from skeletor.manifolds.mpifft4py import ShearOperators
 
 
 def test_shear_gradient_operator(plot=False):
