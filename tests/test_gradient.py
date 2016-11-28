@@ -32,7 +32,7 @@ def test_gradient(plot=False):
     grid = Grid(nx, ny, comm)
 
     # Initialize integro-differential operators
-    operators = Operators(grid, ax, ay, np)
+    operators = Operators(grid, ax, ay)
 
     # Coordinate arrays
     x = numpy.arange(grid.nx, dtype=Float)

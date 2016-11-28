@@ -30,7 +30,7 @@ def test_ohm(plot=False):
     ax, ay = 0.0, 0.0
 
     # Initialize various integro-differential operators
-    operators = Operators(grid, ax, ay, np)
+    operators = Operators(grid, ax, ay)
     grid.operators = operators
 
     # Initialize Ohm's law solver

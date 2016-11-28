@@ -31,7 +31,7 @@ def test_poisson(plot=False):
     grid = Grid(nx, ny, comm)
 
     # Initialize integro-differential operators
-    operators = Operators(grid, ax, ay, np)
+    operators = Operators(grid, ax, ay)
     grid.operators = operators
 
     # Initialize Poisson solver

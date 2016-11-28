@@ -5,7 +5,7 @@ class Operators:
 
     """Differential and translation operators using mpiFFT4py"""
 
-    def __init__(self, grid, ax, ay, np):
+    def __init__(self, grid, ax, ay):
 
         from math import log2
         from numpy import zeros, sum, where, zeros_like, array, exp
@@ -82,13 +82,13 @@ class Operators:
 
 class ShearOperators(Operators):
 
-    def __init__(self, grid, ax, ay, np):
+    def __init__(self, grid, ax, ay):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi, zeros
         from skeletor import Complex
 
-        Operators.__init__(self, grid, ax, ay, np)
+        Operators.__init__(self, grid, ax, ay)
 
         # Grid spacing
         # TODO: this should be a property of the Grid class

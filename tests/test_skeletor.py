@@ -128,7 +128,7 @@ def test_skeletor():
         ax, ay = 0.912871, 0.912871
 
         # Initialize various integro-differential operators
-        operators = Operators(grid, ax, ay, np)
+        operators = Operators(grid, ax, ay)
         grid.operators = operators
 
         # Initialize Poisson solver

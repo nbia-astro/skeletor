@@ -94,7 +94,7 @@ def test_ionacoustic(plot=False):
 
     ax = 0
     ay = 0
-    operators = Operators(grid, ax, ay, np)
+    operators = Operators(grid, ax, ay)
     grid.operators = operators
 
     # x- and y-grid

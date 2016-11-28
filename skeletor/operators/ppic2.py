@@ -2,7 +2,7 @@ class Operators:
 
     """Solve Gauss' law ∇·E = ρ/ε0 via a discrete fourier transform."""
 
-    def __init__(self, grid, ax, ay, np):
+    def __init__(self, grid, ax, ay):
 
         from ..cython.dtypes import Complex, Complex2, Int
         from ..cython.ppic2_wrapper import cwpfft2rinit, cppois22

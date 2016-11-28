@@ -125,7 +125,7 @@ def test_plasmafrequency(plot=False):
     sources = Sources(grid, dtype=Float)
 
     # Initialize integro-differential operators
-    operators = Operators(grid, ax, ay, np)
+    operators = Operators(grid, ax, ay)
     grid.operators = operators
 
     poisson = Poisson(grid, ax, ay, np)

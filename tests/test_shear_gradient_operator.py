@@ -112,7 +112,7 @@ def test_shear_gradient_operator(plot=False):
     ax = 0
     ay = 0
     np = 1
-    operators = ShearOperators(grid, ax, ay, np)
+    operators = ShearOperators(grid, ax, ay)
 
     for it in range(nt):
         t = tstart + it*dt
