@@ -97,7 +97,7 @@ class ShearingManifold(Manifold):
         dx = self.Lx/self.nx
         dy = self.Ly/self.ny
 
-        shape = self.ny/self.comm.size, self.nx//2+1
+        shape = self.ny//self.comm.size, self.nx//2+1
         self.temp = zeros(shape, dtype=Complex)
 
         # Wave numbers for real-to-complex transforms
