@@ -1,6 +1,6 @@
-from skeletor import Float, Float2, Grid, Field, Particles, Sources
+from skeletor import Float, Float2, Field, Particles, Sources
 from skeletor import Ohm
-from skeletor.manifolds.mpifft4py import Operators
+from skeletor.manifolds.mpifft4py import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -90,15 +90,12 @@ def test_ionacoustic(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    grid = Grid(nx, ny, comm)
-
     ax = 0
     ay = 0
-    operators = Operators(grid, ax, ay)
-    grid.operators = operators
+    manifold = Manifold(nx, ny, comm, ax, ay)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(grid.x, grid.y)
+    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/comm.size)
@@ -107,21 +104,21 @@ def test_ionacoustic(plot=False):
     ions = Particles(npmax, charge, mass)
 
     # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy, grid)
+    ions.initialize(x, y, vx, vy, manifold)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(grid, dtype=Float2)
+    E = Field(manifold, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Initialize sources
-    sources = Sources(grid, dtype=Float)
+    sources = Sources(manifold, dtype=Float)
 
     # Initialize Ohm's law solver
-    ohm = Ohm(grid, npc, temperature=Te, charge=charge)
+    ohm = Ohm(manifold, temperature=Te, charge=charge)
 
     # Calculate initial density and force
 

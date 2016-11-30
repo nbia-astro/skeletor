@@ -1,5 +1,5 @@
-from skeletor import Float, Float2, Grid, Field, Poisson
-from skeletor.manifolds.ppic2 import Operators
+from skeletor import Float, Float2, Field, Poisson
+from skeletor.manifolds.ppic2 import Manifold
 from mpi4py.MPI import COMM_WORLD as comm
 from mpiFFT4py.line import R2C
 
@@ -28,28 +28,24 @@ def test_poisson(plot=False):
     #############################################
 
     # Create numerical grid
-    grid = Grid(nx, ny, comm)
-
-    # Initialize integro-differential operators
-    operators = Operators(grid, ax, ay)
-    grid.operators = operators
+    manifold = Manifold(nx, ny, comm, ax, ay)
 
     # Initialize Poisson solver
-    poisson = Poisson(grid, ax, ay, np)
+    poisson = Poisson(manifold, np)
 
     # Coordinate arrays
-    x = numpy.arange(grid.nx, dtype=Float)
-    y = grid.noff + numpy.arange(grid.nyp, dtype=Float)
+    x = numpy.arange(manifold.nx, dtype=Float)
+    y = manifold.noff + numpy.arange(manifold.nyp, dtype=Float)
     xx, yy = numpy.meshgrid(x, y)
 
     # Initialize density field
-    qe = Field(grid, dtype=Float)
+    qe = Field(manifold, dtype=Float)
     qe.fill(0.0)
     ikx, iky = 1, 2
-    qe[:grid.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
+    qe[:manifold.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
 
     # Initialize force field
-    fxye = Field(grid, dtype=Float2)
+    fxye = Field(manifold, dtype=Float2)
     fxye.fill((0.0, 0.0))
 
     # Solve Gauss' law
@@ -60,7 +56,7 @@ def test_poisson(plot=False):
     #######################################################
 
     # Initialize force field
-    fxye_custom = Field(grid, dtype=Float2)
+    fxye_custom = Field(manifold, dtype=Float2)
     fxye_custom.fill((0.0, 0.0))
 
     # Solve Gauss' law
@@ -83,12 +79,12 @@ def test_poisson(plot=False):
     global_fxye = concatenate(fxye.trim())
 
     # Wave number arrays
-    kx = 2*numpy.pi*numpy.fft.rfftfreq(grid.nx)
-    ky = 2*numpy.pi*numpy.fft.fftfreq(grid.ny)
+    kx = 2*numpy.pi*numpy.fft.rfftfreq(manifold.nx)
+    ky = 2*numpy.pi*numpy.fft.fftfreq(manifold.ny)
     kx, ky = numpy.meshgrid(kx, ky)
 
     # Normalization constant
-    affp = grid.nx*grid.ny/np
+    affp = manifold.nx*manifold.ny/np
 
     # Compute inverse wave number squared
     k2 = kx**2 + ky**2
@@ -139,11 +135,11 @@ def test_poisson(plot=False):
     k21 = 1 / numpy.where(k2 == 0, 1, k2).astype(float)
 
     # Initialize force field
-    fxye = Field(grid, dtype=Float2)
+    fxye = Field(manifold, dtype=Float2)
     fxye.fill((0.0, 0.0))
 
     # Normalization constant
-    affp = grid.nx*grid.ny/np
+    affp = manifold.nx*manifold.ny/np
 
     # Effective inverse wave number for finite size particles
     k21_eff = k21*numpy.exp(-((kx*ax)**2 + (ky*ay)**2))

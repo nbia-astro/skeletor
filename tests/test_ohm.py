@@ -1,5 +1,5 @@
-from skeletor import Float, Float2, Grid, Field, Ohm
-from skeletor.manifolds.ppic2 import Operators
+from skeletor import Float, Float2, Field, Ohm
+from skeletor.manifolds.ppic2 import Manifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
 
@@ -23,26 +23,22 @@ def test_ohm(plot=False):
     # Solve Ohm's law with mpifft4py            #
     #############################################
 
-    # Create numerical grid
-    grid = Grid(nx, ny, comm)
-
     # Smoothed particle size
     ax, ay = 0.0, 0.0
 
-    # Initialize various integro-differential operators
-    operators = Operators(grid, ax, ay)
-    grid.operators = operators
+    # Create numerical grid
+    manifold = Manifold(nx, ny, comm, ax, ay)
 
     # Initialize Ohm's law solver
-    ohm = Ohm(grid, npc=1, temperature=1.0, charge=1.0)
+    ohm = Ohm(manifold, temperature=1.0, charge=1.0)
 
     # Coordinate arrays
-    x = numpy.arange(grid.nx, dtype=Float)
-    y = grid.noff + numpy.arange(grid.nyp, dtype=Float)
+    x = numpy.arange(manifold.nx, dtype=Float)
+    y = manifold.noff + numpy.arange(manifold.nyp, dtype=Float)
     xx, yy = numpy.meshgrid(x, y)
 
     # Initialize density field
-    rho = Field(grid, dtype=Float)
+    rho = Field(manifold, dtype=Float)
     rho.fill(0.0)
 
     # Wavenumbers of mode
@@ -52,10 +48,10 @@ def test_ohm(plot=False):
 
     # Notice that the charge is positive
     A = 0.2
-    rho[:grid.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
+    rho[:manifold.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
 
     # Initialize electric field
-    E = Field(grid, dtype=Float2)
+    E = Field(manifold, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Solve Ohm's law
@@ -64,7 +60,7 @@ def test_ohm(plot=False):
     E.copy_guards()
 
     # Calculate the electric field analytically
-    factor = -ohm.alpha/rho[:grid.nyp, :nx]
+    factor = -ohm.alpha/rho[:manifold.nyp, :nx]
     Ex = kx*A*numpy.cos(kx*xx + ky*yy)*factor
     Ey = ky*A*numpy.cos(kx*xx + ky*yy)*factor
 
