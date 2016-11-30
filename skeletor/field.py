@@ -91,6 +91,28 @@ class Field(ndarray):
         self[:, ubx:] = 0.0
         self[:, :lbx] = 0.0
 
+    def add_guards_vector(self):
+        lbx = self.grid.lbx
+        lby = self.grid.lby
+        nubx = self.grid.nubx
+        nuby = self.grid.nuby
+        ubx = self.grid.ubx
+        uby = self.grid.uby
+
+        # Add data from guard cells to corresponding active cells
+        dims = ('x', 'y', 'z')
+        for dim in dims:
+            self[:, lbx:lbx+nubx][dim] += self[:, ubx:][dim]
+            self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
+
+            self[lby:lby+nuby, :][dim] += self.send_up(self[uby:, :][dim])
+            self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
+
+        # Erase guard cells
+        self[:lby, :] = 0.0
+        self[uby:, :] = 0.0
+        self[:, ubx:] = 0.0
+        self[:, :lbx] = 0.0
 
     def add_guards_ppic2(self):
 
