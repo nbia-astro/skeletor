@@ -59,7 +59,7 @@ class Particles(numpy.ndarray):
         self.info = getattr(obj, "info", None)
         self.time = getattr(obj, "time", None)
 
-    def initialize(self, x, y, vx, vy):
+    def initialize(self, x, y, vx, vy, vz):
 
         from numpy import logical_and, sum
         from warnings import warn
@@ -81,6 +81,7 @@ class Particles(numpy.ndarray):
         self["y"][:self.np] = y[ind]
         self["vx"][:self.np] = vx[ind]
         self["vy"][:self.np] = vy[ind]
+        self["vz"][:self.np] = vz[ind]
 
     def move(self):
         """Uses ppic2's cppmove2 routine for moving particles

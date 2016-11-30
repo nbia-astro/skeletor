@@ -18,7 +18,7 @@ class Sources:
 
         if erase:
             self.rho.fill(0.0)
-            self.J.fill((0.0, 0.0))
+            self.J.fill((0.0, 0.0, 0.0))
 
         if not self.rho.grid.shear:
             S = 0.0
