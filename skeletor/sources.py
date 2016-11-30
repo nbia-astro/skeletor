@@ -1,5 +1,6 @@
 from .field import Field
 from .cython.ppic2_wrapper import cppgpost2l
+from .cython.dtypes import Float2
 
 
 class Sources:
@@ -7,6 +8,8 @@ class Sources:
     def __init__(self, grid, order='cic', **kwds):
 
         self.rho = Field(grid, **kwds)
+
+        self.J = Field(grid, dtype=Float2)
 
         # Interpolation order
         self.order = order
@@ -22,9 +25,10 @@ class Sources:
 
         if erase:
             self.rho.fill(0.0)
+            self.J.fill((0.0, 0.0, 0.0))
 
         cython_deposit(
-                particles[:particles.np], self.rho, particles.charge,
+                particles[:particles.np], self.rho, self.J, particles.charge,
                 self.rho.grid.noff, self.rho.grid.lbx, self.rho.grid.lby)
 
     def deposit_tsc(self, particles, erase=True):
@@ -32,6 +36,7 @@ class Sources:
 
         if erase:
             self.rho.fill(0.0)
+            self.J.fill((0.0, 0.0, 0.0))
 
         deposit_tsc(
                 particles[:particles.np], self.rho, particles.charge,
