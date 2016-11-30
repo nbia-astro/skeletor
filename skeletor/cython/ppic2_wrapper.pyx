@@ -17,7 +17,7 @@ cdef int ndim = 2
 # Number of partition boundaries
 cdef int idps = 2
 # Number of particle phase space coordinates
-cdef int idimp = 4
+cdef int idimp = 5
 # Particle boundary condition: 1 = periodic
 cdef int ipbc = 0
 # Not sure what this is for

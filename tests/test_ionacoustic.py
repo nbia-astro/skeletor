@@ -1,6 +1,6 @@
 from skeletor import Float, Float2, Field, Particles, Sources
 from skeletor import Ohm, InitialCondition
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.second_order import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -100,7 +100,7 @@ def test_ionacoustic(plot=False):
 
     # Set the electric field to zero
     E = Field(manifold, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
 
     # Initialize sources
     sources = Sources(manifold)
