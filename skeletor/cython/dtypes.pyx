@@ -5,9 +5,9 @@ Int = dtype("i{}".format(sizeof(int)))
 Float = dtype("f{}".format(sizeof(real_t)))
 Complex = dtype("c{}".format(sizeof(complex_t)))
 
-Float2 = [('x', Float), ('y', Float)]
+Float2 = [('x', Float), ('y', Float), ('z', Float)]
 Complex2 = [('x', Complex), ('y', Complex)]
 
 Particle = dtype(
-        [('x', Float), ('y', Float), ('vx', Float), ('vy', Float)],
-        align=True)
+        [('x', Float), ('y', Float), ('vx', Float), ('vy', Float),
+        ('vz', Float)], align=True)

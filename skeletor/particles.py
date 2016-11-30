@@ -69,7 +69,7 @@ class Particles(numpy.ndarray):
         self.rbufr = getattr(obj, "rbufr", None)
         self.info = getattr(obj, "info", None)
 
-    def initialize(self, x, y, vx, vy, grid):
+    def initialize(self, x, y, vx, vy, vz, grid):
 
         from numpy import logical_and, sum
         from warnings import warn
@@ -90,6 +90,7 @@ class Particles(numpy.ndarray):
         self["y"][:self.np] = y[ind]
         self["vx"][:self.np] = vx[ind]
         self["vy"][:self.np] = vy[ind]
+        self["vz"][:self.np] = vz[ind]
 
     def initialize_ppic2(self, vtx, vty, vdx, vdy, npx, npy, grid):
 
