@@ -31,13 +31,14 @@ def push_epicycle(particle_t[:] particles, real_t dt):
         particles[ip].y += particles[ip].vy*dt
 
 
-def push_cic(particle_t[:] particles, real2_t[:, :] E, real_t bz, real_t qtmh,
+def push_cic(particle_t[:] particles, real2_t[:, :] E, real2_t[:, :] B, real_t qtmh,
          real_t dt, int noff, int lbx, int lby):
 
-    cdef real_t ex, ey
+    cdef real_t ex, ey, ez
+    cdef real_t bx, by, bz
 
-    cdef real_t vmx, vmy
-    cdef real_t vpx, vpy
+    cdef real_t vmx, vmy, vmz
+    cdef real_t vpx, vpy, vpz
     cdef real_t fac
 
     cdef int ix, iy
@@ -71,32 +72,51 @@ def push_cic(particle_t[:] particles, real2_t[:, :] E, real_t bz, real_t qtmh,
         ey = dy*(dx*E[iy+1, ix+1].y + tx*E[iy+1, ix].y)  \
             + ty*(dx*E[iy, ix+1].y + tx*E[iy, ix].y)
 
+        ez = dy*(dx*E[iy+1, ix+1].z + tx*E[iy+1, ix].z)  \
+            + ty*(dx*E[iy, ix+1].z + tx*E[iy, ix].z)
+
+        bx = dy*(dx*B[iy+1, ix+1].x + tx*B[iy+1, ix].x)  \
+            + ty*(dx*B[iy, ix+1].x + tx*B[iy, ix].x)
+
+        by = dy*(dx*B[iy+1, ix+1].y + tx*B[iy+1, ix].y)  \
+            + ty*(dx*B[iy, ix+1].y + tx*B[iy, ix].y)
+
+        bz = dy*(dx*B[iy+1, ix+1].z + tx*B[iy+1, ix].z)  \
+            + ty*(dx*B[iy, ix+1].z + tx*B[iy, ix].z)
+
         # Rescale electric & magnetic field with qtmh = 0.5*dt*charge/mass
         ex *= qtmh
         ey *= qtmh
+        ez *= qtmh
+        bx *= qtmh
+        by *= qtmh
         bz *= qtmh
 
         vmx = particles[ip].vx + ex
         vmy = particles[ip].vy + ey
+        vmz = particles[ip].vz + ez
 
-        vpx = vmx + vmy*bz
-        vpy = vmy - vmx*bz
+        vpx = vmx + (vmy*bz - vmz*by)
+        vpy = vmy + (vmz*bx - vmx*bz)
+        vpz = vmz + (vmx*by - vmy*bx)
 
-        fac = 2.0/(1.0 + bz*bz)
+        fac = 2./(1. + bx*bx + by*by + bz*bz)
 
-        particles[ip].vx = vmx + fac*vpy*bz + ex
-        particles[ip].vy = vmy - fac*vpx*bz + ey
+        particles[ip].vx = vmx + fac*(vpy*bz - vpz*by) + ex
+        particles[ip].vy = vmy + fac*(vpz*bx - vpx*bz) + ey
+        particles[ip].vz = vmz + fac*(vpx*by - vpy*bx) + ez
 
         particles[ip].x += particles[ip].vx*dt
         particles[ip].y += particles[ip].vy*dt
 
-def push_tsc(particle_t[:] particles, real2_t[:, :] E, real_t bz, real_t qtmh,
+def push_tsc(particle_t[:] particles, real2_t[:, :] E, real2_t[:,:] B, real_t qtmh,
          real_t dt, int noff, int lbx, int lby):
 
-    cdef real_t ex, ey
+    cdef real_t ex, ey, ez
+    cdef real_t bx, by, bz
 
-    cdef real_t vmx, vmy
-    cdef real_t vpx, vpy
+    cdef real_t vmx, vmy, vmz
+    cdef real_t vpx, vpy, vpz
     cdef real_t fac
 
     cdef int ix, iy
@@ -140,21 +160,43 @@ def push_tsc(particle_t[:] particles, real2_t[:, :] E, real_t bz, real_t qtmh,
            + w0y*(wmx*E[iy  , ix-1].y+w0x*E[iy  , ix  ].y+wpx*E[iy  , ix+1].y)\
            + wpy*(wmx*E[iy+1, ix-1].y+w0x*E[iy+1, ix  ].y+wpx*E[iy+1, ix+1].y)
 
+        ez = wmy*(wmx*E[iy-1, ix-1].z+w0x*E[iy-1, ix  ].z+wpx*E[iy-1, ix+1].z)\
+           + w0y*(wmx*E[iy  , ix-1].z+w0x*E[iy  , ix  ].z+wpx*E[iy  , ix+1].z)\
+           + wpy*(wmx*E[iy+1, ix-1].z+w0x*E[iy+1, ix  ].z+wpx*E[iy+1, ix+1].z)
+
+        bx = wmy*(wmx*B[iy-1, ix-1].x+w0x*B[iy-1, ix  ].x+wpx*B[iy-1, ix+1].x)\
+           + w0y*(wmx*B[iy  , ix-1].x+w0x*B[iy  , ix  ].x+wpx*B[iy  , ix+1].x)\
+           + wpy*(wmx*B[iy+1, ix-1].x+w0x*B[iy+1, ix  ].x+wpx*B[iy+1, ix+1].x)
+
+        by = wmy*(wmx*B[iy-1, ix-1].y+w0x*B[iy-1, ix  ].y+wpx*B[iy-1, ix+1].y)\
+           + w0y*(wmx*B[iy  , ix-1].y+w0x*B[iy  , ix  ].y+wpx*B[iy  , ix+1].y)\
+           + wpy*(wmx*B[iy+1, ix-1].y+w0x*B[iy+1, ix  ].y+wpx*B[iy+1, ix+1].y)
+
+        bz = wmy*(wmx*B[iy-1, ix-1].z+w0x*B[iy-1, ix  ].z+wpx*B[iy-1, ix+1].z)\
+           + w0y*(wmx*B[iy  , ix-1].z+w0x*B[iy  , ix  ].z+wpx*B[iy  , ix+1].z)\
+           + wpy*(wmx*B[iy+1, ix-1].z+w0x*B[iy+1, ix  ].z+wpx*B[iy+1, ix+1].z)
+
         # Rescale electric & magnetic field with qtmh = 0.5*dt*charge/mass
         ex *= qtmh
         ey *= qtmh
+        ez *= qtmh
+        bx *= qtmh
+        by *= qtmh
         bz *= qtmh
 
         vmx = particles[ip].vx + ex
         vmy = particles[ip].vy + ey
+        vmz = particles[ip].vz + ez
 
-        vpx = vmx + vmy*bz
-        vpy = vmy - vmx*bz
+        vpx = vmx + (vmy*bz - vmz*by)
+        vpy = vmy + (vmz*bx - vmx*bz)
+        vpz = vmz + (vmx*by - vmy*bx)
 
-        fac = 2.0/(1.0 + bz*bz)
+        fac = 2./(1. + bx*bx + by*by + bz*bz)
 
-        particles[ip].vx = vmx + fac*vpy*bz + ex
-        particles[ip].vy = vmy - fac*vpx*bz + ey
+        particles[ip].vx = vmx + fac*(vpy*bz - vpz*by) + ex
+        particles[ip].vy = vmy + fac*(vpz*bx - vpx*bz) + ey
+        particles[ip].vz = vmz + fac*(vpx*by - vpy*bx) + ez
 
         particles[ip].x += particles[ip].vx*dt
         particles[ip].y += particles[ip].vy*dt

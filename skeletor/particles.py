@@ -175,7 +175,7 @@ class Particles(numpy.ndarray):
 
         return ek
 
-    def push(self, fxy, dt, t=0):
+    def push(self, E, B, dt, t=0):
         if self.order == 'cic':
             from .cython.push_epicycle import push_cic as push
         elif self.order == 'tsc':
@@ -184,10 +184,9 @@ class Particles(numpy.ndarray):
             msg = 'Interpolation order not supported. order = {}'
             raise RuntimeError(msg.format(self.order))
 
-
-        grid = fxy.grid
+        grid = E.grid
         qtmh = self.charge/self.mass*dt/2
-        push(self[:self.np], fxy, self.bz, qtmh, dt, grid.noff,
+        push(self[:self.np], E, B, qtmh, dt, grid.noff,
              grid.lbx, grid.lby)
 
         # Shearing periodicity
