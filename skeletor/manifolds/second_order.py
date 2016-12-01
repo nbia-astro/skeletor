@@ -35,14 +35,45 @@ class Manifold(Grid):
         grad.boundaries_set = False
 
         # Divide by dx and dy to account for nx != Lx and ny != Ly
-        grad['x'] /= grad.grid.dx
-        grad['y'] /= grad.grid.dy
+        grad['x'] /= self.dx
+        grad['y'] /= self.dy
 
 
     def log(self, f):
         from numpy import log as numpy_log
 
         return numpy_log(f)
+
+    def ddxn(self, f):
+        from ..cython.finite_difference import ddxdn
+        from numpy import zeros_like
+
+        df = zeros_like(f)
+
+        ddxdn(f, df, self.lbx, self.ubx, self.lby, self.uby)
+
+        df /= self.dx
+
+        return df
+
+    def ddyn(self, f):
+        from ..cython.finite_difference import ddydn
+        from numpy import zeros_like
+
+        df = zeros_like(f)
+
+        ddydn(f, df, self.lbx, self.ubx, self.lby, self.uby)
+
+        df /= self.dy
+
+        return df
+
+    def curl(self, f, curl):
+        """Calculate the curl of vector f"""
+
+        curl['x'] = self.ddyn(f['z'])
+        curl['y'] = -self.ddxn(f['z'])
+        curl['z'] = self.ddxn(f['y']) - self.ddyn(f['x'])
 
     def grad_inv_del(self, qe, fxye):
 
