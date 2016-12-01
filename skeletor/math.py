@@ -3,5 +3,5 @@ def log(f):
         active cells of skeletor fields"""
     from numpy import log as numpy_log
     g = f.copy()
-    g[:-1, :-2] = numpy_log(f.trim())
+    g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = numpy_log(f.trim())
     return g
