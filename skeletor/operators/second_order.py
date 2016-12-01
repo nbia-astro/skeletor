@@ -29,6 +29,36 @@ class Operators:
         cython_gradient(f, grad, self.grid.lbx, self.grid.ubx, self.grid.lby,
                         self.grid.uby)
 
+    def ddxn(self, f):
+        from ..cython.finite_difference import ddxdn
+        from numpy import zeros_like
+
+        df = zeros_like(f)
+
+        ddxdn(f, df, self.grid.lbx, self.grid.ubx, self.grid.lby,
+              self.grid.uby)
+
+        return df
+
+    def ddyn(self, f):
+        from ..cython.finite_difference import ddydn
+        from numpy import zeros_like
+
+        df = zeros_like(f)
+
+        ddydn(f, df, self.grid.lbx, self.grid.ubx, self.grid.lby,
+              self.grid.uby)
+
+        return df
+
+    def curl(self, f, curl):
+        """Calculate the curl of vector f"""
+
+        curl['x'] = self.ddyn(f['z'])
+        curl['y'] = -self.ddxn(f['z'])
+        curl['z'] = self.ddxn(f['y']) - self.ddyn(f['x'])
+
+
     def grad_inv_del(self, qe, fxye):
 
         raise RuntimeError("grad_inv_del not implemented for 2nd order finite \
