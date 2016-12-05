@@ -4,7 +4,7 @@ import warnings
 
 class Manifold(Grid):
 
-    def __init__(self, nx, ny, comm, ax, ay):
+    def __init__(self, nx, ny, comm, ax, ay, nlbx=0, nubx=2, nlby=0, nuby=1):
 
         from math import log2
         from numpy import zeros, sum, where, zeros_like, array, exp
@@ -12,7 +12,7 @@ class Manifold(Grid):
         from mpi4py import MPI
         from skeletor import Float, Complex
 
-        super().__init__(nx, ny, comm)
+        super().__init__(nx, ny, comm, nlbx, nubx, nlby, nuby)
 
         self.indx = int(log2(nx))
         self.indy = int(log2(ny))
@@ -65,8 +65,10 @@ class Manifold(Grid):
         self.FFT.fft2(f.trim(), self.f_hat)
         self.fx_hat[:] = 1j*self.kx*self.f_hat
         self.fy_hat[:] = 1j*self.ky*self.f_hat
-        self.FFT.ifft2(self.fx_hat, grad['x'][:-1, :-2])
-        self.FFT.ifft2(self.fy_hat, grad['y'][:-1, :-2])
+        self.FFT.ifft2(self.fx_hat, grad['x'][self.lby:self.uby,
+                     self.lbx:self.ubx])
+        self.FFT.ifft2(self.fy_hat, grad['y'][self.lby:self.uby,
+                     self.lbx:self.ubx])
 
     def grad_inv_del(self, f, grad_inv_del, destroy_input=None):
         """ """
@@ -78,19 +80,21 @@ class Manifold(Grid):
         self.fx_hat[:] = -1j*self.kx*self.k21_eff*self.f_hat
         self.fy_hat[:] = -1j*self.ky*self.k21_eff*self.f_hat
 
-        self.FFT.ifft2(self.fx_hat, grad_inv_del['x'][:-1, :-2])
-        self.FFT.ifft2(self.fy_hat, grad_inv_del['y'][:-1, :-2])
+        self.FFT.ifft2(self.fx_hat, grad_inv_del['x'][self.lby:self.uby,
+                     self.lbx:self.ubx])
+        self.FFT.ifft2(self.fy_hat, grad_inv_del['y'][self.lby:self.uby,
+                     self.lbx:self.ubx])
 
 
 class ShearingManifold(Manifold):
 
-    def __init__(self, nx, ny, comm, ax, ay):
+    def __init__(self, nx, ny, comm, ax, ay, nlbx=0, nubx=2, nlby=0, nuby=1):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi, zeros
         from skeletor import Complex
 
-        super().__init__(nx, ny, comm, ax, ay)
+        super().__init__(nx, ny, comm, nlbx, nubx, nlby, nuby)
 
         # Grid spacing
         # TODO: this should be a property of the Grid class
@@ -153,8 +157,10 @@ class ShearingManifold(Manifold):
         self.fy_hat[:] = 1j*ky*self.f_hat
 
         # Transform back to real space
-        self._irfft2(self.fx_hat, grad['x'][:-1, :-2], phase)
-        self._irfft2(self.fy_hat, grad['y'][:-1, :-2], phase)
+        self._irfft2(self.fx_hat, grad['x'][self.lby:self.uby,
+                     self.lbx:self.ubx], phase)
+        self._irfft2(self.fy_hat, grad['y'][self.lby:self.uby,
+                     self.lbx:self.ubx], phase)
 
     def grad_inv_del(self, f, grad_inv_del):
         raise 'grad_inv_del not implemented in shearing sheet'
