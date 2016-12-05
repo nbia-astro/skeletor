@@ -179,16 +179,25 @@ class Particles(numpy.ndarray):
         return ek
 
     def push(self, fxy, dt, t=0):
+        grid = fxy.grid
+
+        err = 'Too few bondary layers for the chosen interpolation'
+
+        # Cloud-In-Cell interpolation (CIC)
         if self.order == 'cic':
             from .cython.push_epicycle import push_cic as push
+            assert (grid.nlbx >= 0 and grid.nlby >= 0 and
+                    grid.nubx >= 1 and grid.nuby >= 1), err
+            from .cython.deposit import deposit_cic as cython_deposit
+        # Triangular Shaped Cloud deposition (TSC)
         elif self.order == 'tsc':
+            assert (grid.nlbx >= 1 and grid.nlby >= 1 and
+                    grid.nubx >= 2 and grid.nuby >= 2), err
             from .cython.push_epicycle import push_tsc as push
         else:
             msg = 'Interpolation order not supported. order = {}'
             raise RuntimeError(msg.format(self.order))
 
-
-        grid = fxy.grid
         qtmh = self.charge/self.mass*dt/2
         push(self[:self.np], fxy, self.bz, qtmh, dt, grid.noff,
              grid.lbx, grid.lby)

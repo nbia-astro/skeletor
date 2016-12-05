@@ -17,6 +17,9 @@ class Manifold(Grid):
         self.indx = int(log2(nx))
         self.indy = int(log2(ny))
 
+        err = 'Not enough boundary layers for second order finite difference.'
+        assert (nlbx >= 1 and nlby >= 1 and nubx >= 1 and nuby >= 1), err
+
         assert nx == 2**self.indx, "'nx' needs to be a power of two"
         assert ny == 2**self.indy, "'ny' needs to be a power of two"
 

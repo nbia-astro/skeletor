@@ -12,9 +12,16 @@ class Sources:
         self.order = order
 
     def deposit(self, particles, erase=True):
+        err = 'Too few bondary layers for the chosen deposition'
+        # Cloud-In-Cell deposition (CIC)
         if self.order == 'cic':
+            assert (self.rho.grid.nlbx >= 0 and self.rho.grid.nlby >= 0 and
+                    self.rho.grid.nubx >= 1 and self.rho.grid.nuby >= 1), err
             from .cython.deposit import deposit_cic as cython_deposit
+        # Triangular Shaped Cloud deposition (TSC)
         elif self.order == 'tsc':
+            assert (self.rho.grid.nlbx >= 1 and self.rho.grid.nlby >= 1 and
+                    self.rho.grid.nubx >= 2 and self.rho.grid.nuby >= 2), err
             from .cython.deposit import deposit_tsc as cython_deposit
         else:
             msg = 'Interpolation order not supported. order = {}'
