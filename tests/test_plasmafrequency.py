@@ -1,5 +1,5 @@
-from skeletor import Float, Float2, Grid, Field, Particles, Sources
-from skeletor.operators.mpifft4py import Operators
+from skeletor import Float, Float2, Field, Particles, Sources
+from skeletor.manifolds.mpifft4py import Manifold
 from skeletor import Poisson
 import numpy
 from mpi4py import MPI
@@ -102,7 +102,7 @@ def test_plasmafrequency(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    grid = Grid(nx, ny, comm)
+    manifold = Manifold(nx, ny, comm, ax, ay)
 
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/comm.size)
@@ -111,24 +111,21 @@ def test_plasmafrequency(plot=False):
     electrons = Particles(npmax, charge, mass)
 
     # Assign particles to subdomains
-    electrons.initialize(x, y, vx, vy, grid)
+    electrons.initialize(x, y, vx, vy, manifold)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
     assert comm.allreduce(electrons.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(grid, dtype=Float2)
+    E = Field(manifold, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Initialize sources
-    sources = Sources(grid, dtype=Float)
+    sources = Sources(manifold, dtype=Float)
 
     # Initialize integro-differential operators
-    operators = Operators(grid, ax, ay, np)
-    grid.operators = operators
-
-    poisson = Poisson(grid, ax, ay, np)
+    poisson = Poisson(manifold, np)
 
     # Calculate initial density and force
 
@@ -143,7 +140,7 @@ def test_plasmafrequency(plot=False):
         # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
     # Solve Gauss' law
-    poisson(sources.rho, E, destroy_input=False)
+    poisson(sources.rho, E)
     # Set boundary condition
     E.copy_guards_ppic2()
 
@@ -197,7 +194,7 @@ def test_plasmafrequency(plot=False):
         #     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
         # Solve Gauss' law
-        poisson(sources.rho, E, destroy_input=False)
+        poisson(sources.rho, E)
 
         # Set boundary condition
         E.copy_guards_ppic2()

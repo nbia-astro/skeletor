@@ -16,7 +16,7 @@ extensions = [Extension(
 setup(
     name='skeletor',
     version='0.0.1',
-    packages=['skeletor', 'skeletor.operators'],
+    packages=['skeletor', 'skeletor.manifolds'],
     ext_modules=cythonize(
         extensions,
         compiler_directives=compiler_directives))

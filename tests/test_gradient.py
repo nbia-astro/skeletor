@@ -1,5 +1,5 @@
-from skeletor import Float, Float2, Grid, Field
-from skeletor.operators.ppic2 import Operators
+from skeletor import Float, Float2, Field
+from skeletor.manifolds.ppic2 import Manifold
 from mpi4py.MPI import COMM_WORLD as comm
 from mpiFFT4py.line import R2C
 from mpi4py import MPI
@@ -29,28 +29,25 @@ def test_gradient(plot=False):
     #############################################
 
     # Create numerical grid
-    grid = Grid(nx, ny, comm)
-
-    # Initialize integro-differential operators
-    operators = Operators(grid, ax, ay, np)
+    manifold = Manifold(nx, ny, comm, ax, ay)
 
     # Coordinate arrays
-    x = numpy.arange(grid.nx, dtype=Float)
-    y = grid.noff + numpy.arange(grid.nyp, dtype=Float)
+    x = numpy.arange(manifold.nx, dtype=Float)
+    y = manifold.noff + numpy.arange(manifold.nyp, dtype=Float)
     xx, yy = numpy.meshgrid(x, y)
 
     # Initialize density field
-    qe = Field(grid, dtype=Float)
+    qe = Field(manifold, dtype=Float)
     qe.fill(0.0)
     ikx, iky = 1, 2
-    qe[:grid.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
+    qe[:manifold.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
 
     # Initialize force field
-    fxye = Field(grid, dtype=Float2)
+    fxye = Field(manifold, dtype=Float2)
     fxye.fill((0.0, 0.0))
 
     # Compute gradient
-    operators.gradient(qe, fxye, destroy_input=False)
+    manifold.gradient(qe, fxye, destroy_input=False)
 
     # Concatenate local arrays to obtain global arrays (without guard cells).
     # The result is available on all processors.
@@ -64,8 +61,8 @@ def test_gradient(plot=False):
     ##############################################
 
     # Wave number arrays
-    kx = 2*numpy.pi*numpy.fft.rfftfreq(grid.nx)
-    ky = 2*numpy.pi*numpy.fft.fftfreq(grid.ny)
+    kx = 2*numpy.pi*numpy.fft.rfftfreq(manifold.nx)
+    ky = 2*numpy.pi*numpy.fft.fftfreq(manifold.ny)
     kx, ky = numpy.meshgrid(kx, ky)
 
     # Finite size particle shape factor
@@ -113,7 +110,7 @@ def test_gradient(plot=False):
     ky = k[0]
 
     # Initialize force field
-    fxye = Field(grid, dtype=Float2)
+    fxye = Field(manifold, dtype=Float2)
     fxye.fill((0.0, 0.0))
 
     # Finite size particle shape factor

@@ -1,6 +1,6 @@
 from skeletor import Float, Float2
-from skeletor import Grid, Field, Particles, Poisson, Sources
-from skeletor.operators.ppic2 import Operators
+from skeletor import Field, Particles, Poisson, Sources
+from skeletor.manifolds.ppic2 import Manifold
 import numpy
 from mpi4py import MPI
 
@@ -53,9 +53,12 @@ def test_skeletor():
 
     for comm in [MPI.COMM_SELF, MPI.COMM_WORLD]:
 
+        # Smoothed particle size
+        ax, ay = 0.912871, 0.912871
+
         # Create numerical grid. This contains information about the extent of
         # the subdomain assigned to each processor.
-        grid = Grid(nx, ny, comm)
+        manifold = Manifold(nx, ny, comm, ax, ay)
 
         # Maximum number of electrons in each partition
         npmax = int(1.5*np/comm.size)
@@ -64,7 +67,7 @@ def test_skeletor():
         electrons = Particles(npmax, charge, mass)
 
         # Assign particles to subdomains
-        electrons.initialize(x, y, vx, vy, grid)
+        electrons.initialize(x, y, vx, vy, manifold)
 
         # Make sure the numbers of particles in each subdomain add up to the
         # total number of particles
@@ -75,7 +78,7 @@ def test_skeletor():
         #######################
 
         # Set the force to zero (this will of course change in the future).
-        fxy = Field(grid, dtype=Float2)
+        fxy = Field(manifold, dtype=Float2)
         fxy.fill((0.0, 0.0))
 
         for it in range(nt):
@@ -93,8 +96,8 @@ def test_skeletor():
         # Test charge deposition #
         ##########################
 
-        sources = Sources(grid, dtype=Float)
-        sources2 = Sources(grid, dtype=Float)
+        sources = Sources(manifold, dtype=Float)
+        sources2 = Sources(manifold, dtype=Float)
 
         sources.deposit(electrons)
         sources2.deposit_ppic2(electrons)
@@ -124,15 +127,8 @@ def test_skeletor():
         # Compute electric field #
         ##########################
 
-        # Smoothed particle size
-        ax, ay = 0.912871, 0.912871
-
-        # Initialize various integro-differential operators
-        operators = Operators(grid, ax, ay, np)
-        grid.operators = operators
-
         # Initialize Poisson solver
-        poisson = Poisson(grid, ax, ay, np)
+        poisson = Poisson(manifold, np)
 
         # Solve Gauss's law
         poisson(sources.rho, fxy)

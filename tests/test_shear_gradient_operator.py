@@ -1,7 +1,7 @@
 from skeletor import Float, Float2, Grid, Field
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
-from skeletor.operators.mpifft4py import ShearOperators
+from skeletor.manifolds.mpifft4py import ShearingManifold
 
 
 def test_shear_gradient_operator(plot=False):
@@ -13,15 +13,18 @@ def test_shear_gradient_operator(plot=False):
     nx = 1 << indx
     ny = 1 << indy
 
+    # Particle size
+    ax, ay = 0.0, 0.0
+
     ##################################################
     # Solve Ohm's law in shear coordinates with FFTs #
     ##################################################
 
     # Create numerical grid
-    grid = Grid(nx, ny, comm)
+    manifold = ShearingManifold(nx, ny, comm, ax, ay)
 
     # Coordinate arrays
-    xx, yy = numpy.meshgrid(grid.x, grid.y)
+    xx, yy = numpy.meshgrid(manifold.x, manifold.y)
 
     # alpha parameter in Ohm's law
     alpha = 1
@@ -32,11 +35,11 @@ def test_shear_gradient_operator(plot=False):
         ky = S*t*kx
 
         # Initialize density field
-        rho = Field(grid, dtype=Float)
+        rho = Field(manifold, dtype=Float)
         rho.fill(0.0)
 
         A = 0.2
-        rho[:grid.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
+        rho[:manifold.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
 
         return rho
 
@@ -44,22 +47,22 @@ def test_shear_gradient_operator(plot=False):
         """Analytic electric field as a function of time"""
 
         # Initialize electric field
-        E = Field(grid, dtype=Float2)
+        E = Field(manifold, dtype=Float2)
         E.fill((0.0, 0.0))
 
         kx = 2*numpy.pi*ikx/nx
         ky = S*t*kx
 
         A = 0.2
-        E['x'][:grid.nyp, :nx] = -alpha*kx*A*numpy.cos(kx*xx+ky*yy) \
+        E['x'][:manifold.nyp, :nx] = -alpha*kx*A*numpy.cos(kx*xx+ky*yy) \
             / (1 + A*numpy.sin(kx*xx + ky*yy))
-        E['y'][:grid.nyp, :nx] = -alpha*ky*A*numpy.cos(kx*xx+ky*yy) \
+        E['y'][:manifold.nyp, :nx] = -alpha*ky*A*numpy.cos(kx*xx+ky*yy) \
             / (1 + A*numpy.sin(kx*xx + ky*yy))
 
         return E
 
     # Initialize electric field
-    E = Field(grid, dtype=Float2)
+    E = Field(manifold, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Rate of shear
@@ -67,7 +70,7 @@ def test_shear_gradient_operator(plot=False):
     # Time step
     dt = 2e-2/abs(S)
     # Amount of time between instances at which the domain is strictly periodic
-    tS = grid.Lx/(abs(S)*grid.Ly)
+    tS = manifold.Lx/(abs(S)*manifold.Ly)
     # Start and end time
     tstart = -3*tS
     tend = 3*tS
@@ -109,11 +112,6 @@ def test_shear_gradient_operator(plot=False):
                 ax.set_xlabel(r'$x$')
                 ax.set_ylabel(r'$y$')
 
-    ax = 0
-    ay = 0
-    np = 1
-    operators = ShearOperators(grid, ax, ay, np)
-
     for it in range(nt):
         t = tstart + it*dt
 
@@ -121,7 +119,7 @@ def test_shear_gradient_operator(plot=False):
         rho = rho_analytic(t)
 
         # Calculate shear electric field
-        operators.gradient(numpy.log(rho.trim()), E, S*t)
+        manifold.gradient(numpy.log(rho.trim()), E, S*t)
         E['x'] *= -alpha
         E['y'] *= -alpha
 

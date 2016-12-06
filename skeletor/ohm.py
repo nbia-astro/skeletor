@@ -2,10 +2,10 @@ class Ohm:
 
     """Solve Ohm's law"""
 
-    def __init__(self, grid, npc, charge=1.0, temperature=0.0, eta=0.0):
+    def __init__(self, manifold, charge=1.0, temperature=0.0, eta=0.0):
 
         # Store the operators here for easy access
-        self.operators = grid.operators
+        self.gradient = manifold.gradient
 
         # Charge
         self.charge = charge
@@ -22,6 +22,6 @@ class Ohm:
     def __call__(self, rho, E, destroy_input=True):
         from skeletor import log
 
-        self.operators.gradient(log(rho), E)
+        self.gradient(log(rho), E)
         E['x'] *= -self.alpha
         E['y'] *= -self.alpha

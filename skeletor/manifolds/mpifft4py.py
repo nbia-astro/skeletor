@@ -1,11 +1,10 @@
+from ..grid import Grid
 import warnings
 
 
-class Operators:
+class Manifold(Grid):
 
-    """Differential and translation operators using mpiFFT4py"""
-
-    def __init__(self, grid, ax, ay, np):
+    def __init__(self, nx, ny, comm, ax, ay):
 
         from math import log2
         from numpy import zeros, sum, where, zeros_like, array, exp
@@ -13,26 +12,29 @@ class Operators:
         from mpi4py import MPI
         from skeletor import Float, Complex
 
-        self.indx = int(log2(grid.nx))
-        self.indy = int(log2(grid.ny))
+        super().__init__(nx, ny, comm)
 
-        assert grid.nx == 2**self.indx, "'nx' needs to be a power of two"
-        assert grid.ny == 2**self.indy, "'ny' needs to be a power of two"
+        self.indx = int(log2(nx))
+        self.indy = int(log2(ny))
+
+        assert nx == 2**self.indx, "'nx' needs to be a power of two"
+        assert ny == 2**self.indy, "'ny' needs to be a power of two"
 
         # Smoothed particle size in x- and y-direction
         self.ax = ax
         self.ay = ay
 
         # Length vector
-        L = array([grid.Ly, grid.Lx], dtype=Float)
+        L = array([self.Ly, self.Lx], dtype=Float)
         # Grid size vector
-        N = array([grid.ny, grid.nx], dtype=int)
+        N = array([self.ny, self.nx], dtype=int)
 
         # Create FFT object
         if str(Float) == 'float64':
             precision = 'double'
         else:
             precision = 'single'
+        # precision = 'double' if str(Float) == 'float64' else 'single'
         self.FFT = R2C(N, L, MPI.COMM_WORLD, precision)
 
         # Pre-allocate array for Fourier transform and force
@@ -80,35 +82,35 @@ class Operators:
         self.FFT.ifft2(self.fy_hat, grad_inv_del['y'][:-1, :-2])
 
 
-class ShearOperators(Operators):
+class ShearingManifold(Manifold):
 
-    def __init__(self, grid, ax, ay, np):
+    def __init__(self, nx, ny, comm, ax, ay):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi, zeros
         from skeletor import Complex
 
-        Operators.__init__(self, grid, ax, ay, np)
+        super().__init__(nx, ny, comm, ax, ay)
 
         # Grid spacing
         # TODO: this should be a property of the Grid class
-        dx = grid.Lx/grid.nx
-        dy = grid.Ly/grid.ny
+        dx = self.Lx/self.nx
+        dy = self.Ly/self.ny
 
-        shape = grid.ny/grid.comm.size, grid.nx//2+1
+        shape = self.ny//self.comm.size, self.nx//2+1
         self.temp = zeros(shape, dtype=Complex)
 
         # Wave numbers for real-to-complex transforms
-        kx_vec = 2*pi*rfftfreq(grid.nx)/dx
+        kx_vec = 2*pi*rfftfreq(self.nx)/dx
 
         # Outer product of y and kx
-        self.y_kx = outer(grid.y, kx_vec)
+        self.y_kx = outer(self.y, kx_vec)
 
         # Maximum value of ky
         self.ky_max = pi/dy
 
         # Aspect ratio of grid
-        self.aspect = grid.Lx/grid.Ly
+        self.aspect = self.Lx/self.Ly
 
     def _rfft2(self, f, f_hat, phase):
         from numpy import exp
