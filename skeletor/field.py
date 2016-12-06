@@ -97,6 +97,10 @@ class Field(ndarray):
         # This routine *only* works for scalar fields
         assert self.dtype == dtype(Float)
 
+        # This routine only works for ppic grid layout
+        assert(self.grid.nubx == 2 and self.grid.nuby == 1 and
+               self.grid.lbx == 0 and self.grid.lby == 0)
+
         cppaguard2xl(self, self.grid)
         cppnaguard2l(self, self.scr, self.grid)
 
@@ -104,6 +108,10 @@ class Field(ndarray):
 
         # This routine *only* works for vector fields
         assert self.dtype == dtype(Float2)
+
+        # This routine only works for ppic grid layout
+        assert(self.grid.nubx == 2 and self.grid.nuby == 1 and
+               self.grid.lbx == 0 and self.grid.lby == 0)
 
         cppncguard2l(self, self.grid)
         cppcguard2xl(self, self.grid)
