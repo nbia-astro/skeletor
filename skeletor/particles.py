@@ -155,6 +155,10 @@ class Particles(numpy.ndarray):
 
         grid = fxy.grid
 
+        # This routine only works for ppic2 grid layout
+        assert(grid.nubx == 2 and grid.nuby == 1 and
+               grid.lbx == 0 and grid.lby == 0)
+
         qm = self.charge/self.mass
 
         ek = cppgbpush2l(self, fxy, self.bz, self.np, self.ihole, qm, dt, grid)
