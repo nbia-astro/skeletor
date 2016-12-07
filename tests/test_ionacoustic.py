@@ -1,6 +1,6 @@
 from skeletor import Float, Float2, Field, Particles, Sources
 from skeletor import Ohm
-from skeletor.manifolds.mpifft4py import Manifold
+from skeletor.manifolds.ppic2 import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -92,7 +92,7 @@ def test_ionacoustic(plot=False):
     # the subdomain assigned to each processor.
     ax = 0
     ay = 0
-    manifold = Manifold(nx, ny, comm, ax, ay)
+    manifold = Manifold(nx, ny, comm, ax, ay, nlbx=1, nubx=2, nlby=1, nuby=1)
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)
@@ -125,14 +125,15 @@ def test_ionacoustic(plot=False):
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-    sources.rho.add_guards_ppic2()
+    sources.rho.add_guards()
+    sources.rho.copy_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     # Calculate electric field (Solve Ohm's law)
     ohm(sources.rho, E, destroy_input=False)
     # Set boundary condition
-    E.copy_guards_ppic2()
+    E.copy_guards()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -176,15 +177,16 @@ def test_ionacoustic(plot=False):
         t += dt
 
         # Deposit sources
-        sources.deposit_ppic2(ions)
+        sources.deposit(ions)
 
         # Boundary calls
-        sources.rho.add_guards_ppic2()
+        sources.rho.add_guards()
+        sources.rho.copy_guards()
 
         # Calculate forces (Solve Ohm's law)
         ohm(sources.rho, E, destroy_input=False)
         # Set boundary condition
-        E.copy_guards_ppic2()
+        E.copy_guards()
 
         # Difference between numerical and analytic solution
         local_rho = sources.rho.trim()
