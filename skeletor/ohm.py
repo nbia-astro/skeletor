@@ -6,6 +6,7 @@ class Ohm:
 
         # Store the operators here for easy access
         self.gradient = manifold.gradient
+        self.log = manifold.log
 
         # Charge
         self.charge = charge
@@ -20,8 +21,7 @@ class Ohm:
         return self.temperature/self.charge
 
     def __call__(self, rho, E, destroy_input=True):
-        from skeletor import log
 
-        self.gradient(log(rho), E)
+        self.gradient(self.log(rho), E)
         E['x'] *= -self.alpha
         E['y'] *= -self.alpha

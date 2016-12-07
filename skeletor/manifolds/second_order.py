@@ -33,6 +33,10 @@ class Manifold(Grid):
 
         cython_gradient(f, grad, self.lbx, self.ubx, self.lby, self.uby)
 
+    def log(self, f):
+        from numpy import log as numpy_log
+        return numpy_log(f)
+
     def grad_inv_del(self, qe, fxye):
 
         raise RuntimeError("grad_inv_del not implemented for 2nd order finite \

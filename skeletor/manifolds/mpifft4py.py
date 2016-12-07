@@ -70,6 +70,14 @@ class Manifold(Grid):
         self.FFT.ifft2(self.fy_hat, grad['y'][self.lby:self.uby,
                      self.lbx:self.ubx])
 
+    def log(self, f):
+        """Custom log function that works on the
+            active cells of skeletor fields"""
+        from numpy import log as numpy_log
+        g = f.copy()
+        g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = numpy_log(f.trim())
+        return g
+
     def grad_inv_del(self, f, grad_inv_del, destroy_input=None):
         """ """
         if destroy_input is not None:
