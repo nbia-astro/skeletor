@@ -14,22 +14,16 @@ def test_gradient(plot=False):
     nx = 1 << indx
     ny = 1 << indy
 
-    # Average number of particles per cell
-    npc = 256
-
     # Smoothed particle size in x/y direction
     ax = 0.912871
     ay = 0.912871
-
-    # Total number of particles
-    np = nx*ny*npc
 
     #############################################
     # Compute gradient with PPIC's parallel FFT #
     #############################################
 
     # Create numerical grid
-    manifold = Manifold(nx, ny, comm, ax, ay)
+    manifold = Manifold(nx, ny, comm, ax=ax, ay=ay)
 
     # Coordinate arrays
     x = numpy.arange(manifold.nx, dtype=Float)

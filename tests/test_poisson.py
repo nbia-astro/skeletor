@@ -28,7 +28,7 @@ def test_poisson(plot=False):
     #############################################
 
     # Create numerical grid
-    manifold = Manifold(nx, ny, comm, ax, ay)
+    manifold = Manifold(nx, ny, comm, ax=ax, ay=ay)
 
     # Initialize Poisson solver
     poisson = Poisson(manifold, np)

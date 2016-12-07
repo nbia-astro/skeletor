@@ -90,9 +90,7 @@ def test_ionacoustic(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    ax = 0
-    ay = 0
-    manifold = Manifold(nx, ny, comm, ax, ay, nlbx=1, nubx=2, nlby=1, nuby=1)
+    manifold = Manifold(nx, ny, comm, nlbx=1, nubx=2, nlby=1, nuby=1)
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)

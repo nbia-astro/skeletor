@@ -58,7 +58,7 @@ def test_skeletor():
 
         # Create numerical grid. This contains information about the extent of
         # the subdomain assigned to each processor.
-        manifold = Manifold(nx, ny, comm, ax, ay)
+        manifold = Manifold(nx, ny, comm, ax=ax, ay=ay)
 
         # Maximum number of electrons in each partition
         npmax = int(1.5*np/comm.size)

@@ -1,4 +1,4 @@
-from skeletor import Float, Float2, Grid, Field
+from skeletor import Float, Float2, Field
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
 from skeletor.manifolds.mpifft4py import ShearingManifold
@@ -13,15 +13,12 @@ def test_shear_gradient_operator(plot=False):
     nx = 1 << indx
     ny = 1 << indy
 
-    # Particle size
-    ax, ay = 0.0, 0.0
-
     ##################################################
     # Solve Ohm's law in shear coordinates with FFTs #
     ##################################################
 
     # Create numerical grid
-    manifold = ShearingManifold(nx, ny, comm, ax, ay)
+    manifold = ShearingManifold(nx, ny, comm)
 
     # Coordinate arrays
     xx, yy = numpy.meshgrid(manifold.x, manifold.y)
@@ -143,6 +140,7 @@ def test_shear_gradient_operator(plot=False):
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
+
 
 if __name__ == "__main__":
 

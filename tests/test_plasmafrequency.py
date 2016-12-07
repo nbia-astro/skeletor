@@ -26,23 +26,14 @@ def test_plasmafrequency(plot=False):
     iky = 1
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0.0, 0.0
-    # CFL number
-    cfl = 0.5
     # Number of periods to run for
     nperiods = 1
-
-    # Smoothed particle size in x/y direction
-    ax = 0
-    ay = 0
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(numpy.arange(nx), numpy.arange(ny))
 
     # Total number of particles in simulation
     np = npc*nx*ny
-
-    # Normalization constant
-    affp = nx*ny/np
 
     # Epsilon 0
     eps0 = 1
@@ -102,7 +93,7 @@ def test_plasmafrequency(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm, ax, ay)
+    manifold = Manifold(nx, ny, comm)
 
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/comm.size)
@@ -137,7 +128,7 @@ def test_plasmafrequency(plot=False):
     sources.rho.add_guards_ppic2()
     sources.rho += n0*npc
     # assert numpy.isclose(comm.allreduce(
-        # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+    # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
     # Solve Gauss' law
     poisson(sources.rho, E)
@@ -203,7 +194,6 @@ def test_plasmafrequency(plot=False):
         if plot:
             if (it % 1 == 0):
                 global_rho = concatenate(sources.rho.trim())
-                global_E = concatenate(E.trim())
                 if comm.rank == 0:
                     im1.set_data(global_rho)
                     im2.set_data(rho_an(xg, yg, t))
@@ -220,6 +210,7 @@ def test_plasmafrequency(plot=False):
         tol = 1e-4*npc
         err = numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho))
         assert (err < tol)
+
 
 if __name__ == "__main__":
     import argparse

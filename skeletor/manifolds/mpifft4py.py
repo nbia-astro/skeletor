@@ -4,7 +4,9 @@ import warnings
 
 class Manifold(Grid):
 
-    def __init__(self, nx, ny, comm, ax, ay, nlbx=0, nubx=2, nlby=0, nuby=1):
+    def __init__(
+            self, nx, ny, comm,
+            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1):
 
         from math import log2
         from numpy import zeros, sum, where, zeros_like, array, exp
@@ -12,7 +14,8 @@ class Manifold(Grid):
         from mpi4py import MPI
         from skeletor import Float, Complex
 
-        super().__init__(nx, ny, comm, nlbx, nubx, nlby, nuby)
+        super().__init__(
+                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby)
 
         self.indx = int(log2(nx))
         self.indy = int(log2(ny))
@@ -96,13 +99,16 @@ class Manifold(Grid):
 
 class ShearingManifold(Manifold):
 
-    def __init__(self, nx, ny, comm, ax, ay, nlbx=0, nubx=2, nlby=0, nuby=1):
+    def __init__(
+            self, nx, ny, comm,
+            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi, zeros
         from skeletor import Complex
 
-        super().__init__(nx, ny, comm, nlbx, nubx, nlby, nuby)
+        super().__init__(
+                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby)
 
         # Grid spacing
         # TODO: this should be a property of the Grid class

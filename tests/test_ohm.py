@@ -14,20 +14,12 @@ def test_ohm(plot=False):
     nx = 1 << indx
     ny = 1 << indy
 
-    # Number of particles
-    # TODO: Remove because irrelevant for this test
-    npc = 1
-    np = npc*nx*ny
-
     #############################################
     # Solve Ohm's law with mpifft4py            #
     #############################################
 
-    # Smoothed particle size
-    ax, ay = 0.0, 0.0
-
     # Create numerical grid
-    manifold = Manifold(nx, ny, comm, ax, ay)
+    manifold = Manifold(nx, ny, comm)
 
     # Initialize Ohm's law solver
     ohm = Ohm(manifold, temperature=1.0, charge=1.0)
