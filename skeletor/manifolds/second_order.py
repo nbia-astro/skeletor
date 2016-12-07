@@ -39,5 +39,5 @@ class Manifold(Grid):
 
     def grad_inv_del(self, qe, fxye):
 
-        raise RuntimeError("grad_inv_del not implemented for 2nd order finite \
-                           difference.")
+        raise NotImplementedError("grad_inv_del not implemented for 2nd order\
+            finite difference.")
