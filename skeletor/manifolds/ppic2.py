@@ -11,7 +11,7 @@ class Manifold(Grid):
         from math import log2
         from numpy import zeros
 
-        super().__init__(nx, ny, comm)
+        super().__init__(nx, ny, comm, nlbx, nubx, nlby, nuby)
 
         self.indx = int(log2(nx))
         self.indy = int(log2(ny))
