@@ -13,20 +13,11 @@ class Manifold(Grid):
         super().__init__(
                 nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby)
 
-        from math import log2
-
         err = 'Not enough boundary layers for second order finite difference.'
         assert (nlbx >= 1 and nlby >= 1 and nubx >= 1 and nuby >= 1), err
 
-        self.indx = int(log2(nx))
-        self.indy = int(log2(ny))
-
-        assert nx == 2**self.indx, "'nx' needs to be a power of two"
-        assert ny == 2**self.indy, "'ny' needs to be a power of two"
-
-        # Smoothed particle size in x- and y-direction
-        self.ax = ax
-        self.ay = ay
+        msg = 'Finie particle size not implemented in this manifold'
+        assert ax == 0.0 and ay == 0.0, msg
 
     def gradient(self, f, grad, destroy_input=None):
         """Calculate the gradient of f"""
