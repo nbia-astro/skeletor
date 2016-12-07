@@ -1,6 +1,7 @@
 from ..grid import Grid
 import warnings
 
+
 class Manifold(Grid):
 
     """Finite difference operators"""
@@ -39,5 +40,5 @@ class Manifold(Grid):
 
     def grad_inv_del(self, qe, fxye):
 
-        raise NotImplementedError("grad_inv_del not implemented for 2nd order\
-            finite difference.")
+        msg = "grad_inv_del not implemented for 2nd order finite difference."
+        raise NotImplementedError(msg)

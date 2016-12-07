@@ -65,10 +65,10 @@ class Manifold(Grid):
         self.FFT.fft2(f.trim(), self.f_hat)
         self.fx_hat[:] = 1j*self.kx*self.f_hat
         self.fy_hat[:] = 1j*self.ky*self.f_hat
-        self.FFT.ifft2(self.fx_hat, grad['x'][self.lby:self.uby,
-                     self.lbx:self.ubx])
-        self.FFT.ifft2(self.fy_hat, grad['y'][self.lby:self.uby,
-                     self.lbx:self.ubx])
+        self.FFT.ifft2(self.fx_hat,
+                       grad['x'][self.lby:self.uby, self.lbx:self.ubx])
+        self.FFT.ifft2(self.fy_hat,
+                       grad['y'][self.lby:self.uby, self.lbx:self.ubx])
 
     def log(self, f):
         """Custom log function that works on the
@@ -88,10 +88,10 @@ class Manifold(Grid):
         self.fx_hat[:] = -1j*self.kx*self.k21_eff*self.f_hat
         self.fy_hat[:] = -1j*self.ky*self.k21_eff*self.f_hat
 
-        self.FFT.ifft2(self.fx_hat, grad_inv_del['x'][self.lby:self.uby,
-                     self.lbx:self.ubx])
-        self.FFT.ifft2(self.fy_hat, grad_inv_del['y'][self.lby:self.uby,
-                     self.lbx:self.ubx])
+        self.FFT.ifft2(self.fx_hat,
+                       grad_inv_del['x'][self.lby:self.uby, self.lbx:self.ubx])
+        self.FFT.ifft2(self.fy_hat,
+                       grad_inv_del['y'][self.lby:self.uby, self.lbx:self.ubx])
 
 
 class ShearingManifold(Manifold):
