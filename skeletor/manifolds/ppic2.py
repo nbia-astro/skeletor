@@ -64,9 +64,8 @@ class Manifold(Grid):
         if destroy_input is not None:
             warnings.warn("Ignoring option 'destroy_input'.")
 
-        grid = fxye.grid
-        qe_ = zeros((grid.nyp+1, grid.nx+2), dtype=Float)
-        fxye_ = zeros((grid.nyp+1, grid.nx+2), dtype=Float2)
+        qe_ = zeros((self.nyp+1, self.nx+2), dtype=Float)
+        fxye_ = zeros((self.nyp+1, self.nx+2), dtype=Float2)
         qe_[:-1, :-2] = qe.trim()
         fxye_['x'][:-1, :-2] = fxye.trim()['x']
         fxye_['y'][:-1, :-2] = fxye.trim()['y']
@@ -90,7 +89,7 @@ class Manifold(Grid):
                 fxye_, self.fxyt, self.bs, self.br, isign,
                 self.mixup, self.sct, self.indx, self.indy, self)
 
-        fxye[grid.lby:grid.uby, grid.lbx:grid.ubx] = fxye_[:-1, :-2]
+        fxye[self.lby:self.uby, self.lbx:self.ubx] = fxye_[:-1, :-2]
 
         return ttp
 
@@ -99,7 +98,7 @@ class Manifold(Grid):
             active cells of skeletor fields"""
         from numpy import log as numpy_log
         g = f.copy()
-        g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = numpy_log(f.trim())
+        g[self.lby:self.uby, self.lbx:self.ubx] = numpy_log(f.trim())
         return g
 
     def grad_inv_del(
@@ -113,9 +112,8 @@ class Manifold(Grid):
         if destroy_input is not None:
             warnings.warn("Ignoring option 'destroy_input'.")
 
-        grid = fxye.grid
-        qe_ = zeros((grid.nyp+1, grid.nx+2), dtype=Float)
-        fxye_ = zeros((grid.nyp+1, grid.nx+2), dtype=Float2)
+        qe_ = zeros((self.nyp+1, self.nx+2), dtype=Float)
+        fxye_ = zeros((self.nyp+1, self.nx+2), dtype=Float2)
         qe_[:-1, :-2] = qe.trim()
         fxye_['x'][:-1, :-2] = fxye.trim()['x']
         fxye_['y'][:-1, :-2] = fxye.trim()['y']
@@ -146,6 +144,6 @@ class Manifold(Grid):
                 fxye_, self.fxyt, self.bs, self.br, isign,
                 self.mixup, self.sct, self.indx, self.indy, self)
 
-        fxye[grid.lby:grid.uby, grid.lbx:grid.ubx] = fxye_[:-1, :-2]
+        fxye[self.lby:self.uby, self.lbx:self.ubx] = fxye_[:-1, :-2]
 
         return ttp, we
