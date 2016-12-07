@@ -1,9 +1,10 @@
 from ..grid import Grid
+import warnings
 
 
 class Manifold(Grid):
 
-    def __init__(self, nx, ny, comm, ax, ay):
+    def __init__(self, nx, ny, comm, ax, ay, nlbx=0, nubx=2, nlby=0, nuby=1):
 
         from ..cython.dtypes import Complex, Complex2, Int
         from ..cython.ppic2_wrapper import cwpfft2rinit, cppois22
@@ -54,11 +55,18 @@ class Manifold(Grid):
 
         from ..cython.ppic2_wrapper import cwppfft2r, cwppfft2r2
         from ..cython.operators import grad
+        from ..cython.dtypes import Float, Float2
+        from numpy import zeros
 
-        if destroy_input:
-            qe_ = qe
-        else:
-            qe_ = qe.copy()
+        if destroy_input is not None:
+            warnings.warn("Ignoring option 'destroy_input'.")
+
+        grid = fxye.grid
+        qe_ = zeros((grid.nyp+1, grid.nx+2), dtype=Float)
+        fxye_ = zeros((grid.nyp+1, grid.nx+2), dtype=Float2)
+        qe_[:-1, :-2] = qe.trim()
+        fxye_['x'][:-1, :-2] = fxye.trim()['x']
+        fxye_['y'][:-1, :-2] = fxye.trim()['y']
 
         # Transform charge to fourier space with standard procedure:
         # updates qt, modifies qe
@@ -76,8 +84,10 @@ class Manifold(Grid):
         # updates fxye, modifies fxyt
         isign = 1
         cwppfft2r2(
-                fxye, self.fxyt, self.bs, self.br, isign,
+                fxye_, self.fxyt, self.bs, self.br, isign,
                 self.mixup, self.sct, self.indx, self.indy, self)
+
+        fxye[grid.lby:grid.uby, grid.lbx:grid.ubx] = fxye_[:-1, :-2]
 
         return ttp
 
@@ -86,11 +96,18 @@ class Manifold(Grid):
 
         from ..cython.ppic2_wrapper import cppois22, cwppfft2r, cwppfft2r2
         from ..cython.operators import grad_inv_del
+        from ..cython.dtypes import Float, Float2
+        from numpy import zeros
 
-        if destroy_input:
-            qe_ = qe
-        else:
-            qe_ = qe.copy()
+        if destroy_input is not None:
+            warnings.warn("Ignoring option 'destroy_input'.")
+
+        grid = fxye.grid
+        qe_ = zeros((grid.nyp+1, grid.nx+2), dtype=Float)
+        fxye_ = zeros((grid.nyp+1, grid.nx+2), dtype=Float2)
+        qe_[:-1, :-2] = qe.trim()
+        fxye_['x'][:-1, :-2] = fxye.trim()['x']
+        fxye_['y'][:-1, :-2] = fxye.trim()['y']
 
         # Transform charge to fourier space with standard procedure:
         # updates qt, modifies qe
@@ -115,7 +132,9 @@ class Manifold(Grid):
         # updates fxye, modifies fxyt
         isign = 1
         cwppfft2r2(
-                fxye, self.fxyt, self.bs, self.br, isign,
+                fxye_, self.fxyt, self.bs, self.br, isign,
                 self.mixup, self.sct, self.indx, self.indy, self)
+
+        fxye[grid.lby:grid.uby, grid.lbx:grid.ubx] = fxye_[:-1, :-2]
 
         return ttp, we
