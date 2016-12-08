@@ -8,7 +8,7 @@ class Manifold(Grid):
             self, nx, ny, comm,
             ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1):
 
-        from ..cython.dtypes import Complex, Complex2, Int
+        from ..cython.dtypes import Complex, Complex2, Float, Float2, Int
         from ..cython.ppic2_wrapper import cwpfft2rinit, cppois22
         from math import log2
         from numpy import zeros
@@ -45,6 +45,11 @@ class Manifold(Grid):
         self.bs = zeros((kyp, kxp), Complex2)
         self.br = zeros((kyp, kxp), Complex2)
 
+        # Declare charge and electric fields with fixed number of guard layers.
+        # This is necessary for interfacing with PPIC2's C-routines.
+        self.qe = zeros((self.nyp+1, nx+2), dtype=Float)
+        self.fxye = zeros((self.nyp+1, nx+2), dtype=Float2)
+
         # Prepare fft tables
         cwpfft2rinit(self.mixup, self.sct, self.indx, self.indy)
 
@@ -58,24 +63,19 @@ class Manifold(Grid):
 
         from ..cython.ppic2_wrapper import cwppfft2r, cwppfft2r2
         from ..cython.operators import grad
-        from ..cython.dtypes import Float, Float2
-        from numpy import zeros
 
         if destroy_input is not None:
             warnings.warn("Ignoring option 'destroy_input'.")
 
-        qe_ = zeros((self.nyp+1, self.nx+2), dtype=Float)
-        fxye_ = zeros((self.nyp+1, self.nx+2), dtype=Float2)
-        qe_[:-1, :-2] = qe.trim()
-        fxye_['x'][:-1, :-2] = fxye.trim()['x']
-        fxye_['y'][:-1, :-2] = fxye.trim()['y']
+        # Copy charge into pre-allocated buffer that has the right number of
+        # guard layers expected by PPIC2
+        self.qe[:-1, :-2] = qe.trim()
 
         # Transform charge to fourier space with standard procedure:
         # updates qt, modifies qe
         isign = -1
-        ttp = cwppfft2r(
-                qe_, self.qt, self.bs, self.br, isign, self.mixup, self.sct,
-                self.indx, self.indy, self)
+        ttp = cwppfft2r(self.qe, self.qt, self.bs, self.br, isign,
+                        self.mixup, self.sct, self.indx, self.indy, self)
 
         # Calculate gradient in fourier space
         # updates fxyt
@@ -85,11 +85,12 @@ class Manifold(Grid):
         # Transform force to real space with standard procedure:
         # updates fxye, modifies fxyt
         isign = 1
-        cwppfft2r2(
-                fxye_, self.fxyt, self.bs, self.br, isign,
-                self.mixup, self.sct, self.indx, self.indy, self)
+        cwppfft2r2(self.fxye, self.fxyt, self.bs, self.br, isign,
+                   self.mixup, self.sct, self.indx, self.indy, self)
 
-        fxye[self.lby:self.uby, self.lbx:self.ubx] = fxye_[:-1, :-2]
+        # Copy electric field into an array with arbitrary number
+        # of guard layers
+        fxye[self.lby:self.uby, self.lbx:self.ubx] = self.fxye[:-1, :-2]
 
         return ttp
 
@@ -106,24 +107,19 @@ class Manifold(Grid):
 
         from ..cython.ppic2_wrapper import cppois22, cwppfft2r, cwppfft2r2
         from ..cython.operators import grad_inv_del
-        from ..cython.dtypes import Float, Float2
-        from numpy import zeros
 
         if destroy_input is not None:
             warnings.warn("Ignoring option 'destroy_input'.")
 
-        qe_ = zeros((self.nyp+1, self.nx+2), dtype=Float)
-        fxye_ = zeros((self.nyp+1, self.nx+2), dtype=Float2)
-        qe_[:-1, :-2] = qe.trim()
-        fxye_['x'][:-1, :-2] = fxye.trim()['x']
-        fxye_['y'][:-1, :-2] = fxye.trim()['y']
+        # Copy charge into pre-allocated buffer that has the right number of
+        # guard layers expected by PPIC2
+        self.qe[:-1, :-2] = qe.trim()
 
         # Transform charge to fourier space with standard procedure:
         # updates qt, modifies qe
         isign = -1
-        ttp = cwppfft2r(
-                qe_, self.qt, self.bs, self.br, isign, self.mixup, self.sct,
-                self.indx, self.indy, self)
+        ttp = cwppfft2r(self.qe, self.qt, self.bs, self.br, isign,
+                        self.mixup, self.sct, self.indx, self.indy, self)
 
         # Calculate force/charge in fourier space with standard procedure:
         # updates fxyt, we
@@ -140,10 +136,11 @@ class Manifold(Grid):
         # Transform force to real space with standard procedure:
         # updates fxye, modifies fxyt
         isign = 1
-        cwppfft2r2(
-                fxye_, self.fxyt, self.bs, self.br, isign,
-                self.mixup, self.sct, self.indx, self.indy, self)
+        cwppfft2r2(self.fxye, self.fxyt, self.bs, self.br, isign,
+                   self.mixup, self.sct, self.indx, self.indy, self)
 
-        fxye[self.lby:self.uby, self.lbx:self.ubx] = fxye_[:-1, :-2]
+        # Copy electric field into an array with arbitrary number
+        # of guard layers
+        fxye[self.lby:self.uby, self.lbx:self.ubx] = self.fxye[:-1, :-2]
 
         return ttp, we
