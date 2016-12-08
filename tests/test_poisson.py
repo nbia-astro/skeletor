@@ -49,7 +49,7 @@ def test_poisson(plot=False):
     fxye.fill((0.0, 0.0))
 
     # Solve Gauss' law
-    poisson(qe, fxye, destroy_input=False)
+    poisson(qe, fxye)
 
     #######################################################
     # Check that custom cppois22() yields the same result #
@@ -60,7 +60,7 @@ def test_poisson(plot=False):
     fxye_custom.fill((0.0, 0.0))
 
     # Solve Gauss' law
-    poisson(qe, fxye_custom, destroy_input=False, custom_cppois22=True)
+    poisson(qe, fxye_custom, custom_cppois22=True)
 
     # Result may differ up to round-off error
     tol = numpy.finfo(qe.dtype).eps

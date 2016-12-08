@@ -1,5 +1,4 @@
 from ..grid import Grid
-import warnings
 
 
 class Manifold(Grid):
@@ -19,12 +18,9 @@ class Manifold(Grid):
         msg = 'Finie particle size not implemented in this manifold'
         assert ax == 0.0 and ay == 0.0, msg
 
-    def gradient(self, f, grad, destroy_input=None):
+    def gradient(self, f, grad):
         """Calculate the gradient of f"""
         from ..cython.finite_difference import gradient as cython_gradient
-
-        if destroy_input is not None:
-            warnings.warn("Ignoring option 'destroy_input'.")
 
         cython_gradient(f, grad, self.lbx, self.ubx, self.lby, self.uby)
 

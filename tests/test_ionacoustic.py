@@ -129,7 +129,7 @@ def test_ionacoustic(plot=False):
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     # Calculate electric field (Solve Ohm's law)
-    ohm(sources.rho, E, destroy_input=False)
+    ohm(sources.rho, E)
     # Set boundary condition
     E.copy_guards()
 
@@ -182,7 +182,7 @@ def test_ionacoustic(plot=False):
         sources.rho.copy_guards()
 
         # Calculate forces (Solve Ohm's law)
-        ohm(sources.rho, E, destroy_input=False)
+        ohm(sources.rho, E)
         # Set boundary condition
         E.copy_guards()
 

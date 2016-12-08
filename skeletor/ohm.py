@@ -20,7 +20,7 @@ class Ohm:
         # Ratio of temperature to charge
         return self.temperature/self.charge
 
-    def __call__(self, rho, E, destroy_input=True):
+    def __call__(self, rho, E):
 
         self.gradient(self.log(rho), E)
         E['x'] *= -self.alpha

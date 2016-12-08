@@ -41,7 +41,7 @@ def test_gradient(plot=False):
     fxye.fill((0.0, 0.0))
 
     # Compute gradient
-    manifold.gradient(qe, fxye, destroy_input=False)
+    manifold.gradient(qe, fxye)
 
     # Concatenate local arrays to obtain global arrays (without guard cells).
     # The result is available on all processors.

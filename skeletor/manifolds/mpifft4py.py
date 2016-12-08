@@ -1,5 +1,4 @@
 from ..grid import Grid
-import warnings
 
 
 class Manifold(Grid):
@@ -60,10 +59,8 @@ class Manifold(Grid):
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
-    def gradient(self, f, grad, destroy_input=None):
+    def gradient(self, f, grad):
         """Calculate the gradient of f"""
-        if destroy_input is not None:
-            warnings.warn("Ignoring option 'destroy_input'.")
 
         self.FFT.fft2(f.trim(), self.f_hat)
         self.fx_hat[:] = 1j*self.kx*self.f_hat
@@ -81,10 +78,7 @@ class Manifold(Grid):
         g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = numpy_log(f.trim())
         return g
 
-    def grad_inv_del(self, f, grad_inv_del, destroy_input=None):
-        """ """
-        if destroy_input is not None:
-            warnings.warn("Ignoring option 'destroy_input'.")
+    def grad_inv_del(self, f, grad_inv_del):
 
         self.FFT.fft2(f.trim(), self.f_hat)
 

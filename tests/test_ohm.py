@@ -47,7 +47,7 @@ def test_ohm(plot=False):
     E.fill((0.0, 0.0))
 
     # Solve Ohm's law
-    ohm(rho, E, destroy_input=False)
+    ohm(rho, E)
     # Set boundary condition
     E.copy_guards()
 
