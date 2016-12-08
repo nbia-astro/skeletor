@@ -59,13 +59,14 @@ class Manifold(Grid):
                 self.qt, self.fxyt, isign, self.ffc,
                 self.ax, self.ay, self.affp, self)
 
-    def gradient(self, qe, fxye, destroy_input=True):
+    def gradient(self, qe, fxye, destroy_input=False):
 
         from ..cython.ppic2_wrapper import cwppfft2r, cwppfft2r2
         from ..cython.operators import grad
 
-        if destroy_input is not None:
-            warnings.warn("Ignoring option 'destroy_input'.")
+        if destroy_input:
+            msg = "Ignoring option 'destroy_input'. Input is never destroyed."
+            warnings.warn(msg)
 
         # Copy charge into pre-allocated buffer that has the right number of
         # guard layers expected by PPIC2
@@ -102,14 +103,15 @@ class Manifold(Grid):
         g[self.lby:self.uby, self.lbx:self.ubx] = numpy_log(f.trim())
         return g
 
-    def grad_inv_del(
-            self, qe, fxye, destroy_input=True, custom_cppois22=False):
+    def grad_inv_del(self, qe, fxye,
+                     destroy_input=False, custom_cppois22=False):
 
         from ..cython.ppic2_wrapper import cppois22, cwppfft2r, cwppfft2r2
         from ..cython.operators import grad_inv_del
 
-        if destroy_input is not None:
-            warnings.warn("Ignoring option 'destroy_input'.")
+        if destroy_input:
+            msg = "Ignoring option 'destroy_input'. Input is never destroyed."
+            warnings.warn(msg)
 
         # Copy charge into pre-allocated buffer that has the right number of
         # guard layers expected by PPIC2
