@@ -7,4 +7,3 @@ from .particle_sort import ParticleSort
 from .poisson import Poisson
 from .ohm import Ohm
 from .sources import Sources
-from .math import log
