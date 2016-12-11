@@ -41,8 +41,8 @@ class Manifold(Grid):
 
         # Pre-allocate array for Fourier transform and force
         self.f_hat = zeros(self.FFT.complex_shape(), dtype=Complex)
-        self.fx_hat = zeros_like(self.f_hat)
-        self.fy_hat = zeros_like(self.f_hat)
+        self.gx_hat = zeros_like(self.f_hat)
+        self.gy_hat = zeros_like(self.f_hat)
 
         # Scaled local wavevector
         k = self.FFT.get_scaled_local_wavenumbermesh()
@@ -59,36 +59,32 @@ class Manifold(Grid):
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
-    def gradient(self, f, grad):
+    def gradient(self, f, g):
         """Calculate the gradient of f"""
 
-        self.FFT.fft2(f.trim(), self.f_hat)
-        self.fx_hat[:] = 1j*self.kx*self.f_hat
-        self.fy_hat[:] = 1j*self.ky*self.f_hat
-        self.FFT.ifft2(self.fx_hat,
-                       grad['x'][self.lby:self.uby, self.lbx:self.ubx])
-        self.FFT.ifft2(self.fy_hat,
-                       grad['y'][self.lby:self.uby, self.lbx:self.ubx])
+        self.FFT.fft2(f.active, self.f_hat)
+        self.gx_hat[:] = 1j*self.kx*self.f_hat
+        self.gy_hat[:] = 1j*self.ky*self.f_hat
+        self.FFT.ifft2(self.gx_hat, g.active['x'])
+        self.FFT.ifft2(self.gy_hat, g.active['y'])
 
     def log(self, f):
         """Custom log function that works on the
             active cells of skeletor fields"""
         from numpy import log as numpy_log
         g = f.copy()
-        g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = numpy_log(f.trim())
+        g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = numpy_log(f.active)
         return g
 
-    def grad_inv_del(self, f, grad_inv_del):
+    def grad_inv_del(self, f, g):
 
-        self.FFT.fft2(f.trim(), self.f_hat)
+        self.FFT.fft2(f.active, self.f_hat)
 
-        self.fx_hat[:] = -1j*self.kx*self.k21_eff*self.f_hat
-        self.fy_hat[:] = -1j*self.ky*self.k21_eff*self.f_hat
+        self.gx_hat[:] = -1j*self.kx*self.k21_eff*self.f_hat
+        self.gy_hat[:] = -1j*self.ky*self.k21_eff*self.f_hat
 
-        self.FFT.ifft2(self.fx_hat,
-                       grad_inv_del['x'][self.lby:self.uby, self.lbx:self.ubx])
-        self.FFT.ifft2(self.fy_hat,
-                       grad_inv_del['y'][self.lby:self.uby, self.lbx:self.ubx])
+        self.FFT.ifft2(self.gx_hat, g.active['x'])
+        self.FFT.ifft2(self.gy_hat, g.active['y'])
 
 
 class ShearingManifold(Manifold):
@@ -136,7 +132,7 @@ class ShearingManifold(Manifold):
         self.temp *= exp(1j*phase)
         self.FFT.irfftx(self.temp, f)
 
-    def gradient(self, f, grad, St):
+    def gradient(self, f, g, St):
         """Gradient in the shearing sheet using mpifft4py"""
 
         from numpy import pi, mod
@@ -161,14 +157,12 @@ class ShearingManifold(Manifold):
         ky = mod(ky + self.ky_max, 2*self.ky_max) - self.ky_max
 
         # Take derivative
-        self.fx_hat[:] = 1j*self.kx*self.f_hat
-        self.fy_hat[:] = 1j*ky*self.f_hat
+        self.gx_hat[:] = 1j*self.kx*self.f_hat
+        self.gy_hat[:] = 1j*ky*self.f_hat
 
         # Transform back to real space
-        self._irfft2(self.fx_hat, grad['x'][self.lby:self.uby,
-                     self.lbx:self.ubx], phase)
-        self._irfft2(self.fy_hat, grad['y'][self.lby:self.uby,
-                     self.lbx:self.ubx], phase)
+        self._irfft2(self.gx_hat, g.active['x'], phase)
+        self._irfft2(self.gy_hat, g.active['y'], phase)
 
     def grad_inv_del(self, f, grad_inv_del):
         raise 'grad_inv_del not implemented in shearing sheet'
