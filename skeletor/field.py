@@ -45,6 +45,16 @@ class Field(ndarray):
         return asarray(self[self.grid.lby:self.grid.uby,
                             self.grid.lbx:self.grid.ubx])
 
+    @property
+    def active(self):
+        return asarray(self[self.grid.lby:self.grid.uby,
+                            self.grid.lbx:self.grid.ubx])
+
+    @active.setter
+    def active(self, rhs):
+        self[self.grid.lby:self.grid.uby,
+             self.grid.lbx:self.grid.ubx] = rhs
+
     def copy_guards(self):
         lbx = self.grid.lbx
         lby = self.grid.lby
