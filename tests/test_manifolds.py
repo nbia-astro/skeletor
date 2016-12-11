@@ -52,7 +52,7 @@ def test_manifolds():
     phase = kx*xx + ky*yy
 
     # Error tolerance for single and double precision
-    eps_single = 1e-7
+    eps_single = 2e-7
     eps_double = 1e-15
 
     # PPIC2 manifold
