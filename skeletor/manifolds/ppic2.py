@@ -65,7 +65,7 @@ class Manifold(Grid):
 
         # Copy charge into pre-allocated buffer that has the right number of
         # guard layers expected by PPIC2
-        self.qe[:-1, :-2] = qe.trim()
+        self.qe[:-1, :-2] = qe.active
 
         # Transform charge to fourier space with standard procedure:
         # updates qt, modifies qe
@@ -86,7 +86,7 @@ class Manifold(Grid):
 
         # Copy electric field into an array with arbitrary number
         # of guard layers
-        fxye[self.lby:self.uby, self.lbx:self.ubx] = self.fxye[:-1, :-2]
+        fxye.active = self.fxye[:-1, :-2]
 
         return ttp
 
@@ -95,7 +95,7 @@ class Manifold(Grid):
             active cells of skeletor fields"""
         from numpy import log as numpy_log
         g = f.copy()
-        g[self.lby:self.uby, self.lbx:self.ubx] = numpy_log(f.trim())
+        g[self.lby:self.uby, self.lbx:self.ubx] = numpy_log(f.active)
         return g
 
     def grad_inv_del(self, qe, fxye, custom_cppois22=False):
@@ -105,7 +105,7 @@ class Manifold(Grid):
 
         # Copy charge into pre-allocated buffer that has the right number of
         # guard layers expected by PPIC2
-        self.qe[:-1, :-2] = qe.trim()
+        self.qe[:-1, :-2] = qe.active
 
         # Transform charge to fourier space with standard procedure:
         # updates qt, modifies qe
@@ -133,6 +133,6 @@ class Manifold(Grid):
 
         # Copy electric field into an array with arbitrary number
         # of guard layers
-        fxye[self.lby:self.uby, self.lbx:self.ubx] = self.fxye[:-1, :-2]
+        fxye.active = self.fxye[:-1, :-2]
 
         return ttp, we
