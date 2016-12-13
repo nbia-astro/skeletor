@@ -97,7 +97,7 @@ class ShearingManifold(Manifold):
 
     def __init__(
             self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1):
+            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1, S=0, Omega=0):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi, zeros
@@ -125,6 +125,15 @@ class ShearingManifold(Manifold):
 
         # Aspect ratio of grid
         self.aspect = self.Lx/self.Ly
+
+        # Shear parameter
+        self.S = S
+        # True if shear is turned on
+        self.shear = (S != 0)
+
+        # Angular frequency
+        self.Omega = Omega
+        self.rotation = (Omega != 0)
 
     def _rfft2(self, f, f_hat, phase):
         from numpy import exp
