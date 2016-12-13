@@ -140,6 +140,9 @@ class Field(ndarray):
 
 
 class ShearField(Field):
+    # TODO: ShearField really needs to have a ShearManifold passed, it
+    # will fail if a standard Grid or Manifold is passed. Change variable name
+    # to manifold or shearmanifold?
 
     def __new__(cls, grid, time=0.0, **kwds):
 
