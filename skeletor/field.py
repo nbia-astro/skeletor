@@ -6,7 +6,7 @@ from .cython.ppic2_wrapper import cppcguard2xl, cppncguard2l
 
 class Field(ndarray):
 
-    def __new__(cls, grid, **kwds):
+    def __new__(cls, grid, time=0.0, **kwds):
 
         # Field size set accoring to number of guard layes
         obj = super().__new__(cls, shape=(grid.nypmx, grid.nxpmx), **kwds)
@@ -23,6 +23,10 @@ class Field(ndarray):
 
         # Boolean indicating whether boundaries are set
         obj.boundaries_set = False
+
+        # Time of the field
+        obj.time = time
+
         return obj
 
     def __array_finalize__(self, obj):
@@ -35,6 +39,7 @@ class Field(ndarray):
         self.below = getattr(obj, "below", None)
         self.scr = getattr(obj, "scr", None)
         self.boundaries_set = getattr(obj, "boundaries_set", None)
+        self.time = getattr(obj, "time", None)
 
     def send_up(self, sendbuf):
         return self.grid.comm.sendrecv(
@@ -136,12 +141,12 @@ class Field(ndarray):
 
 class ShearField(Field):
 
-    def __new__(cls, grid, **kwds):
+    def __new__(cls, grid, time=0.0, **kwds):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi
 
-        obj = super().__new__(cls, grid, **kwds)
+        obj = super().__new__(cls, grid, time=time, **kwds)
 
         # Grid spacing
         # TODO: this should be a property of the Grid class
