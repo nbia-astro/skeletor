@@ -59,6 +59,10 @@ class Manifold(Grid):
         # Effective inverse wave number for finite size particles
         self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
+        # Rotation and shear is always false for this manifold
+        self.shear = False
+        self.rotation = False
+
     def gradient(self, f, g):
         """Calculate the gradient of f"""
 

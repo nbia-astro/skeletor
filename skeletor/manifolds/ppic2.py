@@ -58,6 +58,10 @@ class Manifold(Grid):
                 self.qt, self.fxyt, isign, self.ffc,
                 self.ax, self.ay, self.affp, self)
 
+        # Rotation and shear is always false for this manifold
+        self.shear = False
+        self.rotation = False
+
     def gradient(self, qe, fxye):
 
         from ..cython.ppic2_wrapper import cwppfft2r, cwppfft2r2
