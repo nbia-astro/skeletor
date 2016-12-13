@@ -167,11 +167,8 @@ class ShearField(Field):
         from numpy import exp
 
         lbx = self.grid.lbx
-        lby = self.grid.lby
         nubx = self.grid.nubx
-        nuby = self.grid.nuby
         ubx = self.grid.ubx
-        uby = self.grid.uby
 
         # Translate in real space by phase shifting in spectral space
         self[iy, self.grid.lbx:self.grid.ubx] = irfft(exp
