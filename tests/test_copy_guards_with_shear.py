@@ -16,7 +16,7 @@ def test_copy_guards_with_shear(plot=False):
     idproc, nvp = cppinit(comm)
 
     # Create numerical grid
-    grid = Grid(nx, ny, comm)
+    grid = Grid(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
 
     # Shear
     S = -3/2
@@ -34,12 +34,11 @@ def test_copy_guards_with_shear(plot=False):
     # Initialize density field using standard field class
     f = Field(grid, dtype=Float)
     f.fill(0.0)
-    f[:grid.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
+    f.active = 1 + A*numpy.sin(kx*xx + ky*yy)
 
     # Initialize density field using shear field class
     g = ShearField(grid, dtype=Float)
-    g.fill(0.0)
-    g[:grid.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
+    g.active = 1 + A*numpy.sin(kx*xx + ky*yy)
 
     # Apply boundaries
     f.copy_guards()
@@ -47,14 +46,15 @@ def test_copy_guards_with_shear(plot=False):
     g.copy_guards(St)
 
     # Grid including first ghost zone
-    xg = numpy.arange(nx+1)
+    xg = numpy.arange(-grid.lbx, grid.ubx + grid.nlbx)
     xxg, yyg = numpy.meshgrid(xg, grid.yg)
 
     # Analytic field including first ghost-zone
     g_an = 1 + A*numpy.sin(kx*xxg + ky*yyg)
 
     # Compare field analytic field with field with applied boundary condition
-    assert(numpy.allclose(g[:, :(nx+1)], g_an))
+    assert(numpy.allclose(g, g_an))
+
 
     if plot:
         if comm.rank == comm.size - 1:

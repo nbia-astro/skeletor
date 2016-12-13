@@ -16,7 +16,7 @@ def test_translate(plot=False):
     idproc, nvp = cppinit(comm)
 
     # Create numerical grid
-    grid = Grid(nx, ny, comm)
+    grid = Grid(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
 
     # Shear
     S = -3/2
@@ -37,7 +37,8 @@ def test_translate(plot=False):
     # Initialize density field using shear field class
     rho = ShearField(grid, dtype=Float)
     rho.fill(0.0)
-    rho[:grid.nyp, :nx] = rho_an(0)
+    rho.active = rho_an(0)
+    rho.copy_guards(0)
 
     rho.translate(S*t)
 
@@ -60,6 +61,7 @@ def test_translate(plot=False):
             ax2.imshow(global_rho)
 
             plt.show()
+
 
 if __name__ == "__main__":
 

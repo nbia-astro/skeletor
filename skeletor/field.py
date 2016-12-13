@@ -161,43 +161,87 @@ class ShearField(Field):
         from numpy.fft import rfft, irfft
         from numpy import exp
 
-        # Number of active grid points in x
-        nx = self.grid.nx
+        lbx = self.grid.lbx
+        lby = self.grid.lby
+        nubx = self.grid.nubx
+        nuby = self.grid.nuby
+        ubx = self.grid.ubx
+        uby = self.grid.uby
 
         # Translate in real space by phase shifting in spectral space
-        self[iy, :nx] = irfft(exp(-1j*self.kx*trans)*rfft(self[iy, :nx]))
+        self[iy, self.grid.lbx:self.grid.ubx] = irfft(exp
+            (-1j*self.kx*trans)*rfft(self[iy, self.grid.lbx:self.grid.ubx]))
 
-        # Set boundary condition
-        self[iy, -2] = self[iy, 0]
+        # lower active cells to upper guard layers
+        self[iy, ubx:] = self[iy, lbx:lbx+nubx]
+        # upper active cells to lower guard layers
+        self[iy, :lbx] = self[iy, ubx-lbx:ubx]
 
     def add_guards(self, St):
 
-        # Add data from guard cells to corresponding active cells in x
-        self[:, 0] += self[:, -2]
+        lbx = self.grid.lbx
+        lby = self.grid.lby
+        nubx = self.grid.nubx
+        nuby = self.grid.nuby
+        ubx = self.grid.ubx
+        uby = self.grid.uby
+
+        # Add data from guard cells to corresponding active cells
+        self[:, lbx:lbx+nubx] += self[:, ubx:]
+        self[:, ubx-lbx:ubx] += self[:, :lbx]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = self.grid.Ly*St
-            self._translate_boundary(trans, self.grid.nyp)
+            for iy in range(uby, uby + nuby + 1):
+                self._translate_boundary(trans, iy)
+        if self.grid.comm.rank == 0:
+            trans = -self.grid.Ly*St
+            for iy in range(0, lby):
+                self._translate_boundary(trans, iy)
 
         # Add data from guard cells to corresponding active cells in y
-        self[0, :] += self.send_up(self[-1, :])
+        self[lby:lby+nuby, :] += self.send_up(self[uby:, :])
+        self[uby-lby:uby, :] += self.send_down(self[:lby, :])
 
         # Erase guard cells
-        self[:, -2:] = 0.0
-        self[-1, :] = 0.0
+        self[:lby, :] = 0.0
+        self[uby:, :] = 0.0
+        self[:, ubx:] = 0.0
+        self[:, :lbx] = 0.0
 
     def copy_guards(self, St):
 
-        # Copy data to guard cells from corresponding active cells
-        self[:-1, -2] = self[:-1, 0]
-        self[-1, :-2] = self.send_down(self[0, :-2])
-        self[-1, -2] = self.send_down(self[0, 0])
+        msg = 'Boundaries are already set!'
+        assert not self.boundaries_set, msg
+
+        lbx = self.grid.lbx
+        lby = self.grid.lby
+        nubx = self.grid.nubx
+        nuby = self.grid.nuby
+        ubx = self.grid.ubx
+        uby = self.grid.uby
+
+        # lower active cells to upper guard layers
+        self[uby:, lbx:ubx] = self.send_down(self[lby:lby+nuby, lbx:ubx])
+        # upper active cells to lower guard layers
+        self[:lby, lbx:ubx] = self.send_up(self[uby-lby:uby, lbx:ubx])
+        # lower active cells to upper guard layers
+        self[:, ubx:] = self[:, lbx:lbx+nubx]
+        # upper active cells to lower guard layers
+        self[:, :lbx] = self[:, ubx-lbx:ubx]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = -self.grid.Ly*St
-            self._translate_boundary(trans, -1)
+            for iy in range(uby, uby + nuby):
+                self._translate_boundary(trans, iy)
+        if self.grid.comm.rank == 0:
+            trans = +self.grid.Ly*St
+            for iy in range(0, lby):
+                self._translate_boundary(trans, iy)
+
+        self.boundaries_set = True
 
     def translate(self, St):
         """Translation using numpy's fft."""
@@ -205,21 +249,16 @@ class ShearField(Field):
         from numpy import exp
 
         # Fourier transform along x
-        fx_hat = rfft(self[:-1, :-2], axis=1)
+        fx_hat = rfft(self.trim(), axis=1)
 
         # Translate along x by an amount -S*t*y
         fx_hat *= exp(1j*St*self.y_kx)
 
         # Inverse Fourier transform along x
-        self[:-1, :-2] = irfft(fx_hat, axis=1)
+        self.active = irfft(fx_hat, axis=1)
 
         # Set boundary condition?
-
-    def copy_guards2(self):
-        raise 'copy_guards2 not implemented for shearing fields'
-
-    def add_guards2(self):
-        raise 'add_guards2 not implemented for shearing fields'
+        self.boundaries_set = False
 
     def add_guards_ppic2(self):
         raise 'add_guards_ppic2 not implemented for shearing fields'
