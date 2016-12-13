@@ -147,11 +147,12 @@ class ShearingManifold(Manifold):
         self.temp *= exp(1j*phase)
         self.FFT.irfftx(self.temp, f)
 
-    def gradient(self, f, g, St):
+    def gradient(self, f, g):
         """Gradient in the shearing sheet using mpifft4py"""
 
         from numpy import pi, mod
 
+        St = self.S*f.time
         # We only need to know how much time has elapsed since the last time
         # the domain was strictly periodic
         St %= self.aspect
@@ -163,7 +164,7 @@ class ShearingManifold(Manifold):
         # This is an angle, so it can be mapped into the interval [0, 2*pi)
         phase = mod(self.y_kx*St, 2*pi)
 
-        self._rfft2(f, self.f_hat, phase)
+        self._rfft2(f.active, self.f_hat, phase)
 
         # Laboratory frame 'ky'.
         # Exploit periodicity in Fourier space (i.e. aliasing) and make sure
@@ -178,6 +179,8 @@ class ShearingManifold(Manifold):
         # Transform back to real space
         self._irfft2(self.gx_hat, g.active['x'], phase)
         self._irfft2(self.gy_hat, g.active['y'], phase)
+
+        g.boundaries_set = False
 
     def grad_inv_del(self, f, grad_inv_del):
         raise 'grad_inv_del not implemented in shearing sheet'

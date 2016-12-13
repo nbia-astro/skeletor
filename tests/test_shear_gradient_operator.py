@@ -1,4 +1,4 @@
-from skeletor import Float, Float2, Field
+from skeletor import Float, Float2, ShearField
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
 from skeletor.manifolds.mpifft4py import ShearingManifold
@@ -17,8 +17,11 @@ def test_shear_gradient_operator(plot=False):
     # Solve Ohm's law in shear coordinates with FFTs #
     ##################################################
 
+    # Rate of shear
+    S = -3/2
+
     # Create numerical grid
-    manifold = ShearingManifold(nx, ny, comm)
+    manifold = ShearingManifold(nx, ny, comm, S=S)
 
     # Coordinate arrays
     xx, yy = numpy.meshgrid(manifold.x, manifold.y)
@@ -32,11 +35,11 @@ def test_shear_gradient_operator(plot=False):
         ky = S*t*kx
 
         # Initialize density field
-        rho = Field(manifold, dtype=Float)
+        rho = ShearField(manifold, time=t, dtype=Float)
         rho.fill(0.0)
 
         A = 0.2
-        rho[:manifold.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
+        rho.active = 1 + A*numpy.sin(kx*xx + ky*yy)
 
         return rho
 
@@ -44,26 +47,24 @@ def test_shear_gradient_operator(plot=False):
         """Analytic electric field as a function of time"""
 
         # Initialize electric field
-        E = Field(manifold, dtype=Float2)
+        E = ShearField(manifold, time=t, dtype=Float2)
         E.fill((0.0, 0.0))
 
         kx = 2*numpy.pi*ikx/nx
         ky = S*t*kx
 
         A = 0.2
-        E['x'][:manifold.nyp, :nx] = -alpha*kx*A*numpy.cos(kx*xx+ky*yy) \
+        E['x'].active = -alpha*kx*A*numpy.cos(kx*xx+ky*yy) \
             / (1 + A*numpy.sin(kx*xx + ky*yy))
-        E['y'][:manifold.nyp, :nx] = -alpha*ky*A*numpy.cos(kx*xx+ky*yy) \
+        E['y'].active = -alpha*ky*A*numpy.cos(kx*xx+ky*yy) \
             / (1 + A*numpy.sin(kx*xx + ky*yy))
 
         return E
 
     # Initialize electric field
-    E = Field(manifold, dtype=Float2)
+    E = ShearField(manifold, dtype=Float2)
     E.fill((0.0, 0.0))
 
-    # Rate of shear
-    S = -3/2
     # Time step
     dt = 2e-2/abs(S)
     # Amount of time between instances at which the domain is strictly periodic
@@ -114,18 +115,22 @@ def test_shear_gradient_operator(plot=False):
 
         # Density field
         rho = rho_analytic(t)
+        rho.copy_guards()
 
         # Calculate shear electric field
-        manifold.gradient(numpy.log(rho.trim()), E, S*t)
+        manifold.gradient(manifold.log(rho), E)
         E['x'] *= -alpha
         E['y'] *= -alpha
+
+        E.time = t
+        E.copy_guards()
 
         # Calculate analytic field
         E_an = E_analytic(t)
 
         # Make sure the two solutions are close to each other
-        assert numpy.allclose(E_an['x'], E['x'], atol=1e-06)
-        assert numpy.allclose(E_an['y'], E['y'], atol=1e-06)
+        assert numpy.allclose(E_an['x'].active, E['x'].active, atol=1e-06)
+        assert numpy.allclose(E_an['y'].active, E['y'].active, atol=1e-06)
 
         # Make figures
         if plot:
