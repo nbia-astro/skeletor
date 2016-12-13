@@ -1,7 +1,9 @@
-from skeletor import Float, Float2, Grid, Field, Particles, Sources
+from skeletor import Float2, Field, Particles
+from skeletor.manifolds.ppic2 import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
+
 
 def test_EcrossBdrift(plot=False):
 
@@ -14,11 +16,9 @@ def test_EcrossBdrift(plot=False):
     # Number of time steps
     nt = int(tend/dt)
 
-    t0 = -dt/2
-
     # Particle charge and mass
     charge = 1
-    mass   = 1
+    mass = 1
 
     # Magnetic field in z-direction
     bz = 1
@@ -53,11 +53,13 @@ def test_EcrossBdrift(plot=False):
     x0 = numpy.array(x0)
     y0 = numpy.array(y0)
 
-    def  x_an(t): return -ampl*numpy.cos (og*t + phi) + x0 + vdx*t
-    def  y_an(t): return +ampl*numpy.sin (og*t + phi) + y0
-    def vx_an(t): return (vdx+og*ampl*numpy.sin (og*t + phi))*numpy.ones(np)
-    def vy_an(t): return og*ampl*numpy.cos (og*t + phi)*numpy.ones(np)
+    def x_an(t): return -ampl*numpy.cos(og*t + phi) + x0 + vdx*t
 
+    def y_an(t): return +ampl*numpy.sin(og*t + phi) + y0
+
+    def vx_an(t): return (vdx+og*ampl*numpy.sin(og*t + phi))*numpy.ones(np)
+
+    def vy_an(t): return og*ampl*numpy.cos(og*t + phi)*numpy.ones(np)
 
     # Particle position at t = -dt/2
     x = x_an(-dt/2)
@@ -73,27 +75,27 @@ def test_EcrossBdrift(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    grid = Grid(nx, ny, comm)
+    manifold = Manifold(nx, ny, comm)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(grid.x, grid.y)
+    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of ions in each partition
     # For this test we only have one particle.
     npmax = np
 
     # Create particle array
-    ions = Particles(npmax, charge, mass, bz=bz)
+    ions = Particles(manifold, npmax, charge, mass, bz=bz)
 
     # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy, grid)
+    ions.initialize(x, y, vx, vy)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(grid, dtype=Float2)
+    E = Field(manifold, dtype=Float2)
     E.fill((0.0, 0.0))
     E['y'] = Ey
     E.copy_guards_ppic2()
@@ -107,7 +109,8 @@ def test_EcrossBdrift(plot=False):
         plt.rc('image', origin='lower', interpolation='nearest')
         plt.figure(1)
         fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
-        lines = ax1.plot(ions['x'][0], ions['y'][0], 'b.', x_an(0), y_an(0), 'rx')
+        lines = ax1.plot(ions['x'][0], ions['y'][0],
+                         'b.', x_an(0), y_an(0), 'rx')
         ax1.set_xlim(-1, nx+1)
         ax1.set_ylim(-1, ny+1)
 
@@ -125,14 +128,15 @@ def test_EcrossBdrift(plot=False):
         # Update time
         t += dt
         # True if particle is in this domain
-        ind = numpy.logical_and(ions['y'][0] >= grid.edges[0], \
-                                ions['y'][0] < grid.edges[1])
+        ind = numpy.logical_and(ions['y'][0] >= manifold.edges[0],
+                                ions['y'][0] < manifold.edges[1])
         if ind:
             diff_x = abs(ions['x'][0]-x_an(t))
             diff_y = abs(ions['y'][0]-y_an(t))
             err = numpy.max([diff_x, diff_y])/ampl
             # Round off errrors giving trouble when comparing
-            if err > 1.0: err = 0.0
+            if err > 1.0:
+                err = 0.0
             # print(err, ions['y'][0], y_an(t), ions['x'][0], x_an(t))
             # Check if test has passed
             assert(err < 1.0e-3)
@@ -147,7 +151,6 @@ def test_EcrossBdrift(plot=False):
                         warnings.filterwarnings(
                                     "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
-
 
 
 if __name__ == "__main__":

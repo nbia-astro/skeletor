@@ -99,10 +99,10 @@ def test_ionacoustic(plot=False):
     npmax = int(1.5*np/comm.size)
 
     # Create particle array
-    ions = Particles(npmax, charge, mass)
+    ions = Particles(manifold, npmax, charge, mass)
 
     # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy, manifold)
+    ions.initialize(x, y, vx, vy)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles

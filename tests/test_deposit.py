@@ -1,4 +1,5 @@
 from skeletor import Float, Grid, Particles, Sources
+from skeletor.manifolds.ppic2 import Manifold
 
 from mpi4py.MPI import COMM_WORLD as comm, SUM
 import numpy
@@ -14,11 +15,11 @@ charge = -1.0
 mass = 1.0
 
 # Create numerical grid
-grid = Grid(nx, ny, comm)
+manifold = Manifold(nx, ny, comm)
 
 # # Initialize sources
-sources = Sources(grid, dtype=Float)
-sources_ppic2 = Sources(grid, dtype=Float)
+sources = Sources(manifold, dtype=Float)
+sources_ppic2 = Sources(manifold, dtype=Float)
 
 # Total number of particles
 np = npc*nx*ny
@@ -26,7 +27,7 @@ np = npc*nx*ny
 npmax = int(1.5*np/comm.size)
 
 # Create particle array
-particles = Particles(npmax, charge, mass)
+particles = Particles(manifold, npmax, charge, mass)
 
 # Synchronize random number generator across ALL processes
 numpy.random.set_state(comm.bcast(numpy.random.get_state()))
@@ -39,7 +40,7 @@ vx = numpy.empty(np, Float)
 vy = numpy.empty(np, Float)
 
 # Assign particles to subdomains
-particles.initialize(x, y, vx, vy, grid)
+particles.initialize(x, y, vx, vy)
 
 
 # def test_initialize():
