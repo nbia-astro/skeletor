@@ -125,3 +125,97 @@ class Field(ndarray):
 
         cppncguard2l(self, self.grid)
         cppcguard2xl(self, self.grid)
+
+
+class ShearField(Field):
+
+    def __new__(cls, grid, comm, **kwds):
+
+        from numpy.fft import rfftfreq
+        from numpy import outer, pi
+
+        obj = super().__new__(cls, grid, comm, **kwds)
+
+        # Grid spacing
+        # TODO: this should be a property of the Grid class
+        dx = obj.grid.Lx/obj.grid.nx
+
+        # Wave numbers for real-to-complex transforms
+        obj.kx = 2*pi*rfftfreq(obj.grid.nx)/dx
+
+        # Outer product of y and kx
+        obj.y_kx = outer(obj.grid.y, obj.kx)
+
+        return obj
+
+    def _translate_boundary(self, trans, iy):
+
+        "Translation using FFTs"
+        from numpy.fft import rfft, irfft
+        from numpy import exp
+
+        # Number of active grid points in x
+        nx = self.grid.nx
+
+        # Translate in real space by phase shifting in spectral space
+        self[iy, :nx] = irfft(exp(-1j*self.kx*trans)*rfft(self[iy, :nx]))
+
+        # Set boundary condition
+        self[iy, -2] = self[iy, 0]
+
+    def add_guards(self, St):
+
+        # Add data from guard cells to corresponding active cells in x
+        self[:, 0] += self[:, -2]
+
+        # Translate the y-ghostzones
+        if self.comm.rank == self.comm.size - 1:
+            trans = self.grid.Ly*St
+            self._translate_boundary(trans, self.grid.nyp)
+
+        # Add data from guard cells to corresponding active cells in y
+        self[0, :] += self.send_up(self[-1, :])
+
+        # Erase guard cells
+        self[:, -2:] = 0.0
+        self[-1, :] = 0.0
+
+    def copy_guards(self, St):
+
+        # Copy data to guard cells from corresponding active cells
+        self[:-1, -2] = self[:-1, 0]
+        self[-1, :-2] = self.send_down(self[0, :-2])
+        self[-1, -2] = self.send_down(self[0, 0])
+
+        # Translate the y-ghostzones
+        if self.comm.rank == self.comm.size - 1:
+            trans = -self.grid.Ly*St
+            self._translate_boundary(trans, -1)
+
+    def translate(self, St):
+        """Translation using numpy's fft."""
+        from numpy.fft import rfft, irfft
+        from numpy import exp
+
+        # Fourier transform along x
+        fx_hat = rfft(self[:-1, :-2], axis=1)
+
+        # Translate along x by an amount -S*t*y
+        fx_hat *= exp(1j*St*self.y_kx)
+
+        # Inverse Fourier transform along x
+        self[:-1, :-2] = irfft(fx_hat, axis=1)
+
+        # Set boundary condition?
+
+    def copy_guards2(self):
+        raise 'copy_guards2 not implemented for shearing fields'
+
+    def add_guards2(self):
+        raise 'add_guards2 not implemented for shearing fields'
+
+    def add_guards_ppic2(self):
+        raise 'add_guards_ppic2 not implemented for shearing fields'
+
+    def copy_guards_ppic2(self):
+        raise 'copy_guards_ppic2 not implemented for shearing fields'
