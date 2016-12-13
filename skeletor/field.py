@@ -21,6 +21,8 @@ class Field(ndarray):
         # Scratch array needed for PPIC2's "add_guards" routine
         obj.scr = zeros((2, grid.nx + 2), Float)
 
+        # Boolean indicating whether boundaries are set
+        obj.boundaries_set = False
         return obj
 
     def __array_finalize__(self, obj):
@@ -32,6 +34,7 @@ class Field(ndarray):
         self.above = getattr(obj, "above", None)
         self.below = getattr(obj, "below", None)
         self.scr = getattr(obj, "scr", None)
+        self.boundaries_set = getattr(obj, "boundaries_set", None)
 
     def send_up(self, sendbuf):
         return self.grid.comm.sendrecv(
@@ -56,6 +59,9 @@ class Field(ndarray):
              self.grid.lbx:self.grid.ubx] = rhs
 
     def copy_guards(self):
+
+        msg = 'Boundaries are already set!'
+        assert(not self.boundaries_set), msg
         lbx = self.grid.lbx
         lby = self.grid.lby
         nubx = self.grid.nubx
@@ -79,6 +85,7 @@ class Field(ndarray):
             # That is, make PPIC2's FFT work with the extended grid
             self[:, -1] = 0.0
 
+        self.boundaries_set = True
 
     def add_guards(self):
         lbx = self.grid.lbx

@@ -68,12 +68,16 @@ class Manifold(Grid):
         self.FFT.ifft2(self.gx_hat, g.active['x'])
         self.FFT.ifft2(self.gy_hat, g.active['y'])
 
+        g.boundaries_set = False
+
     def log(self, f):
         """Custom log function that works on the
             active cells of skeletor fields"""
         from numpy import log as numpy_log
         g = f.copy()
         g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = numpy_log(f.active)
+
+        g.boundaries_set = False
         return g
 
     def grad_inv_del(self, f, g):
@@ -85,6 +89,8 @@ class Manifold(Grid):
 
         self.FFT.ifft2(self.gx_hat, g.active['x'])
         self.FFT.ifft2(self.gy_hat, g.active['y'])
+
+        g.boundaries_set = False
 
 
 class ShearingManifold(Manifold):

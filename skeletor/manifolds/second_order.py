@@ -20,12 +20,18 @@ class Manifold(Grid):
 
     def gradient(self, f, grad):
         """Calculate the gradient of f"""
+
+        msg = 'Boundaries need to be set on f for second order differences'
+        assert f.boundaries_set, msg
         from ..cython.finite_difference import gradient as cython_gradient
 
         cython_gradient(f, grad, self.lbx, self.ubx, self.lby, self.uby)
 
+        grad.boundaries_set = False
+
     def log(self, f):
         from numpy import log as numpy_log
+
         return numpy_log(f)
 
     def grad_inv_del(self, qe, fxye):
