@@ -1,7 +1,7 @@
 from skeletor import Float, Float2, ShearField
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
-from skeletor.manifolds.mpifft4py import ShearingManifold
+from skeletor.manifolds.second_order import ShearingManifold
 
 
 def test_shear_gradient_operator(plot=False):
@@ -129,14 +129,14 @@ def test_shear_gradient_operator(plot=False):
         E_an = E_analytic(t)
 
         # Make sure the two solutions are close to each other
-        assert numpy.allclose(E_an['x'].active, E['x'].active, atol=1e-06)
-        assert numpy.allclose(E_an['y'].active, E['y'].active, atol=1e-06)
+        assert numpy.allclose(E_an['x'].active, E['x'].active, atol=5e-03)
+        assert numpy.allclose(E_an['y'].active, E['y'].active, atol=5e-03)
 
         # Make figures
         if plot:
             if (it % 1 == 0):
-                global_rho = concatenate(rho.trim())
-                global_E = concatenate(E.trim())
+                global_rho = concatenate(rho.active)
+                global_E = concatenate(E.active)
                 if comm.rank == 0:
                     im1.set_data(global_rho)
                     im2.set_data(global_E["x"])
