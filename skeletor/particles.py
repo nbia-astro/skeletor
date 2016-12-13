@@ -6,7 +6,7 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, npmax, charge=1.0, mass=1.0, S=0, Omega=0, bz=0):
+    def __new__(cls, manifold, npmax, charge=1.0, mass=1.0, bz=0):
 
         from .cython.dtypes import Int, Particle
 
@@ -25,17 +25,10 @@ class Particles(numpy.ndarray):
         # Constant magnetic field
         obj.bz = bz
 
-        # Shear parameter
-        obj.S = S
-        # True if shear is turned on
-        obj.shear = (S != 0)
+        obj.manifold = manifold
 
-        # Angular frequency
-        obj.Omega = Omega
-        obj.rotation = (Omega != 0)
-
-        if obj.rotation:
-            obj.bz += 2.0*mass/charge*Omega
+        if manifold.rotation:
+            obj.bz += 2.0*mass/charge*manifold.Omega
 
         # Location of hole left in particle arrays
         obj.ihole = numpy.zeros(ntmax, Int)
@@ -65,12 +58,13 @@ class Particles(numpy.ndarray):
         self.rbufr = getattr(obj, "rbufr", None)
         self.info = getattr(obj, "info", None)
 
-    def initialize(self, x, y, vx, vy, grid):
+    def initialize(self, x, y, vx, vy):
 
         from numpy import logical_and, sum
         from warnings import warn
 
-        ind = logical_and(y >= grid.edges[0], y < grid.edges[1])
+        ind = logical_and(y >= self.manifold.edges[0],
+                          y < self.manifold.edges[1])
 
         # Number of particles in subdomain
         self.np = sum(ind)
@@ -87,17 +81,18 @@ class Particles(numpy.ndarray):
         self["vx"][:self.np] = vx[ind]
         self["vy"][:self.np] = vy[ind]
 
-    def initialize_ppic2(self, vtx, vty, vdx, vdy, npx, npy, grid):
+    def initialize_ppic2(self, vtx, vty, vdx, vdy, npx, npy):
 
         from ppic2_wrapper import cpdistr2
 
-        npp, ierr = cpdistr2(self, vtx, vty, vdx, vdy, npx, npy, grid)
+        npp, ierr = cpdistr2(self, vtx, vty, vdx, vdy, npx, npy,
+                             self.manifold)
         if ierr != 0:
             msg = "Particle initialization error: ierr={}"
             raise RuntimeError(msg.format(ierr))
         self.np = npp
 
-    def move(self, grid):
+    def move(self):
         """Uses ppic2's cppmove2 routine for moving particles
            between processors."""
 
@@ -111,19 +106,19 @@ class Particles(numpy.ndarray):
 
         self.np = cppmove2(
                 self, self.np, self.sbufl, self.sbufr, self.rbufl,
-                self.rbufr, self.ihole, self.info, grid)
+                self.rbufr, self.ihole, self.info, self.manifold)
 
         # Make sure particles actually reside in the local subdomain
-        assert all(self["y"][:self.np] >= grid.edges[0])
-        assert all(self["y"][:self.np] < grid.edges[1])
+        assert all(self["y"][:self.np] >= self.manifold.edges[0])
+        assert all(self["y"][:self.np] < self.manifold.edges[1])
 
-    def periodic_x(self, grid):
+    def periodic_x(self):
         """Applies periodic boundaries on particles along x"""
         from .cython.particle_boundary import periodic_x
 
-        periodic_x(self[:self.np], grid.nx)
+        periodic_x(self[:self.np], self.manifold.nx)
 
-    def periodic_y(self, grid):
+    def periodic_y(self):
         """Applies periodic boundaries on particles along y
 
            Calculates ihole and then calls ppic2's cppmove2 routine for moving
@@ -132,11 +127,12 @@ class Particles(numpy.ndarray):
         from .cython.particle_boundary import calculate_ihole
         from numpy import array
 
-        calculate_ihole(self[:self.np], self.ihole, array(grid.edges))
+        calculate_ihole(self[:self.np], self.ihole,
+                        array(self.manifold.edges))
 
-        self.move(grid)
+        self.move()
 
-    def shear_periodic_y(self, grid, S, t):
+    def shear_periodic_y(self, t):
         """Shearing periodic boundaries along y.
 
            Modifies x and vx and applies periodic boundaries
@@ -145,9 +141,9 @@ class Particles(numpy.ndarray):
 
         from .cython.particle_boundary import shear_periodic_y
 
-        shear_periodic_y(self[:self.np], grid.ny, S, t)
+        shear_periodic_y(self[:self.np], self.manifold.ny, self.manifold.S, t)
 
-        self.periodic_y(grid)
+        self.periodic_y()
 
     def push_ppic2(self, fxy, dt, t=0):
 
@@ -164,13 +160,13 @@ class Particles(numpy.ndarray):
         ek = cppgbpush2l(self, fxy, self.bz, self.np, self.ihole, qm, dt, grid)
 
         # Shearing periodicity
-        if self.shear:
-            self.shear_periodic_y(grid, self.S, t+dt)
+        if self.manifold.shear:
+            self.shear_periodic_y(t+dt)
         else:
-            self.periodic_y(grid)
+            self.periodic_y()
 
         # Apply periodicity in x
-        self.periodic_x(grid)
+        self.periodic_x()
 
         return ek
 
@@ -183,10 +179,10 @@ class Particles(numpy.ndarray):
              grid.lbx, grid.lby)
 
         # Shearing periodicity
-        if self.shear:
-            self.shear_periodic_y(grid, self.S, t+dt)
+        if self.manifold.shear:
+            self.shear_periodic_y(t+dt)
         else:
-            self.periodic_y(grid)
+            self.periodic_y()
 
         # Apply periodicity in x
-        self.periodic_x(grid)
+        self.periodic_x()
