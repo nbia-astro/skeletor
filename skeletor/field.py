@@ -179,7 +179,7 @@ class ShearField(Field):
         # upper active cells to lower guard layers
         self[iy, :lbx] = self[iy, ubx-lbx:ubx]
 
-    def add_guards(self, St):
+    def add_guards(self):
 
         lbx = self.grid.lbx
         lby = self.grid.lby
@@ -194,11 +194,11 @@ class ShearField(Field):
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
-            trans = self.grid.Ly*St
+            trans = self.grid.Ly*self.grid.S*self.time
             for iy in range(uby, uby + nuby + 1):
                 self._translate_boundary(trans, iy)
         if self.grid.comm.rank == 0:
-            trans = -self.grid.Ly*St
+            trans = -self.grid.Ly*self.grid.S*self.time
             for iy in range(0, lby):
                 self._translate_boundary(trans, iy)
 
@@ -212,7 +212,7 @@ class ShearField(Field):
         self[:, ubx:] = 0.0
         self[:, :lbx] = 0.0
 
-    def copy_guards(self, St):
+    def copy_guards(self):
 
         msg = 'Boundaries are already set!'
         assert not self.boundaries_set, msg
@@ -235,17 +235,17 @@ class ShearField(Field):
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
-            trans = -self.grid.Ly*St
+            trans = -self.grid.Ly*self.grid.S*self.time
             for iy in range(uby, uby + nuby):
                 self._translate_boundary(trans, iy)
         if self.grid.comm.rank == 0:
-            trans = +self.grid.Ly*St
+            trans = +self.grid.Ly*self.grid.S*self.time
             for iy in range(0, lby):
                 self._translate_boundary(trans, iy)
 
         self.boundaries_set = True
 
-    def translate(self, St):
+    def translate(self, time):
         """Translation using numpy's fft."""
         from numpy.fft import rfft, irfft
         from numpy import exp
@@ -254,7 +254,7 @@ class ShearField(Field):
         fx_hat = rfft(self.trim(), axis=1)
 
         # Translate along x by an amount -S*t*y
-        fx_hat *= exp(1j*St*self.y_kx)
+        fx_hat *= exp(1j*self.grid.S*time*self.y_kx)
 
         # Inverse Fourier transform along x
         self.active = irfft(fx_hat, axis=1)
