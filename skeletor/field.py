@@ -129,12 +129,12 @@ class Field(ndarray):
 
 class ShearField(Field):
 
-    def __new__(cls, grid, comm, **kwds):
+    def __new__(cls, grid, **kwds):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi
 
-        obj = super().__new__(cls, grid, comm, **kwds)
+        obj = super().__new__(cls, grid, **kwds)
 
         # Grid spacing
         # TODO: this should be a property of the Grid class
@@ -169,7 +169,7 @@ class ShearField(Field):
         self[:, 0] += self[:, -2]
 
         # Translate the y-ghostzones
-        if self.comm.rank == self.comm.size - 1:
+        if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = self.grid.Ly*St
             self._translate_boundary(trans, self.grid.nyp)
 
@@ -188,7 +188,7 @@ class ShearField(Field):
         self[-1, -2] = self.send_down(self[0, 0])
 
         # Translate the y-ghostzones
-        if self.comm.rank == self.comm.size - 1:
+        if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = -self.grid.Ly*St
             self._translate_boundary(trans, -1)
 

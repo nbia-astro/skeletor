@@ -35,7 +35,7 @@ def test_translate(plot=False):
         return 1 + A*numpy.sin(kx*xx + ky*yy)
 
     # Initialize density field using shear field class
-    rho = ShearField(grid, comm, dtype=Float)
+    rho = ShearField(grid, dtype=Float)
     rho.fill(0.0)
     rho[:grid.nyp, :nx] = rho_an(0)
 

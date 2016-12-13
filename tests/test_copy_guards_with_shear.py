@@ -32,12 +32,12 @@ def test_copy_guards_with_shear(plot=False):
     A = 0.2
 
     # Initialize density field using standard field class
-    f = Field(grid, comm, dtype=Float)
+    f = Field(grid, dtype=Float)
     f.fill(0.0)
     f[:grid.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
 
     # Initialize density field using shear field class
-    g = ShearField(grid, comm, dtype=Float)
+    g = ShearField(grid, dtype=Float)
     g.fill(0.0)
     g[:grid.nyp, :nx] = 1 + A*numpy.sin(kx*xx + ky*yy)
 
