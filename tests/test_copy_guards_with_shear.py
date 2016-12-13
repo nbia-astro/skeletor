@@ -1,4 +1,5 @@
-from skeletor import cppinit, Float, Grid, Field, ShearField
+from skeletor import cppinit, Float, Field, ShearField, Grid
+from skeletor.manifolds.second_order import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
 
@@ -12,15 +13,18 @@ def test_copy_guards_with_shear(plot=False):
     nx = 1 << indx
     ny = 1 << indy
 
+    # Shear
+    S = -3/2
+    t = 0.2
+
     # Start parallel processing.
     idproc, nvp = cppinit(comm)
 
     # Create numerical grid
-    grid = Grid(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
+    manifold = ShearingManifold(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4,
+                                S=S, Omega=0)
 
-    # Shear
-    S = -3/2
-    St = 0.2*S
+    grid = Grid(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
 
     # Coordinate arrays
     xx, yy = numpy.meshgrid(grid.x, grid.y)
@@ -28,7 +32,7 @@ def test_copy_guards_with_shear(plot=False):
     # Wavenumbers of mode
     ikx = 1
     kx = 2*numpy.pi*ikx/nx
-    ky = kx*St
+    ky = kx*S*t
     A = 0.2
 
     # Initialize density field using standard field class
@@ -37,13 +41,13 @@ def test_copy_guards_with_shear(plot=False):
     f.active = 1 + A*numpy.sin(kx*xx + ky*yy)
 
     # Initialize density field using shear field class
-    g = ShearField(grid, dtype=Float)
+    g = ShearField(manifold, time=t, dtype=Float)
     g.active = 1 + A*numpy.sin(kx*xx + ky*yy)
 
     # Apply boundaries
     f.copy_guards()
     # TODO: Input St can be removed if we let the field know the time and S
-    g.copy_guards(St)
+    g.copy_guards()
 
     # Grid including first ghost zone
     xg = numpy.arange(-grid.lbx, grid.ubx + grid.nlbx)
@@ -55,7 +59,6 @@ def test_copy_guards_with_shear(plot=False):
     # Compare field analytic field with field with applied boundary condition
     assert(numpy.allclose(g, g_an))
 
-
     if plot:
         if comm.rank == comm.size - 1:
             import matplotlib.pyplot as plt
@@ -65,6 +68,7 @@ def test_copy_guards_with_shear(plot=False):
             ax2.imshow(g)
 
             plt.show()
+
 
 if __name__ == "__main__":
 

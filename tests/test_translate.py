@@ -1,4 +1,5 @@
 from skeletor import cppinit, Float, Grid, ShearField
+from skeletor.manifolds.mpifft4py import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
 
@@ -15,15 +16,16 @@ def test_translate(plot=False):
     # Start parallel processing.
     idproc, nvp = cppinit(comm)
 
-    # Create numerical grid
-    grid = Grid(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
-
     # Shear
     S = -3/2
     t = 0.2
 
+    # Create numerical grid
+    manifold = ShearingManifold(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4,
+                                S=S, Omega=0)
+
     # Coordinate arrays
-    xx, yy = numpy.meshgrid(grid.x, grid.y)
+    xx, yy = numpy.meshgrid(manifold.x, manifold.y)
 
     # Wavenumbers of mode
     ikx = 1
@@ -35,12 +37,12 @@ def test_translate(plot=False):
         return 1 + A*numpy.sin(kx*xx + ky*yy)
 
     # Initialize density field using shear field class
-    rho = ShearField(grid, dtype=Float)
+    rho = ShearField(manifold, time=t, dtype=Float)
     rho.fill(0.0)
     rho.active = rho_an(0)
-    rho.copy_guards(0)
+    rho.copy_guards()
 
-    rho.translate(S*t)
+    rho.translate(t)
 
     # Compare field analytic field with field with translated field
     assert(numpy.allclose(rho_an(t), rho.trim()))
