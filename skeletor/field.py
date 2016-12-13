@@ -174,8 +174,15 @@ class ShearField(Field):
         ubx = self.grid.ubx
 
         # Translate in real space by phase shifting in spectral space
-        self[iy, self.grid.lbx:self.grid.ubx] = irfft(exp
-            (-1j*self.kx*trans)*rfft(self[iy, self.grid.lbx:self.grid.ubx]))
+        phase = -1j*self.kx*trans
+        if self.dtype == dtype(Float):
+            self[iy, self.grid.lbx:self.grid.ubx] = \
+                irfft(exp(phase)*rfft(self[iy, self.grid.lbx:self.grid.ubx]))
+        elif self.dtype == dtype(Float2):
+            for dim in ('x', 'y'):
+                self[iy, self.grid.lbx:self.grid.ubx][dim] = \
+                    irfft(exp(phase) *
+                          rfft(self[iy, self.grid.lbx:self.grid.ubx][dim]))
 
         # lower active cells to upper guard layers
         self[iy, ubx:] = self[iy, lbx:lbx+nubx]
