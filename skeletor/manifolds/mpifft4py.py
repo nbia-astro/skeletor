@@ -68,12 +68,16 @@ class Manifold(Grid):
         self.FFT.ifft2(self.gx_hat, g.active['x'])
         self.FFT.ifft2(self.gy_hat, g.active['y'])
 
+        g.boundaries_set = False
+
     def log(self, f):
         """Custom log function that works on the
             active cells of skeletor fields"""
         from numpy import log as numpy_log
         g = f.copy()
         g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = numpy_log(f.active)
+
+        g.boundaries_set = False
         return g
 
     def grad_inv_del(self, f, g):
@@ -86,12 +90,14 @@ class Manifold(Grid):
         self.FFT.ifft2(self.gx_hat, g.active['x'])
         self.FFT.ifft2(self.gy_hat, g.active['y'])
 
+        g.boundaries_set = False
+
 
 class ShearingManifold(Manifold):
 
     def __init__(
             self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1):
+            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1, S=0, Omega=0):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi, zeros
@@ -120,6 +126,15 @@ class ShearingManifold(Manifold):
         # Aspect ratio of grid
         self.aspect = self.Lx/self.Ly
 
+        # Shear parameter
+        self.S = S
+        # True if shear is turned on
+        self.shear = (S != 0)
+
+        # Angular frequency
+        self.Omega = Omega
+        self.rotation = (Omega != 0)
+
     def _rfft2(self, f, f_hat, phase):
         from numpy import exp
         self.FFT.rfftx(f, self.temp)
@@ -132,11 +147,12 @@ class ShearingManifold(Manifold):
         self.temp *= exp(1j*phase)
         self.FFT.irfftx(self.temp, f)
 
-    def gradient(self, f, g, St):
+    def gradient(self, f, g):
         """Gradient in the shearing sheet using mpifft4py"""
 
         from numpy import pi, mod
 
+        St = self.S*f.time
         # We only need to know how much time has elapsed since the last time
         # the domain was strictly periodic
         St %= self.aspect
@@ -148,7 +164,7 @@ class ShearingManifold(Manifold):
         # This is an angle, so it can be mapped into the interval [0, 2*pi)
         phase = mod(self.y_kx*St, 2*pi)
 
-        self._rfft2(f, self.f_hat, phase)
+        self._rfft2(f.active, self.f_hat, phase)
 
         # Laboratory frame 'ky'.
         # Exploit periodicity in Fourier space (i.e. aliasing) and make sure
@@ -163,6 +179,8 @@ class ShearingManifold(Manifold):
         # Transform back to real space
         self._irfft2(self.gx_hat, g.active['x'], phase)
         self._irfft2(self.gy_hat, g.active['y'], phase)
+
+        g.boundaries_set = False
 
     def grad_inv_del(self, f, grad_inv_del):
         raise 'grad_inv_del not implemented in shearing sheet'

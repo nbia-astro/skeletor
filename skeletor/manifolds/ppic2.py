@@ -88,6 +88,8 @@ class Manifold(Grid):
         # of guard layers
         fxye.active = self.fxye[:-1, :-2]
 
+        fxye.boundaries_set = False
+
         return ttp
 
     def log(self, f):
@@ -96,6 +98,8 @@ class Manifold(Grid):
         from numpy import log as numpy_log
         g = f.copy()
         g[self.lby:self.uby, self.lbx:self.ubx] = numpy_log(f.active)
+
+        g.boundaries_set = False
         return g
 
     def grad_inv_del(self, qe, fxye, custom_cppois22=False):
@@ -134,5 +138,7 @@ class Manifold(Grid):
         # Copy electric field into an array with arbitrary number
         # of guard layers
         fxye.active = self.fxye[:-1, :-2]
+
+        fxye.boundaries_set = False
 
         return ttp, we
