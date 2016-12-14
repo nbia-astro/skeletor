@@ -79,7 +79,7 @@ def test_gyromotion(plot=False):
     npmax = np
 
     # Create particle array
-    ions = Particles(manifold, npmax, charge, mass, bz=bz)
+    ions = Particles(manifold, npmax, charge=charge, mass=mass, bz=bz)
 
     # Assign particles to subdomains
     ions.initialize(x, y, vx, vy)

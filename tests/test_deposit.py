@@ -27,7 +27,7 @@ np = npc*nx*ny
 npmax = int(1.5*np/comm.size)
 
 # Create particle array
-particles = Particles(manifold, npmax, charge, mass)
+particles = Particles(manifold, npmax, charge=charge, mass=mass)
 
 # Synchronize random number generator across ALL processes
 numpy.random.set_state(comm.bcast(numpy.random.get_state()))

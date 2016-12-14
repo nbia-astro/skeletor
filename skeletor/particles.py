@@ -6,7 +6,7 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, manifold, npmax, charge=1.0, mass=1.0, bz=0):
+    def __new__(cls, manifold, npmax, time=0.0, charge=1.0, mass=1.0, bz=0):
 
         from .cython.dtypes import Int, Particle
 
@@ -42,6 +42,9 @@ class Particles(numpy.ndarray):
         # Info array used for checking errors in particle move
         obj.info = numpy.zeros(7, Int)
 
+        # Set initial time
+        obj.time = time
+
         return obj
 
     def __array_finalize__(self, obj):
@@ -57,6 +60,7 @@ class Particles(numpy.ndarray):
         self.rbufl = getattr(obj, "rbufl", None)
         self.rbufr = getattr(obj, "rbufr", None)
         self.info = getattr(obj, "info", None)
+        self.time = getattr(obj, "time", None)
 
     def initialize(self, x, y, vx, vy):
 
@@ -132,7 +136,7 @@ class Particles(numpy.ndarray):
 
         self.move()
 
-    def shear_periodic_y(self, t):
+    def shear_periodic_y(self):
         """Shearing periodic boundaries along y.
 
            Modifies x and vx and applies periodic boundaries
@@ -141,13 +145,17 @@ class Particles(numpy.ndarray):
 
         from .cython.particle_boundary import shear_periodic_y
 
-        shear_periodic_y(self[:self.np], self.manifold.ny, self.manifold.S, t)
+        shear_periodic_y(self[:self.np], self.manifold.ny, self.manifold.S,
+                         self.time)
 
         self.periodic_y()
 
-    def push_ppic2(self, fxy, dt, t=0):
+    def push_ppic2(self, fxy, dt):
 
         from .cython.ppic2_wrapper import cppgbpush2l
+
+        # Update time
+        self.time += dt
 
         grid = fxy.grid
 
@@ -170,8 +178,11 @@ class Particles(numpy.ndarray):
 
         return ek
 
-    def push(self, fxy, dt, t=0):
+    def push(self, fxy, dt):
         from .cython.push_epicycle import push
+
+        # Update time
+        self.time += dt
 
         grid = fxy.grid
         qtmh = self.charge/self.mass*dt/2
@@ -180,7 +191,7 @@ class Particles(numpy.ndarray):
 
         # Shearing periodicity
         if self.manifold.shear:
-            self.shear_periodic_y(t+dt)
+            self.shear_periodic_y()
         else:
             self.periodic_y()
 

@@ -99,7 +99,7 @@ def test_plasmafrequency(plot=False):
     npmax = int(1.5*np/comm.size)
 
     # Create particle array
-    electrons = Particles(manifold, npmax, charge, mass)
+    electrons = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
     electrons.initialize(x, y, vx, vy)

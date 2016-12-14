@@ -95,7 +95,7 @@ def test_shearing_epicycle(plot=False):
     npmax = np
 
     # Create particle array
-    ions = Particles(manifold, npmax, charge, mass)
+    ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
     ions.initialize(x, y, vx, vy)
