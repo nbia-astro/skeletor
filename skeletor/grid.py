@@ -77,6 +77,16 @@ class Grid(grid_t):
         return self.ny
 
     @property
+    def dx(self):
+        "Grid size in x"
+        return self.Lx/self.nx
+
+    @property
+    def dy(self):
+        "Grid size in y"
+        return self.Ly/self.ny
+
+    @property
     def x(self):
         "One-dimensional x-coordinate array"
         from numpy import arange

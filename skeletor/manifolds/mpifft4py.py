@@ -110,22 +110,17 @@ class ShearingManifold(Manifold):
         super().__init__(
                 nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby)
 
-        # Grid spacing
-        # TODO: this should be a property of the Grid class
-        dx = self.Lx/self.nx
-        dy = self.Ly/self.ny
-
         shape = self.ny//self.comm.size, self.nx//2+1
         self.temp = zeros(shape, dtype=Complex)
 
         # Wave numbers for real-to-complex transforms
-        kx_vec = 2*pi*rfftfreq(self.nx)/dx
+        kx_vec = 2*pi*rfftfreq(self.nx)/self.dx
 
         # Outer product of y and kx
         self.y_kx = outer(self.y, kx_vec)
 
         # Maximum value of ky
-        self.ky_max = pi/dy
+        self.ky_max = pi/self.dy
 
         # Aspect ratio of grid
         self.aspect = self.Lx/self.Ly
