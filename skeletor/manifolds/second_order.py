@@ -18,6 +18,10 @@ class Manifold(Grid):
         msg = 'Finie particle size not implemented in this manifold'
         assert ax == 0.0 and ay == 0.0, msg
 
+        # Rotation and shear is always false for this manifold
+        self.shear = False
+        self.rotation = False
+
     def gradient(self, f, grad):
         """Calculate the gradient of f"""
 
