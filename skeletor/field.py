@@ -205,7 +205,7 @@ class ShearField(Field):
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = self.grid.Ly*self.grid.S*self.time
-            for iy in range(uby, uby + nuby + 1):
+            for iy in range(uby, uby + nuby):
                 self._translate_boundary(trans, iy)
         if self.grid.comm.rank == 0:
             trans = -self.grid.Ly*self.grid.S*self.time
