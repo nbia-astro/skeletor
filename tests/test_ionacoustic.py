@@ -113,7 +113,7 @@ def test_ionacoustic(plot=False):
     E.fill((0.0, 0.0))
 
     # Initialize sources
-    sources = Sources(manifold, dtype=Float)
+    sources = Sources(manifold)
 
     # Initialize Ohm's law solver
     ohm = Ohm(manifold, temperature=Te, charge=charge)

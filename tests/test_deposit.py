@@ -18,8 +18,8 @@ mass = 1.0
 manifold = Manifold(nx, ny, comm)
 
 # # Initialize sources
-sources = Sources(manifold, dtype=Float)
-sources_ppic2 = Sources(manifold, dtype=Float)
+sources = Sources(manifold)
+sources_ppic2 = Sources(manifold)
 
 # Total number of particles
 np = npc*nx*ny
