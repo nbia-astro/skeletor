@@ -27,9 +27,6 @@ class Particles(numpy.ndarray):
 
         obj.manifold = manifold
 
-        if manifold.rotation:
-            obj.bz += 2.0*mass/charge*manifold.Omega
-
         # Location of hole left in particle arrays
         obj.ihole = numpy.zeros(ntmax, Int)
 
@@ -165,11 +162,15 @@ class Particles(numpy.ndarray):
 
         qm = self.charge/self.mass
 
-        ek = cppgbpush2l(self, fxy, self.bz, self.np, self.ihole, qm, dt, grid)
+        bz = self.bz
+        if self.manifold.rotation:
+            bz += 2.0*self.mass/self.charge*self.manifold.Omega
+
+        ek = cppgbpush2l(self, fxy, bz, self.np, self.ihole, qm, dt, grid)
 
         # Shearing periodicity
         if self.manifold.shear:
-            self.shear_periodic_y(t+dt)
+            self.shear_periodic_y()
         else:
             self.periodic_y()
 
@@ -179,15 +180,46 @@ class Particles(numpy.ndarray):
         return ek
 
     def push(self, fxy, dt):
-        from .cython.push_epicycle import push
+        """
+        A standard Boris push which updates positions and velocities.
+
+        fxy is the electric field and dt is the time step.
+        If shear is turned on, fxy needs to be E_star
+        """
+        from .cython.push_epicycle import boris_push as push
 
         # Update time
         self.time += dt
 
         grid = fxy.grid
         qtmh = self.charge/self.mass*dt/2
-        push(self[:self.np], fxy, self.bz, qtmh, dt, grid.noff,
-             grid.lbx, grid.lby)
+
+        bz = self.bz
+        if self.manifold.rotation:
+            bz += 2.0*self.mass/self.charge*self.manifold.Omega
+
+        push(self[:self.np], fxy, bz, qtmh, dt, grid.noff, grid.lbx, grid.lby)
+
+        # Shearing periodicity
+        if self.manifold.shear:
+            self.shear_periodic_y()
+        else:
+            self.periodic_y()
+
+        # Apply periodicity in x
+        self.periodic_x()
+
+    def push_modified(self, fxy, dt):
+        from .cython.push_epicycle import modified_boris_push as push
+
+        # Update time
+        self.time += dt
+
+        grid = fxy.grid
+        qtmh = self.charge/self.mass*dt/2
+
+        push(self[:self.np], fxy, self.bz, qtmh, dt, grid.noff, grid.lbx,
+             grid.lby, self.manifold.Omega, self.manifold.S)
 
         # Shearing periodicity
         if self.manifold.shear:
