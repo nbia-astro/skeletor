@@ -1,6 +1,7 @@
 from .field import Field
 from .cython.deposit import deposit as cython_deposit
 from .cython.ppic2_wrapper import cppgpost2l
+from .cython.dtypes import Float2
 
 
 class Sources:
@@ -9,13 +10,16 @@ class Sources:
 
         self.rho = Field(grid, **kwds)
 
+        self.J = Field(grid, dtype=Float2)
+
     def deposit(self, particles, erase=True):
 
         if erase:
             self.rho.fill(0.0)
+            self.J.fill((0.0, 0.0))
 
         cython_deposit(
-                particles[:particles.np], self.rho, particles.charge,
+                particles[:particles.np], self.rho, self.J, particles.charge,
                 self.rho.grid.noff, self.rho.grid.lbx, self.rho.grid.lby)
 
         self.rho.boundaries_set = False
