@@ -113,7 +113,7 @@ def test_plasmafrequency(plot=False):
     E.fill((0.0, 0.0))
 
     # Initialize sources
-    sources = Sources(manifold, dtype=Float)
+    sources = Sources(manifold)
 
     # Initialize integro-differential operators
     poisson = Poisson(manifold, np)

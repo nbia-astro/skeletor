@@ -96,8 +96,8 @@ def test_skeletor():
         # Test charge deposition #
         ##########################
 
-        sources = Sources(manifold, dtype=Float)
-        sources2 = Sources(manifold, dtype=Float)
+        sources = Sources(manifold)
+        sources2 = Sources(manifold)
 
         sources.deposit(electrons)
         sources2.deposit_ppic2(electrons)

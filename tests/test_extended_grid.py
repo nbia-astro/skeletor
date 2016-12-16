@@ -20,7 +20,7 @@ idproc, nvp = cppinit(comm)
 manifold = Manifold(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
 
 # # Initialize sources
-sources = Sources(manifold, dtype=Float)
+sources = Sources(manifold)
 
 # Total number of particles
 np = npc*nx*ny
