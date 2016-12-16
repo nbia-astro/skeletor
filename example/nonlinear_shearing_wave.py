@@ -107,7 +107,7 @@ assert all(ions["y"][:ions.np] < manifold.edges[1])
 assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
 # Initialize sources
-sources = Sources(manifold, dtype=Float)
+sources = Sources(manifold)
 sources.rho = ShearField(manifold, time=t, dtype=Float)
 rho_periodic = ShearField(manifold, time=0, dtype=Float)
 
