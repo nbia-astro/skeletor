@@ -1,5 +1,6 @@
 from ctypes cimport real_t, real2_t, particle_t
 
+
 def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
                real_t qtmh, real_t dt, int noff, int lbx, int lby):
 
@@ -59,6 +60,7 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
         particles[ip].x += particles[ip].vx*dt
         particles[ip].y += particles[ip].vy*dt
 
+
 def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
                         real_t qtmh, real_t dt, int noff, int lbx, int lby,
                         real_t Omega, real_t S):
@@ -107,7 +109,7 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
 
         # Modify fields due to rotation and shear
         bz += Omega*dt
-        ey -= S*particles[ip].y*bz
+        ey -= S*y*bz
 
         vmx = particles[ip].vx + ex
         vmy = particles[ip].vy + ey
