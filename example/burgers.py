@@ -149,7 +149,7 @@ if plot:
         fig2, (ax1, ax2) = plt.subplots(num=2, nrows=2)
         im3 = ax1.plot(manifold.x, global_rho.mean(axis=0)/npc, 'b-',
                        xp(a, t), rho(a, t), 'r--')
-        im4 = ax2.plot(manifold.x, ((global_J['x']/global_rho)[2, :]),
+        im4 = ax2.plot(manifold.x, ((global_J['x']/global_rho).mean(axis=0)),
                        'b', xp(a, 0), ux(a), 'r--')
         ax1.set_ylim(1 - 10*ampl, 1 + 40*ampl)
 
@@ -163,10 +163,12 @@ for it in range(nt):
 
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
     sources.rho.add_guards()
+    sources.J.add_guards_vector()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     sources.rho.copy_guards()
+    sources.J.copy_guards()
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
@@ -189,6 +191,6 @@ for it in range(nt):
                 im2.autoscale()
                 im3[0].set_ydata(global_rho.mean(axis=0)/npc)
                 im3[1].set_data(xp(a, t), rho(a, t))
-                im4[0].set_ydata(((global_J['x']/global_rho)[2, :]))
+                im4[0].set_ydata(((global_J['x']/global_rho)).mean(axis=0))
                 im4[1].set_data(xp(a, t), ux(a))
                 plt.pause(1e-7)
