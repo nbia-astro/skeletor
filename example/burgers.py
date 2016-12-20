@@ -112,6 +112,10 @@ def xp(a, t):
     A = a + ux(a)*t
     return A
 
+
+def rho(a, t):
+    return 1/(1 + ampl*kx*numpy.cos(kx*a)*t)
+
 a = manifold.x
 
 # Electric field
@@ -143,10 +147,11 @@ if plot:
         plt.figure(2)
         plt.clf()
         fig2, (ax1, ax2) = plt.subplots(num=2, nrows=2)
-        im3 = ax1.plot(manifold.x, (global_rho.mean(axis=0)-npc)/npc)
+        im3 = ax1.plot(manifold.x, global_rho.mean(axis=0)/npc, 'b-',
+                       xp(a, t), rho(a, t), 'r--')
         im4 = ax2.plot(manifold.x, ((global_J['x']/global_rho)[2, :]),
                        'b', xp(a, 0), ux(a), 'r--')
-        ax1.set_ylim(-4*ampl, 4*ampl)
+        ax1.set_ylim(1 - 10*ampl, 1 + 40*ampl)
 
 ##########################################################################
 # Main loop over time                                                    #
@@ -182,9 +187,8 @@ for it in range(nt):
                 im2.set_data(global_J['x'])
                 im1.autoscale()
                 im2.autoscale()
-                im3[0].set_ydata((global_rho.
-                                 mean(axis=0)-npc)/npc)
+                im3[0].set_ydata(global_rho.mean(axis=0)/npc)
+                im3[1].set_data(xp(a, t), rho(a, t))
                 im4[0].set_ydata(((global_J['x']/global_rho)[2, :]))
                 im4[1].set_data(xp(a, t), ux(a))
-
                 plt.pause(1e-7)
