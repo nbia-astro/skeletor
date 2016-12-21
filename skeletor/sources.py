@@ -22,9 +22,13 @@ class Sources:
             self.rho.fill(0.0)
             self.J.fill((0.0, 0.0))
 
-        cython_deposit(
-                particles[:particles.np], self.rho, self.J, particles.charge,
-                self.rho.grid.noff, self.rho.grid.lbx, self.rho.grid.lby)
+        if not self.rho.grid.shear:
+            S = 0.0
+        elif self.rho.grid.shear:
+            S = self.rho.grid.S
+        cython_deposit(particles[:particles.np], self.rho, self.J,
+                       particles.charge, self.rho.grid.noff,
+                       self.rho.grid.lbx, self.rho.grid.lby, S)
 
         self.rho.boundaries_set = False
         self.J.boundaries_set = False
