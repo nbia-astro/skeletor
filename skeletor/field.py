@@ -205,6 +205,8 @@ class ShearField(Field):
                 self[iy, self.grid.lbx:self.grid.ubx][dim] = \
                     irfft(exp(phase) *
                           rfft(self[iy, self.grid.lbx:self.grid.ubx][dim]))
+        else:
+            raise RuntimeError("Input should be Float or Float2")
 
         # lower active cells to upper guard layers
         self[iy, ubx:] = self[iy, lbx:lbx+nubx]
@@ -212,6 +214,8 @@ class ShearField(Field):
         self[iy, :lbx] = self[iy, ubx-lbx:ubx]
 
     def add_guards(self):
+
+        assert self.dtype == dtype(Float)
 
         lbx = self.grid.lbx
         lby = self.grid.lby
@@ -237,6 +241,43 @@ class ShearField(Field):
         # Add data from guard cells to corresponding active cells in y
         self[lby:lby+nuby, :] += self.send_up(self[uby:, :])
         self[uby-lby:uby, :] += self.send_down(self[:lby, :])
+
+        # Erase guard cells
+        self[:lby, :] = 0.0
+        self[uby:, :] = 0.0
+        self[:, ubx:] = 0.0
+        self[:, :lbx] = 0.0
+
+    def add_guards_vector(self):
+
+        assert self.dtype == dtype(Float2)
+
+        lbx = self.grid.lbx
+        lby = self.grid.lby
+        nubx = self.grid.nubx
+        nuby = self.grid.nuby
+        ubx = self.grid.ubx
+        uby = self.grid.uby
+
+        for dim in ('x', 'y'):
+            # Add data from guard cells to corresponding active cells
+            self[:, lbx:lbx+nubx][dim] += self[:, ubx:][dim]
+            self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
+
+        # Translate the y-ghostzones
+        if self.grid.comm.rank == self.grid.comm.size - 1:
+            trans = self.grid.Ly*self.grid.S*self.time
+            for iy in range(uby, uby + nuby):
+                self._translate_boundary(trans, iy)
+        if self.grid.comm.rank == 0:
+            trans = -self.grid.Ly*self.grid.S*self.time
+            for iy in range(0, lby):
+                self._translate_boundary(trans, iy)
+
+        for dim in ('x', 'y'):
+            # Add data from guard cells to corresponding active cells in y
+            self[lby:lby+nuby, :][dim] += self.send_up(self[uby:, :][dim])
+            self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
 
         # Erase guard cells
         self[:lby, :] = 0.0
@@ -290,6 +331,25 @@ class ShearField(Field):
 
         # Inverse Fourier transform along x
         self.active = irfft(fx_hat, axis=1)
+
+        # Set boundary condition?
+        self.boundaries_set = False
+
+    def translate_vector(self, time):
+        """Translation using numpy's fft."""
+        from numpy.fft import rfft, irfft
+        from numpy import exp
+
+        dims = ('x', 'y')
+        for dim in dims:
+            # Fourier transform along x
+            fx_hat = rfft(self.trim()[dim], axis=1)
+
+            # Translate along x by an amount -S*t*y
+            fx_hat *= exp(1j*self.grid.S*time*self.y_kx)
+
+            # Inverse Fourier transform along x
+            self.active[dim] = irfft(fx_hat, axis=1)
 
         # Set boundary condition?
         self.boundaries_set = False
