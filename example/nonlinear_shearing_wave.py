@@ -40,10 +40,10 @@ kappa = numpy.sqrt(2*Omega*(2*Omega+S))
 ampl = 0.1
 
 # Number of grid points in x- and y-direction
-nx, ny = 32, 64
+nx, ny = 32, 16
 
 # Average number of particles per cell
-npc = 64
+npc = 16
 
 # Wave numbers
 kx = 2*numpy.pi/nx
@@ -110,6 +110,7 @@ assert comm.allreduce(ions.np, op=MPI.SUM) == np
 sources = Sources(manifold)
 sources.rho = ShearField(manifold, time=t, dtype=Float)
 rho_periodic = ShearField(manifold, time=0, dtype=Float)
+J_periodic = ShearField(manifold, time=0, dtype=Float2)
 
 # Deposit sources
 sources.deposit(ions)
@@ -117,6 +118,10 @@ assert numpy.isclose(sources.rho.sum(), ions.np*charge)
 sources.rho.add_guards()
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+sources.rho.copy_guards()
+
+sources.J.add_guards_vector()
+sources.J.copy_guards()
 
 
 def theta(a, t, phi=0):
@@ -167,22 +172,35 @@ def concatenate(arr):
 if plot:
     import matplotlib.pyplot as plt
 
-    global_rho = concatenate(sources.rho)
+    global_rho = concatenate(sources.rho.trim())
+    global_rho_periodic = concatenate(rho_periodic.trim())
+    global_J = concatenate(sources.J.trim())
+    global_J_periodic = concatenate(J_periodic.trim())
 
     if comm.rank == 0:
         plt.rc('image', origin='upper', interpolation='nearest',
                cmap='coolwarm')
         plt.figure(1)
         plt.clf()
-        fig, axes = plt.subplots(num=1, ncols=2)
-        im1 = axes[0].imshow(global_rho)
-        im2 = axes[1].imshow(global_rho)
+        fig, axes = plt.subplots(num=1, ncols=2, nrows=3)
+        im1a = axes[0, 0].imshow(global_rho)
+        im2a = axes[0, 1].imshow(global_rho_periodic)
+        im1b = axes[1, 0].imshow(global_J['x']/global_rho)
+        im2b = axes[1, 1].imshow(global_J_periodic['x']/global_rho_periodic)
+        im1c = axes[2, 0].imshow(global_J['y']/global_rho)
+        im2c = axes[2, 1].imshow(global_J_periodic['y']/global_rho_periodic)
         plt.figure(2)
         plt.clf()
-        fig2, ax1 = plt.subplots(num=2, ncols=1)
-        im4 = ax1.plot(manifold.x, (rho_periodic.trim().mean(axis=0)-npc)/npc,
-                       'b', xp(a, 0), rho(a, 0) - 1, 'r')
-        ax1.set_ylim(-4*ampl, 4*ampl)
+        fig2, (ax1, ax2, ax3) = plt.subplots(num=2, nrows=3)
+        im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+                       'b', xp(a, 0), rho(a, 0), 'r--')
+        im5 = ax2.plot(manifold.x, (global_J_periodic['x']/global_rho_periodic)
+                       .mean(axis=0), 'b', xp(a, 0), ux(a, 0), 'r--')
+        im6 = ax3.plot(manifold.x, (global_J_periodic['y']/global_rho_periodic)
+                       .mean(axis=0), 'b', xp(a, 0), uy(a, 0), 'r--')
+        ax1.set_ylim(1 - 4*ampl, 1 + 4*ampl)
+        ax2.set_ylim(-4*ampl, 4*ampl)
+        ax3.set_ylim(-4*ampl, 4*ampl)
 
 ##########################################################################
 # Main loop over time                                                    #
@@ -192,12 +210,15 @@ for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
     sources.rho.time = t
+    sources.J.time = t
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
     sources.rho.add_guards()
+    sources.J.add_guards_vector()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     sources.rho.copy_guards()
+    sources.J.copy_guards()
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
@@ -210,20 +231,41 @@ for it in range(nt):
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
+    J_periodic.active = sources.J.trim()
 
     # Translate the density to be periodic in y
     rho_periodic.translate(-t)
     rho_periodic.copy_guards()
 
+    J_periodic.translate_vector(-t)
+    J_periodic.copy_guards()
+
     # Make figures
     if plot:
         if (it % 60 == 0):
+            global_rho = concatenate(sources.rho.trim())
+            global_rho_periodic = concatenate(rho_periodic.trim())
+            global_J = concatenate(sources.J.trim())
+            global_J_periodic = concatenate(J_periodic.trim())
             if comm.rank == 0:
-                im1.set_data(sources.rho)
-                im2.set_data(rho_periodic)
-                im1.autoscale()
-                im2.autoscale()
-                im4[0].set_ydata((rho_periodic.trim().
-                                 mean(axis=0)-npc)/npc)
-                im4[1].set_data(xp(a, t), rho(a, t) - 1)
+                im1a.set_data(global_rho)
+                im2a.set_data(global_rho_periodic)
+                im1b.set_data(global_J['x']/global_rho)
+                im2b.set_data(global_J_periodic['x']/global_rho_periodic)
+                im1c.set_data(global_J['y']/global_rho)
+                im2c.set_data(global_J_periodic['y']/global_rho_periodic)
+                im1a.autoscale()
+                im2a.autoscale()
+                im1b.autoscale()
+                im2b.autoscale()
+                im1c.autoscale()
+                im2c.autoscale()
+                im4[0].set_ydata(global_rho_periodic.mean(axis=0)/npc)
+                im5[0].set_ydata((global_J_periodic['x']/global_rho_periodic).
+                                 mean(axis=0))
+                im6[0].set_ydata((global_J_periodic['y']/global_rho_periodic).
+                                 mean(axis=0))
+                im4[1].set_data(xp(a, t), rho(a, t))
+                im5[1].set_data(xp(a, t), ux(a, t))
+                im6[1].set_data(xp(a, t), uy(a, t))
                 plt.pause(1e-7)
