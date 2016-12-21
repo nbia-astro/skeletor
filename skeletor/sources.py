@@ -1,4 +1,3 @@
-from .field import Field
 from .cython.deposit import deposit as cython_deposit
 from .cython.ppic2_wrapper import cppgpost2l
 from .cython.dtypes import Float, Float2
@@ -6,11 +5,16 @@ from .cython.dtypes import Float, Float2
 
 class Sources:
 
-    def __init__(self, grid, **kwds):
+    def __init__(self, manifold, **kwds):
 
-        self.rho = Field(grid, dtype=Float, **kwds)
-
-        self.J = Field(grid, dtype=Float2, **kwds)
+        if not manifold.shear:
+            from .field import Field
+            self.rho = Field(manifold, dtype=Float, **kwds)
+            self.J = Field(manifold, dtype=Float2, **kwds)
+        elif manifold.shear:
+            from .field import ShearField
+            self.rho = ShearField(manifold, dtype=Float, **kwds)
+            self.J = ShearField(manifold, dtype=Float2, **kwds)
 
     def deposit(self, particles, erase=True):
 
