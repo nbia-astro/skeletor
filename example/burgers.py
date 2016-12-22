@@ -9,19 +9,19 @@ from mpi4py.MPI import COMM_WORLD as comm
 quiet = True
 
 # Plotting
-plot = True
+visualization = True
 
 # Time step
 dt = 1e-2
 
 # Initial time of particle positions
-t = dt/2
+t = - 100
 
 # Simulation time
-tend = 40*numpy.pi
+tend = 120
 
 # Number of time steps
-nt = int(tend/dt)
+nt = int((tend-t)/dt)
 
 # Particle charge and mass
 charge = 1
@@ -31,7 +31,7 @@ mass = 1
 ampl = 0.1
 
 # Number of grid points in x- and y-direction
-nx, ny = 64, 4
+nx, ny = 64, 1
 
 # Average number of particles per cell
 npc = 16
@@ -48,22 +48,23 @@ if quiet:
     sqrt_npc = int(numpy.sqrt(npc))
     assert sqrt_npc**2 == npc
     dx = dy = 1/sqrt_npc
-    x, y = numpy.meshgrid(
+    a, b = numpy.meshgrid(
             numpy.arange(dx/2, nx+dx/2, dx),
             numpy.arange(dy/2, ny+dy/2, dy))
-    x = x.flatten()
-    y = y.flatten()
+    a = a.flatten()
+    b = b.flatten()
 else:
-    x = nx*numpy.random.uniform(size=np).astype(Float)
-    y = ny*numpy.random.uniform(size=np).astype(Float)
+    a = nx*numpy.random.uniform(size=np).astype(Float)
+    b = ny*numpy.random.uniform(size=np).astype(Float)
 
 # Particle velocity at t = 0
-vx = ampl*numpy.sin(kx*x)
-vy = numpy.zeros_like(x)
+vx = ampl*numpy.sin(kx*a)
+vy = numpy.zeros_like(a)
 
-# Drift forward by dt/2
-x += vx*dt/2
-y += vy*dt/2
+# Start the positions at time = t
+x = numpy.mod(a + vx*t, nx)
+y = b
+
 
 # Start parallel processing
 idproc, nvp = cppinit(comm)
@@ -130,7 +131,7 @@ def concatenate(arr):
 
 
 # Make initial figure
-if plot:
+if visualization:
     import matplotlib.pyplot as plt
 
     global_rho = concatenate(sources.rho.trim())
@@ -151,7 +152,7 @@ if plot:
                        xp(a, t), rho(a, t), 'r--')
         im4 = ax2.plot(manifold.x, ((global_J['x']/global_rho).mean(axis=0)),
                        'b', xp(a, 0), ux(a), 'r--')
-        ax1.set_ylim(1 - 10*ampl, 1 + 40*ampl)
+        ax1.set_ylim(0, 3)
 
 ##########################################################################
 # Main loop over time                                                    #
@@ -180,7 +181,7 @@ for it in range(nt):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Make figures
-    if plot:
+    if visualization:
         if (it % 60 == 0):
             global_rho = concatenate(sources.rho.trim())
             global_J = concatenate(sources.J.trim())
