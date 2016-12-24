@@ -124,3 +124,11 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
 
         particles[ip].x += particles[ip].vx*dt
         particles[ip].y += particles[ip].vy*dt
+
+
+def drift(particle_t[:] particles, real_t dt):
+
+    for ip in range(particles.shape[0]):
+
+        particles[ip].x += particles[ip].vx*dt
+        particles[ip].y += particles[ip].vy*dt
