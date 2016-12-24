@@ -22,4 +22,4 @@ __pycache__
 *.o
 
 # Jupyter notebook checkpoints
-/.ipynb_checkpoints
+/ipython/.ipynb_checkpoints
