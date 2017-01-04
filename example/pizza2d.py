@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Particles, Sources
+from skeletor import cppinit, Float, Particles, Sources
 from skeletor import ShearField
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy
@@ -21,13 +21,13 @@ S = -3/2
 kappa = numpy.sqrt(2*Omega*(2*Omega+S))
 
 # Amplitude of perturbation
-ampl = 0.5
+ampl = 2.
 
 # Number of grid points in x- and y-direction
 nx, ny = 64, 64
 
 # Average number of particles per cell
-npc = 256
+npc = 64
 
 # Wave numbers
 kx = 2*numpy.pi/nx
@@ -59,8 +59,8 @@ def y_an(ap, bp, t):
     return y
 
 
-def alpha_particle(a, t):
-    phi = kx*a
+def alpha_particle(ap, t):
+    phi = kx*ap
     dxda = 2*Omega/kappa*ampl*kx*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) \
         + 1 - S*t*ampl*kx*numpy.sin(phi)
     dyda = -ampl*kx*(numpy.sin(kappa*t + phi) - numpy.sin(phi))
@@ -94,7 +94,7 @@ xx, yy = numpy.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
-npmax = int(1.25*np/nvp)
+npmax = int(5*np/nvp)
 
 # Create particle array
 ions = Particles(manifold, npmax, time=0, charge=charge, mass=mass)
@@ -166,12 +166,10 @@ def update(t):
         im2a.set_data(global_rho_periodic)
         im1a.autoscale()
         im2a.autoscale()
-        im4[0].set_ydata(global_rho_periodic.mean(axis=0)/npc)
-        # xp_par = ions['x'] + S*ions['y']*t
+        im4[1].set_ydata(global_rho_periodic.mean(axis=0)/npc)
         xp_par = x_an(a, b, t) + S*y_an(a, b, t)*t
         xp_par %= nx
-        xp_par = numpy.sort(xp_par)
-        im4[1].set_data(xp_par, rho_an_particle(xp_par, t))
+        im4[0].set_data(xp_par, rho_an_particle(a, t))
 
 
 if comm.rank == 0:
@@ -182,11 +180,11 @@ if comm.rank == 0:
            cmap='coolwarm')
     plt.figure(1)
     plt.clf()
-    fig, axes = plt.subplots(num=1, ncols=2)
+    fig, axes = plt.subplots(num=1, nrows=2)
     im1a = axes[0].imshow(global_rho)
     im2a = axes[1].imshow(global_rho_periodic)
     axtime1 = plt.axes([0.125, 0.1, 0.775, 0.03])
-    stime1 = mw.Slider(axtime1, 'Time', -2*numpy.pi, 2*numpy.pi, 0)
+    stime1 = mw.Slider(axtime1, 'Time', -numpy.pi, numpy.pi/2, 0)
     stime1.on_changed(update)
 
     plt.figure(2)
@@ -198,12 +196,12 @@ if comm.rank == 0:
     ax1.set_title(r'$\rho/\rho_0$')
     # Create slider widget for changing time
     axtime2 = plt.axes([0.125, 0.1, 0.775, 0.03])
-    stime2 = mw.Slider(axtime2, 'Time', -2*numpy.pi, 2*numpy.pi, 0)
+    stime2 = mw.Slider(axtime2, 'Time', -numpy.pi, numpy.pi/2, 0)
     stime2.on_changed(update)
     xp_par = x_an(a, b, 0) + S*y_an(a, b, 0)*0
     xp_par %= nx
     xp_par = numpy.sort(xp_par)
-    im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
-                   'b', xp_par, rho_an_particle(xp_par, 0), 'r--')
+    im4 = ax1.plot(xp_par, rho_an_particle(xp_par, 0), 'k-',
+                   manifold.x, (global_rho_periodic.mean(axis=0))/npc, 'r-')
     update(0)
     plt.show()
