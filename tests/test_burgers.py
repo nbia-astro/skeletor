@@ -20,7 +20,6 @@ in the end, and verified to be reasonably small (currently < 1e-3).
 
 from skeletor import cppinit, Float, Particles, Sources
 from skeletor.manifolds.second_order import Manifold
-import matplotlib.pyplot as plt
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -109,17 +108,19 @@ def test_burgers(plot=False):
     # Create particle array
     ions = Particles(manifold, npmax, time=0.0, charge=1.0, mass=1.0)
 
-    # Create figure
-    plt.figure(1)
-    plt.clf()
-    fig, axis = plt.subplots(num=1)
-    axis.set_xlim(-0.5, nx-0.5)
-    axis.set_ylim(0, 4)
-    axis.set_xlabel(r'$x$')
-    axis.set_title(r'$\rho/\rho_0$')
-    fig.set_tight_layout(True)
-    lines = axis.plot(manifold.x, np.ones_like(manifold.x), 'k',
-                      manifold.x, np.ones_like(manifold.x), 'r--')
+    if plot:
+        import matplotlib.pyplot as plt
+        # Create figure
+        plt.figure(1)
+        plt.clf()
+        fig, axis = plt.subplots(num=1)
+        axis.set_xlim(-0.5, nx-0.5)
+        axis.set_ylim(0, 4)
+        axis.set_xlabel(r'$x$')
+        axis.set_title(r'$\rho/\rho_0$')
+        fig.set_tight_layout(True)
+        lines = axis.plot(manifold.x, np.ones_like(manifold.x), 'k',
+                          manifold.x, np.ones_like(manifold.x), 'r--')
 
     # Initial time
     t = -300
@@ -162,9 +163,10 @@ def test_burgers(plot=False):
         # Exact charge density
         rho2 = 1/euler_prime(lagrange(manifold.x, t), t)
 
-        # Update plot
-        lines[0].set_ydata(rho1)
-        lines[1].set_ydata(rho2)
+        if plot:
+            # Update plot
+            lines[0].set_ydata(rho1)
+            lines[1].set_ydata(rho2)
 
         # Root-mean-squared difference between deposited and exact charge
         # density
@@ -178,7 +180,8 @@ def test_burgers(plot=False):
         ions.drift(dt)
         t += dt
         err = max(err, deposit_and_compare(t))
-        plt.pause(1e-7)
+        if plot:
+            plt.pause(1e-7)
 
     assert err < 1e-3
 
