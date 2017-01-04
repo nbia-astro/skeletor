@@ -100,7 +100,7 @@ def update(t):
     # Apply particle boundary condition
     xp %= nx
     # Number density as a function of the particle label
-    rhop = rho_an_particle(xp, t)
+    rhop = rho_an_particle(ap, t)
 
     # Initialize density
     rho = np.empty(nx+1, dtype=np.double)
