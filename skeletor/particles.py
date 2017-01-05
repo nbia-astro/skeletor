@@ -186,7 +186,7 @@ class Particles(numpy.ndarray):
         fxy is the electric field and dt is the time step.
         If shear is turned on, fxy needs to be E_star
         """
-        from .cython.push_epicycle import boris_push as push
+        from .cython.particle_push import boris_push as push
 
         # Update time
         self.time += dt
@@ -210,7 +210,7 @@ class Particles(numpy.ndarray):
         self.periodic_x()
 
     def push_modified(self, fxy, dt):
-        from .cython.push_epicycle import modified_boris_push as push
+        from .cython.particle_push import modified_boris_push as push
 
         # Update time
         self.time += dt
@@ -229,3 +229,7 @@ class Particles(numpy.ndarray):
 
         # Apply periodicity in x
         self.periodic_x()
+
+    def drift(self, dt):
+        from .cython.particle_push import drift as cython_drift
+        cython_drift(self[:self.np], dt)
