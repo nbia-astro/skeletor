@@ -500,14 +500,19 @@ Here, $U(a),$ is a function of the Lagrangian coordinate, $a$. It then follows
 from \cref{eq:ux-prime} that $\tilde{u}_{x'} = U(a)$ and using \cref
 {eq:dx/dtau} we find that
 \begin{equation}
+  \label{eq:xprim-burgers}
   x' = U(a)\,\tau + a .
 \end{equation}
 The analytical solution for the density is found according to \cref{eq:rho}
 \begin{equation}
-  \rho = \rho_0 \left(1 + \pder{U}{a} \tau\right)^{-1} \ .
+  \label{eq:rho-sheared-burgers}
+  \rho(a, t) = \rho_0 \left(1 + \pder{U}{a} \tau\right)^{-1} \ .
 \end{equation}
-If we choose $U(a) = A \sin{k a}$ the solution for the density in the
-primed coordinate will be the same as for the standard 1D Burgers' equation.
+Note that the 2D solution $\rho(x, y, t)$ can be found from the solution $\rho
+(a, t)$ by using the definition $x'= x + Sty$ in \cref{eq:xprim-burgers} and
+solving for $a$ using the Newton-Raphson method. If we choose $U(a) = A \sin{k
+a}$ the solution for the density in the primed coordinate will be the same as
+for the Eulerian coordinate in the standard 1D Burgers' equation.
 
 
 \bibliography{mendeley}
