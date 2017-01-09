@@ -66,6 +66,75 @@ def rho_an(a, t):
     return 1/(1 + ampl*kx*numpy.cos(kx*a)*t)
 
 
+def mean(f, axis=None):
+    "Compute mean of an array across processors."
+    result = numpy.mean(f, axis=axis)
+    if axis is None or axis == 0:
+        # If the mean is to be taken over *all* axes or just the y-axis,
+        # then we need to communicate
+        result = comm.allreduce(result, op=MPI.SUM)/comm.size
+    return result
+
+
+def rms(f):
+    "Compute root-mean-square of an array across processors."
+    return numpy.sqrt(mean(f**2))
+
+
+def velocity(a):
+    "Particle velocity in Lagrangian coordinates."
+    return ampl*numpy.sin(kx*a)
+
+
+def velocity_prime(a):
+    "Derivative of particle velocity in Lagrangian coordinates: ∂v(a,τ)/∂a"
+    return ampl*kx*numpy.cos(kx*a)
+
+
+def euler(a, τ):
+    """
+    This function converts from Lagrangian to Eulerian coordinate by
+    solving ∂x(a, τ)/∂τ = u(a) for x(a, τ) subject to the initial condition
+    x(a, 0) = a.
+    """
+    return (a + velocity(a)*τ) % nx
+
+
+def euler_prime(a, τ):
+    """
+    The derivative ∂x/∂a of the conversion function defined above, which is
+    related to the mass density in Lagrangian coordinates through
+        rho(a, τ)/rho_0(a) = (∂x/∂a)⁻¹,
+    where rho_0(a) = rho(a, 0) is the initial mass density.
+    """
+    return 1 + velocity_prime(a)*τ
+
+
+def lagrange(x, t, tol=1.48e-8, maxiter=50):
+    """
+    Given the Eulerian coordinate x and time t, this function solves the
+    definition x = euler(a, t) for the Lagrangian coordinate a via the
+    Newton-Raphson method.
+    """
+    # Use Eulerian coordinate as initial guess
+    a = x.copy()
+    for it in range(maxiter):
+        f = euler(a, t) - x
+        df = euler_prime(a, t)
+        b = a - f/df
+        # This is not the safest criterion, but seems good enough
+        if rms(a - b) < tol:
+            return b
+        a = b.copy()
+
+
+def rho2d_an(x, y, t):
+    xp = x + S*y*t
+    xp %= nx
+    a = lagrange(xp, t)
+    return rho_an(a, t)
+
+
 # Phase
 phi = kx*a
 
@@ -162,6 +231,9 @@ def update(t):
 
     J_periodic.translate_vector(-t)
     J_periodic.copy_guards()
+
+    err = rms(sources.rho.trim()/npc - rho2d_an(xx, yy, t))
+    print(err)
 
     global_rho = concatenate(sources.rho.trim())
     global_rho_periodic = concatenate(rho_periodic.trim())
