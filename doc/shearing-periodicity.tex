@@ -478,6 +478,38 @@ terms of the Lagrangian coordinate $a$ and time), we can simply plot $\rho$,
 $\tilde{u}_x$, or $\tilde{u}_y$ versus $x'$ to visualize the solution in
 Eulerian coordinates in order to make a direct comparison with simulations.
 
+\subsubsection{Non-linear evolution of sheared disturbances: No rotation}
+
+In this section we consider the solution to \cref{eq:dux/dtau} and
+\ref{eq:duy/dtau} in the special case where there is no rotation, i.e.
+$\Omega=0$. We find
+\begin{align}
+  \label{eq:dux/dtau}
+  \pader{\tilde{u}_x}{\tau} &= S\tilde{u}_y \\
+  \label{eq:duy/dtau}
+  \pader{\tilde{u}_y}{\tau} &= 0
+\end{align}
+for which one simple solution is
+\begin{align}
+  \label{eq:dux/dtau}
+  \tilde{u}_x &= U(a) \\
+  \label{eq:duy/dtau}
+  \tilde{u}_y &= 0 \ .
+\end{align}
+Here, $U(a),$ is a function of the Lagrangian coordinate, $a$. It then follows
+from \cref{eq:ux-prime} that $\tilde{u}_{x'} = U(a)$ and using \cref
+{eq:dx/dtau} we find that
+\begin{equation}
+  x' = U(a)\,\tau + a .
+\end{equation}
+The analytical solution for the density is found according to \cref{eq:rho}
+\begin{equation}
+  \rho = \rho_0 \left(1 + \pder{U}{a} \tau\right)^{-1} \ .
+\end{equation}
+If we choose $U(a) = A \sin{k a}$ the solution for the density in the
+primed coordinate will be the same as for the standard 1D Burgers' equation.
+
+
 \bibliography{mendeley}
 
 \end{document}
