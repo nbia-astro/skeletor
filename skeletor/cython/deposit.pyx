@@ -15,6 +15,7 @@ def deposit(
         x = particles[ip].x
         y = particles[ip].y
 
+        # Calculate the fluctuating x-velocity
         vx = particles[ip].vx + S*y
         vy = particles[ip].vy
 

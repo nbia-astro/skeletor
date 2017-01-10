@@ -340,8 +340,7 @@ class ShearField(Field):
         from numpy.fft import rfft, irfft
         from numpy import exp
 
-        dims = ('x', 'y')
-        for dim in dims:
+        for dim in ('x', 'y'):
             # Fourier transform along x
             fx_hat = rfft(self.trim()[dim], axis=1)
 
