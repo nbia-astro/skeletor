@@ -480,25 +480,20 @@ Eulerian coordinates in order to make a direct comparison with simulations.
 
 \subsubsection{Non-linear evolution of sheared disturbances: No rotation}
 
-In this section we consider the solution to \cref{eq:dux/dtau} and
-\ref{eq:duy/dtau} in the special case where there is no rotation, i.e.
-$\Omega=0$. We find
+In this section we consider the solution to \cref{eq:dux/dtau,eq:duy/dtau} in
+the special case where there is no rotation, i.e.\ $\Omega=0$. We find
 \begin{align}
-  \label{eq:dux/dtau}
   \pader{\tilde{u}_x}{\tau} &= S\tilde{u}_y \\
-  \label{eq:duy/dtau}
   \pader{\tilde{u}_y}{\tau} &= 0
 \end{align}
 for which one simple solution is
 \begin{align}
-  \label{eq:dux/dtau}
   \tilde{u}_x &= U(a) \\
-  \label{eq:duy/dtau}
-  \tilde{u}_y &= 0 \ .
+  \tilde{u}_y &= 0.
 \end{align}
-Here, $U(a),$ is a function of the Lagrangian coordinate, $a$. It then follows
-from \cref{eq:ux-prime} that $\tilde{u}_{x'} = U(a)$ and using \cref
-{eq:dx/dtau} we find that
+Here, $U(a)$ is a function of the Lagrangian coordinate, $a$. It then follows
+from \cref{eq:ux-prime} that $\tilde{u}_{x'} = U(a)$ and using
+\cref{eq:dx/dtau} we find that
 \begin{equation}
   \label{eq:xprim-burgers}
   x' = U(a)\,\tau + a .
@@ -506,7 +501,7 @@ from \cref{eq:ux-prime} that $\tilde{u}_{x'} = U(a)$ and using \cref
 The analytical solution for the density is found according to \cref{eq:rho}
 \begin{equation}
   \label{eq:rho-sheared-burgers}
-  \rho(a, t) = \rho_0 \left(1 + \pder{U}{a} \tau\right)^{-1} \ .
+  \rho(a, t) = \rho_0 \left(1 + \pder{U}{a} \tau\right)^{-1}.
 \end{equation}
 Note that the 2D solution $\rho(x, y, t)$ can be found from the solution $\rho
 (a, t)$ by using the definition $x'= x + Sty$ in \cref{eq:xprim-burgers} and
