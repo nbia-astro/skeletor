@@ -9,12 +9,11 @@ class Sources:
 
         if not manifold.shear:
             from .field import Field
-            self.rho = Field(manifold, dtype=Float, **kwds)
-            self.J = Field(manifold, dtype=Float2, **kwds)
-        elif manifold.shear:
-            from .field import ShearField
-            self.rho = ShearField(manifold, dtype=Float, **kwds)
-            self.J = ShearField(manifold, dtype=Float2, **kwds)
+        else:
+            from .field import ShearField as Field
+
+        self.rho = Field(manifold, dtype=Float, **kwds)
+        self.J = Field(manifold, dtype=Float2, **kwds)
 
     def deposit(self, particles, erase=True):
 
@@ -24,8 +23,9 @@ class Sources:
 
         if not self.rho.grid.shear:
             S = 0.0
-        elif self.rho.grid.shear:
+        else:
             S = self.rho.grid.S
+
         cython_deposit(particles[:particles.np], self.rho, self.J,
                        particles.charge, self.rho.grid.noff,
                        self.rho.grid.lbx, self.rho.grid.lby, S)
