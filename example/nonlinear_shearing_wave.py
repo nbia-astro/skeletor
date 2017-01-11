@@ -91,7 +91,11 @@ def vy_an(ap, bp, t):
     return vy
 
 
-def alpha_particle(a, t):
+def euler(ap, bp, t):
+    return x_an(ap, bp, t) + S*t*y_an(ap, bp, t)
+
+
+def euler_prime(a, t):
     phi = kx*a
     dxda = 2*Omega/kappa*ampl*kx*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) \
         + 1 - S*t*ampl*kx*numpy.sin(phi)
@@ -100,8 +104,54 @@ def alpha_particle(a, t):
     return dxda + S*t*dyda
 
 
-def rho_an_particle(a, t):
-    return 1/alpha_particle(a, t)
+def mean(f, axis=None):
+    """Compute mean of an array across processors."""
+    result = numpy.mean(f, axis=axis)
+    if axis is None or axis == 0:
+        # If the mean is to be taken over *all* axes or just the y-axis,
+        # then we need to communicate
+        result = comm.allreduce(result, op=MPI.SUM)/comm.size
+    return result
+
+
+def rms(f):
+    """Compute root-mean-square of an array across processors."""
+    return numpy.sqrt(mean(f**2))
+
+
+def lagrange(xp, t, tol=1.48e-8, maxiter=50):
+    """
+    Given the Eulerian coordinate x' = x + Sty and time t, this function
+    solves the definition x' = euler(a, t) for the Lagrangian coordinate a
+    via the Newton-Raphson method.
+    """
+    # Use Eulerian coordinate as initial guess
+    a = xp.copy()
+    for it in range(maxiter):
+        f = euler(a, 0, t) - xp
+        df = euler_prime(a, t)
+        b = a - f/df
+        # This is not the safest criterion, but seems good enough
+        err = rms(a - b)
+        if err < tol:
+            return b
+        a = b.copy()
+    msg = "maxiter={} exceeded without reaching tol={}. Solution w. rms={}"
+    raise RuntimeError(msg.format(maxiter, tol, err))
+
+
+def rho_an(a, t):
+    return 1/euler_prime(a, t)
+
+
+def find_a(x, y, t):
+    """
+    Calculate the Lagrangian coordinate, a, as a function of Eulerian grid
+    position, (x, y), and time, t. Accepts 2D arrays for x and y.
+    """
+    xp = x + S*y*t
+    a = lagrange(xp, t)
+    return a
 
 
 # Phase
@@ -157,6 +207,9 @@ assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 sources.rho.copy_guards()
 
+# Copy density into a shear field
+rho_periodic.active = sources.rho.trim()
+
 sources.J.add_guards_vector()
 sources.J.copy_guards()
 
@@ -176,6 +229,8 @@ def concatenate(arr):
 # Make initial figure
 if plot:
     import matplotlib.pyplot as plt
+    from matplotlib.cbook import mplDeprecation
+    import warnings
 
     global_rho = concatenate(sources.rho.trim())
     global_rho_periodic = concatenate(rho_periodic.trim())
@@ -224,11 +279,8 @@ for it in range(nt):
     sources.deposit(ions)
     sources.rho.time = t
     sources.J.time = t
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
     sources.rho.add_guards()
     sources.J.add_guards_vector()
-    assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     sources.rho.copy_guards()
     sources.J.copy_guards()
@@ -239,8 +291,6 @@ for it in range(nt):
 
     # Update time
     t += dt
-
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
@@ -254,12 +304,18 @@ for it in range(nt):
     J_periodic.copy_guards()
 
     # Make figures
-    if plot:
-        if (it % 60 == 0):
+    if (it % 60 == 0):
+        # Calculate rms of numerical solution wrt to the analytical solution
+        a_2d = find_a(xx, yy, t)
+        err = rms(sources.rho.trim()/npc - rho_an(a_2d, t))
+        # Check if test is passed
+        assert err < 1e-2, err
+        if plot:
             global_rho = concatenate(sources.rho.trim())
             global_rho_periodic = concatenate(rho_periodic.trim())
             global_J = concatenate(sources.J.trim())
             global_J_periodic = concatenate(J_periodic.trim())
+
             if comm.rank == 0:
                 im1a.set_data(global_rho)
                 im2a.set_data(global_rho_periodic)
@@ -278,12 +334,15 @@ for it in range(nt):
                                  mean(axis=0))
                 im6[0].set_ydata((global_J_periodic['y']/global_rho_periodic).
                                  mean(axis=0))
-                xp_par = x_an(ag, 0, t) + S*y_an(ag, 0, t)*t
+                xp_par = euler(ag, 0, t)
                 xp_par %= nx
                 ind = numpy.argsort(xp_par)
-                im4[1].set_data(xp_par[ind], rho_an_particle(ag, t)[ind])
+                im4[1].set_data(xp_par[ind], rho_an(ag, t)[ind])
                 im5[1].set_data(xp_par[ind], vx_an(ag, 0, t)[ind]
                                 + S*y_an(ag, 0, t)[ind])
                 im6[1].set_data(xp_par[ind], vy_an(ag, 0, t)[ind])
 
-                plt.pause(1e-7)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                            "ignore", category=mplDeprecation)
+                    plt.pause(1e-7)
