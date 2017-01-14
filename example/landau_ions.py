@@ -1,5 +1,6 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
+from skeletor import cppinit, Float, Float2, Field, Particles, Sources
 from skeletor import Ohm
+from skeletor.manifolds.ppic2 import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -93,10 +94,10 @@ def landau_ions(plot=False, fitplot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    grid = Grid(nx, ny, comm)
+    manifold = Manifold(nx, ny, comm)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(grid.x, grid.y)
+    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
     # Pair of Fourier basis functions with the specified wave numbers.
     # The basis functions are normalized so that the Fourier amplitude can be
@@ -108,24 +109,24 @@ def landau_ions(plot=False, fitplot=False):
     npmax = int(1.5*np/nvp)
 
     # Create particle array
-    ions = Particles(npmax, charge, mass)
+    ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy, grid)
+    ions.initialize(x, y, vx, vy)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(grid, comm, dtype=Float2)
+    E = Field(manifold, comm, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Initialize sources
-    sources = Sources(grid, comm, dtype=Float)
+    sources = Sources(manifold)
 
     # Initialize Ohm's law solver
-    ohm = Ohm(grid, npc, temperature=Te, charge=charge)
+    ohm = Ohm(manifold, temperature=Te, charge=charge)
 
     # Calculate initial density and force
 
@@ -137,7 +138,7 @@ def landau_ions(plot=False, fitplot=False):
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     # Calculate electric field (Solve Ohm's law)
-    ohm(sources.rho, E, destroy_input=False)
+    ohm(sources.rho, E)
     # Set boundary condition
     E.copy_guards_ppic2()
 
@@ -194,7 +195,7 @@ def landau_ions(plot=False, fitplot=False):
         sources.rho.add_guards_ppic2()
 
         # Calculate forces (Solve Ohm's law)
-        ohm(sources.rho, E, destroy_input=False)
+        ohm(sources.rho, E)
         # Set boundary condition
         E.copy_guards_ppic2()
 
