@@ -1,6 +1,6 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-from skeletor import Poisson as Poisson
-# from skeletor import PoissonMpiFFT4py as Poisson
+from skeletor import cppinit, Float, Float2, Field, Particles, Sources
+from skeletor.manifolds.mpifft4py import Manifold
+from skeletor import Poisson
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -9,14 +9,16 @@ from mpi4py.MPI import COMM_WORLD as comm
 def test_twostream(plot=False, fitplot=False):
     """Test of twostream instability."""
 
+    quiet = True
+
     # Number of grid points in x- and y-direction
     nx, ny = 64, 4
 
     # Average number of particles per cell
-    npc = 2**15
+    npc = 8
 
     # Number of time steps
-    nt = 600
+    nt = 1000
 
     # Background ion density
     n0 = 1.0
@@ -28,59 +30,78 @@ def test_twostream(plot=False, fitplot=False):
     # Timestep
     dt = 0.05
 
-    # Smoothed particle size in x/y direction
-    ax = 0
-    ay = 0
+    # wavenumber
+    kx = 2*numpy.pi/nx
 
     # Total number of particles in simulation
     np = npc*nx*ny
 
     # Mean velocity of electrons in x-direction
-    vdx = 6.0
+    vdx, vdy = 6.0, 0.
 
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0., 0.
 
-    x = nx*numpy.random.uniform(size=np).astype(Float)
-    y = ny*numpy.random.uniform(size=np).astype(Float)
+    if quiet:
+        # Uniform distribution of particle positions (quiet start)
+        sqrt_npc = int(numpy.sqrt(npc//2))
+        assert (sqrt_npc)**2*2 == npc
+        dx = dy = 1/sqrt_npc
+        x, y = numpy.meshgrid(
+                numpy.arange(0, nx, dx),
+                numpy.arange(0, ny, dy))
+        x = x.flatten()
+        y = y.flatten()
+    else:
+        x = nx*numpy.random.uniform(size=np).astype(Float)
+        y = ny*numpy.random.uniform(size=np).astype(Float)
 
-    # Thermal component of velocity
-    vx = vtx*numpy.random.normal(size=np).astype(Float)
-    vy = vty*numpy.random.normal(size=np).astype(Float)
+    vx = vdx*numpy.ones_like(x)
+    vy = vdy*numpy.ones_like(y)
+
+    # Have two particles at position
+    x = numpy.concatenate([x,x])
+    y = numpy.concatenate([y,y])
+
+    x += 1e-4*numpy.cos(kx*x)
 
     # Make counterpropagating in x
-    vx[:np//2] += vdx
-    vx[np//2:] -= vdx
+    vx = numpy.concatenate([vx, -vx])
+    vy = numpy.concatenate([vy, vy])
+
+    # Add thermal component
+    vx += vtx*numpy.random.normal(size=np).astype(Float)
+    vy += vty*numpy.random.normal(size=np).astype(Float)
 
     # Start parallel processing
     idproc, nvp = cppinit(comm)
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    grid = Grid(nx, ny, comm)
+    manifold = Manifold(nx, ny, comm)
 
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/nvp)
 
     # Create particle array
-    electrons = Particles(npmax, charge, mass)
+    electrons = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
-    electrons.initialize(x, y, vx, vy, grid)
+    electrons.initialize(x, y, vx, vy)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
     # assert comm.allreduce(electrons.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(grid, comm, dtype=Float2)
+    E = Field(manifold, comm, dtype=Float2)
     E.fill((0.0, 0.0))
 
     # Initialize sources
-    sources = Sources(grid, comm, dtype=Float)
+    sources = Sources(manifold)
 
     # Initialize Poisson solver
-    poisson = Poisson(grid, ax, ay, np)
+    poisson = Poisson(manifold, np)
 
     # Calculate initial density and force
 
@@ -90,7 +111,7 @@ def test_twostream(plot=False, fitplot=False):
     sources.rho += n0*npc
 
     # Solve Gauss' law
-    poisson(sources.rho, E, destroy_input=False)
+    poisson(sources.rho, E)
     # Set boundary condition
     E.copy_guards_ppic2()
 
@@ -142,10 +163,10 @@ def test_twostream(plot=False, fitplot=False):
 
         # Boundary calls
         sources.rho.add_guards_ppic2()
-        sources.rho += n0
+        sources.rho += n0*npc
 
         # Solve Gauss' law
-        poisson(sources.rho, E, destroy_input=False)
+        poisson(sources.rho, E)
 
         # Set boundary condition
         E.copy_guards_ppic2()
@@ -158,7 +179,7 @@ def test_twostream(plot=False, fitplot=False):
 
         # Make figures
         if plot:
-            if (it % 1 == 0):
+            if (it % 10 == 0):
                 global_rho = concatenate(sources.rho.trim())
                 global_E = concatenate(E.trim())
                 if comm.rank == 0:
@@ -202,7 +223,7 @@ def test_twostream(plot=False, fitplot=False):
         err = abs((gamma_f-gamma_t))/gamma_t
 
         # Tolerance
-        tol = 4e-2
+        tol = 4e-3
 
         # Did it work?
         assert (err < tol)
