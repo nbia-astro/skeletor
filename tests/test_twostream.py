@@ -15,7 +15,7 @@ def test_twostream(plot=False, fitplot=False):
     nx, ny = 64, 4
 
     # Average number of particles per cell
-    npc = 8
+    npc = 32
 
     # Number of time steps
     nt = 1000
@@ -140,10 +140,16 @@ def test_twostream(plot=False, fitplot=False):
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, nrows=3)
             im1 = ax1.imshow(global_rho)
             im2 = ax2.imshow(global_E['x'])
-            im3 = ax3.imshow(global_E['y'])
+            im3 = ax3.plot(electrons['x'][:np], electrons['vx'][:np], 'o',
+                           fillstyle='full', ms=1)
             ax1.set_title(r'$\rho$')
             ax2.set_title(r'$E_x$')
-            ax3.set_title(r'$E_y$')
+            ax3.set_ylim(-2*vdx, 2*vdx)
+            ax3.set_xlim(0, nx)
+            for ax in (ax1, ax2, ax3):
+                ax.set_xlabel(r'$x$')
+                ax.set_ylabel(r'$y$')
+            ax3.set_ylabel(r'$v_x$')
 
     t = 0
     ##########################################################################
@@ -185,10 +191,9 @@ def test_twostream(plot=False, fitplot=False):
                 if comm.rank == 0:
                     im1.set_data(global_rho)
                     im2.set_data(global_E['x'])
-                    im3.set_data(global_E['y'])
+                    im3[0].set_data(electrons['x'][:np], electrons['vx'][:np])
                     im1.autoscale()
                     im2.autoscale()
-                    im3.autoscale()
                     plt.draw()
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
@@ -240,6 +245,7 @@ def test_twostream(plot=False, fitplot=False):
             plt.semilogy(time, func(time, 1, gamma_t), 'k-',
                          label=r"Theory: $\gamma = %.5f$" % gamma_t)
             plt.xlabel("time")
+            plt.ylabel(r"$E^2$")
             plt.legend(loc=2)
             plt.show()
 
