@@ -26,3 +26,4 @@ cdef class grid_t:
     cdef public real_t edges[2]
     cdef public int nyp, noff, nypmx, nypmn
     cdef public int lbx, lby
+    cdef public real_t dx, dy

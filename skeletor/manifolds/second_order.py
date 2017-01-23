@@ -7,10 +7,11 @@ class Manifold(Grid):
 
     def __init__(
             self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=1, nubx=1, nlby=1, nuby=1):
+            ax=0.0, ay=0.0, nlbx=1, nubx=1, nlby=1, nuby=1, Lx=None, Ly=None):
 
         super().__init__(
-                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby)
+                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby,
+                Lx=Lx, Ly=Ly)
 
         err = 'Not enough boundary layers for second order finite difference.'
         assert (nlbx >= 1 and nlby >= 1 and nubx >= 1 and nuby >= 1), err
@@ -100,10 +101,12 @@ class ShearingManifold(Manifold):
 
     def __init__(
             self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=1, nubx=1, nlby=1, nuby=1, S=0, Omega=0):
+            ax=0.0, ay=0.0, nlbx=1, nubx=1, nlby=1, nuby=1, S=0, Omega=0,
+            Lx=None, Ly=None):
 
         super().__init__(
-                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby)
+                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby,
+                Lx=Lx, Ly=Ly)
 
         # Shear parameter
         self.S = S
