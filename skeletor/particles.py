@@ -64,8 +64,11 @@ class Particles(numpy.ndarray):
         from numpy import logical_and, sum
         from warnings import warn
 
-        ind = logical_and(y >= self.manifold.edges[0],
-                          y < self.manifold.edges[1])
+        dx = self.manifold.dx
+        dy = self.manifold.dy
+
+        ind = logical_and(y >= self.manifold.edges[0]*dy,
+                          y < self.manifold.edges[1]*dy)
 
         # Number of particles in subdomain
         self.np = sum(ind)
@@ -77,10 +80,12 @@ class Particles(numpy.ndarray):
             warn(msg + " (np={}, npmax={})".format(self.np, self.size))
 
         # Fill structured array
-        self["x"][:self.np] = x[ind]
-        self["y"][:self.np] = y[ind]
-        self["vx"][:self.np] = vx[ind]
-        self["vy"][:self.np] = vy[ind]
+        self["x"][:self.np] = x[ind]/dx
+        self["y"][:self.np] = y[ind]/dy
+        self["vx"][:self.np] = vx[ind]/dx
+        self["vy"][:self.np] = vy[ind]/dy
+
+        self.units = False
 
     def initialize_ppic2(self, vtx, vty, vdx, vdy, npx, npy):
 
@@ -233,3 +238,29 @@ class Particles(numpy.ndarray):
     def drift(self, dt):
         from .cython.particle_push import drift as cython_drift
         cython_drift(self[:self.np], dt)
+
+    def to_units(self):
+        """Convert particle positions and velocities to be the position in
+           the simulation"""
+
+        assert not self.units, "Attempting to convert units twice!"
+
+        self["x"] *= self.manifold.dx
+        self["y"] *= self.manifold.dy
+        self["vx"] *= self.manifold.dx
+        self["vy"] *= self.manifold.dy
+
+        self.units = True
+
+    def from_units(self):
+        """Convert particle positions and velocities to be measured in grid
+        spacing coordinates"""
+
+        assert self.units, "Attempting to convert units twice!"
+
+        self["x"] /= self.manifold.dx
+        self["y"] /= self.manifold.dy
+        self["vx"] /= self.manifold.dx
+        self["vy"] /= self.manifold.dy
+
+        self.units = False
