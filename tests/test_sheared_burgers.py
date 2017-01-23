@@ -17,13 +17,13 @@ def test_sheared_burgers(plot=False):
     dt = 0.5e-3
 
     # Initial time of particle positions
-    t = 0
+    t = -numpy.pi/3
 
     # Simulation time
     tend = numpy.pi/3
 
     # Number of time steps
-    nt = int(tend/dt)
+    nt = int((tend-t)/dt)
 
     # Particle charge and mass
     charge = 1
@@ -145,13 +145,6 @@ def test_sheared_burgers(plot=False):
         """Particle x-position as a function of time"""
         return a + vx_an(a, b, t)*t
 
-    # Particle positions at time= 0
-    x = a
-    y = b
-
-    vx = vx_an(a, b, 0)
-    vy = numpy.zeros_like(y)
-
     # Start parallel processing
     idproc, nvp = cppinit(comm)
 
@@ -169,8 +162,21 @@ def test_sheared_burgers(plot=False):
     # Create particle array
     ions = Particles(manifold, npmax, time=t, charge=charge, mass=mass)
 
-    # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy)
+    # Assign particles to subdomains (zero velocity and uniform distribution)
+    ions.initialize(a, b, a*0, b*0)
+
+    # Position and velocities for this subdomain only
+    x_sub = numpy.copy(ions['x'][:ions.np])
+    y_sub = numpy.copy(ions['y'][:ions.np])
+
+    # Set initial condition
+    ions['vx'][:ions.np] = vx_an(x_sub, y_sub, t)
+    ions['x'][:ions.np] = x_an(x_sub, y_sub, t)
+
+    # Set boundary condition on particles
+    ions.time = t
+    ions.shear_periodic_y()
+    ions.periodic_x()
 
     # Make sure particles actually reside in the local subdomain
     assert all(ions["y"][:ions.np] >= manifold.edges[0])
