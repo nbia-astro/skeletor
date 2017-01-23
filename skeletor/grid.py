@@ -3,7 +3,8 @@ from .cython.ppic2_wrapper import grid_t
 
 class Grid(grid_t):
 
-    def __init__(self, nx, ny, comm, nlbx=0, nubx=2, nlby=0, nuby=1):
+    def __init__(self, nx, ny, comm, nlbx=0, nubx=2, nlby=0, nuby=1,
+                 Lx=None, Ly=None):
 
         from .cython.ppic2_wrapper import cppinit
         from numpy import array
@@ -11,6 +12,11 @@ class Grid(grid_t):
         # Number of grid points in x- and y-direction
         self.nx = nx
         self.ny = ny
+
+        # Grid size in x- and y-direction
+        self.Lx = Lx if Lx is not None else nx
+        self.Ly = Ly if Ly is not None else ny
+
         # MPI communicator
         self.comm = comm
 
@@ -62,19 +68,6 @@ class Grid(grid_t):
             msg = "Too many processors requested: ny={}, comm.size={}"
             raise RuntimeError(msg.format(self.ny, comm.size))
 
-    @property
-    def Lx(self):
-        "Domain size in x"
-        # This is defined as a property because right now,
-        # Lx must be equal to nx.
-        return self.nx
-
-    @property
-    def Ly(self):
-        "Domain size in y"
-        # This is defined as a property because right now,
-        # Ly must be equal to ny.
-        return self.ny
 
     @property
     def dx(self):
