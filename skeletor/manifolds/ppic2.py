@@ -95,6 +95,10 @@ class Manifold(Grid):
 
         fxye.boundaries_set = False
 
+        # Divide by dx and dy to account for nx != Lx and ny != Ly
+        fxye['x'] /= fxye.grid.dx
+        fxye['y'] /= fxye.grid.dy
+
         return ttp
 
     def log(self, f):
@@ -145,5 +149,9 @@ class Manifold(Grid):
         fxye.active = self.fxye[:-1, :-2]
 
         fxye.boundaries_set = False
+
+        # Multiply by dx and dy to account for nx != Lx and ny != Ly
+        fxye['x'] *= fxye.grid.dx
+        fxye['y'] *= fxye.grid.dy
 
         return ttp, we

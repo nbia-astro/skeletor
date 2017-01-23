@@ -34,6 +34,11 @@ class Manifold(Grid):
 
         grad.boundaries_set = False
 
+        # Divide by dx and dy to account for nx != Lx and ny != Ly
+        grad['x'] /= grad.grid.dx
+        grad['y'] /= grad.grid.dy
+
+
     def log(self, f):
         from numpy import log as numpy_log
 
