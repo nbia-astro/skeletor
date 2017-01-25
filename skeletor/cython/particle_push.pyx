@@ -15,6 +15,9 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
     cdef real_t dx, dy
     cdef real_t tx, ty
 
+    # Rescale magnetic field with qtmh = 0.5*dt*charge/mass
+    bz *= qtmh
+
     for ip in range(particles.shape[0]):
 
         # Interpolate field onto particle (TODO: Move to separate function)
@@ -41,10 +44,9 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
         ey = dy*(dx*E[iy+1, ix+1].y + tx*E[iy+1, ix].y)  \
             + ty*(dx*E[iy, ix+1].y + tx*E[iy, ix].y)
 
-        # Rescale electric & magnetic field with qtmh = 0.5*dt*charge/mass
+        # Rescale electric field with qtmh = 0.5*dt*charge/mass
         ex *= qtmh
         ey *= qtmh
-        bz *= qtmh
 
         vmx = particles[ip].vx + ex
         vmy = particles[ip].vy + ey
@@ -76,6 +78,12 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
     cdef real_t dx, dy
     cdef real_t tx, ty
 
+    # Rescale magnetic field with qtmh = 0.5*dt*charge/mass
+    bz *= qtmh
+
+    # Modify fields due to rotation and shear
+    bz += Omega*dt
+
     for ip in range(particles.shape[0]):
 
         # Interpolate field onto particle (TODO: Move to separate function)
@@ -105,10 +113,8 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
         # Rescale electric & magnetic field with qtmh = 0.5*dt*charge/mass
         ex *= qtmh
         ey *= qtmh
-        bz *= qtmh
 
         # Modify fields due to rotation and shear
-        bz += Omega*dt
         ey -= S*y*bz
 
         vmx = particles[ip].vx + ex
