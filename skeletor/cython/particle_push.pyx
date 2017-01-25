@@ -1,4 +1,5 @@
 from ctypes cimport real_t, real2_t, particle_t
+from cython.parallel import prange
 
 
 def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
