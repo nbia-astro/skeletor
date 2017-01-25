@@ -18,7 +18,7 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
     # Rescale magnetic field with qtmh = 0.5*dt*charge/mass
     bz *= qtmh
 
-    for ip in range(particles.shape[0]):
+    for ip in prange(particles.shape[0], nogil=True, schedule='static'):
 
         # Interpolate field onto particle (TODO: Move to separate function)
         x = particles[ip].x
@@ -84,7 +84,7 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
     # Modify fields due to rotation and shear
     bz += Omega*dt
 
-    for ip in range(particles.shape[0]):
+    for ip in prange(particles.shape[0], nogil=True, schedule='static'):
 
         # Interpolate field onto particle (TODO: Move to separate function)
         x = particles[ip].x
@@ -134,7 +134,7 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
 
 def drift(particle_t[:] particles, real_t dt):
 
-    for ip in range(particles.shape[0]):
+    for ip in prange(particles.shape[0], nogil=True, schedule='static'):
 
         particles[ip].x += particles[ip].vx*dt
         particles[ip].y += particles[ip].vy*dt

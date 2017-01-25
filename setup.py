@@ -5,12 +5,13 @@ from distutils.extension import Extension
 from numpy import get_include
 
 Options.annotate = False
-compiler_directives = {"boundscheck": True, "cdivision": False}
-cflags = ["-Wno-unused-function", "-Wno-#warnings"]
+compiler_directives = {"boundscheck": False, "cdivision": True}
+cflags = ["-Wno-unused-function", "-Wno-#warnings", "-fopenmp"]
 
 extensions = [Extension(
     "*", ["skeletor/cython/*.pyx"],
     include_dirs=[get_include()], extra_compile_args=cflags,
+    extra_link_args=["-fopenmp"],
     depends=["picksc/ppic2/precision.h"])]
 
 setup(
