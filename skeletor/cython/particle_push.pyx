@@ -11,7 +11,8 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
     cdef real_t vpx, vpy
     cdef real_t fac
 
-    cdef int ix, iy
+    # It might be better to use `Py_ssize_t` instead of `int`
+    cdef int ip, ix, iy
     cdef real_t x, y
     cdef real_t dx, dy
     cdef real_t tx, ty
@@ -74,7 +75,7 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
     cdef real_t vpx, vpy
     cdef real_t fac
 
-    cdef int ix, iy
+    cdef int ip, ix, iy
     cdef real_t x, y
     cdef real_t dx, dy
     cdef real_t tx, ty
@@ -135,6 +136,7 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
 
 def drift(particle_t[:] particles, real_t dt):
 
+    cdef int ip
     for ip in prange(particles.shape[0], nogil=True, schedule='static'):
 
         particles[ip].x += particles[ip].vx*dt
