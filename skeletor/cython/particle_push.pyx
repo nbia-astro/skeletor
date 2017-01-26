@@ -5,8 +5,8 @@ from cython.parallel import prange
 def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
                real_t qtmh, real_t dt, int noff, int lbx, int lby):
 
+    cdef int Np = particles.shape[0]
     cdef real_t ex, ey
-
     cdef real_t vmx, vmy
     cdef real_t vpx, vpy
     cdef real_t fac
@@ -20,7 +20,7 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
     # Rescale magnetic field with qtmh = 0.5*dt*charge/mass
     bz = qtmh*bz
 
-    for ip in prange(particles.shape[0], nogil=True, schedule='static'):
+    for ip in prange(Np, nogil=True, schedule='static'):
 
         # Interpolate field onto particle (TODO: Move to separate function)
         x = particles[ip].x
@@ -69,8 +69,8 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
                         real_t qtmh, real_t dt, int noff, int lbx, int lby,
                         real_t Omega, real_t S):
 
+    cdef int Np = particles.shape[0]
     cdef real_t ex, ey
-
     cdef real_t vmx, vmy
     cdef real_t vpx, vpy
     cdef real_t fac
@@ -86,7 +86,7 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
     # Modify fields due to rotation and shear
     bz = bz + Omega*dt
 
-    for ip in prange(particles.shape[0], nogil=True, schedule='static'):
+    for ip in prange(Np, nogil=True, schedule='static'):
 
         # Interpolate field onto particle (TODO: Move to separate function)
         x = particles[ip].x
@@ -136,8 +136,9 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
 
 def drift(particle_t[:] particles, real_t dt):
 
+    cdef int Np = particles.shape[0]
     cdef int ip
-    for ip in prange(particles.shape[0], nogil=True, schedule='static'):
+    for ip in prange(Np, nogil=True, schedule='static'):
 
-        particles[ip].x += particles[ip].vx*dt
-        particles[ip].y += particles[ip].vy*dt
+        particles[ip].x = particles[ip].x + particles[ip].vx*dt
+        particles[ip].y = particles[ip].y + particles[ip].vy*dt

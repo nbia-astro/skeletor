@@ -3,11 +3,11 @@ from cython.parallel import prange
 
 
 def periodic_x(particle_t[:] particles, int nx):
-
+    cdef int Np = particles.shape[0]
     cdef real_t Lx = <real_t> nx
     cdef int ip
 
-    for ip in prange(particles.shape[0], nogil=True, schedule='static'):
+    for ip in prange(Np, nogil=True, schedule='static'):
 
         while particles[ip].x < 0.0:
             particles[ip].x = particles[ip].x + Lx
@@ -42,10 +42,11 @@ def shear_periodic_y(particle_t[:] particles, int ny, real_t S, real_t t):
        The periodic boundaries on y are handled by ppic2 *after* we have
        used the values of y to update x and vx.
     """
+    cdef int Np = particles.shape[0]
     cdef real_t Ly = <real_t> ny
     cdef int ip
 
-    for ip in prange(particles.shape[0], nogil=True, schedule='static'):
+    for ip in prange(Np, nogil=True, schedule='static'):
         # Left
         if particles[ip].y < 0.0:
             particles[ip].x = particles[ip].x - S*Ly*t
