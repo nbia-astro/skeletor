@@ -7,7 +7,7 @@ def deposit(
         real_t charge, int noff, int lbx, int lby, real_t S):
 
     cdef int Np = particles.shape[0]
-    cdef int ip, ix, iy, k
+    cdef int ip, ix, iy, k, ky, kx
     cdef real_t x, y
     cdef real_t dx, dy
     cdef real_t tx, ty
