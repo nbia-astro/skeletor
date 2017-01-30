@@ -12,41 +12,47 @@ def test_ionacoustic(plot=False):
     quiet = True
     # Number of grid points in x- and y-direction
     nx, ny = 32, 32
+    # Grid size in x- and y-direction
+    Lx = 1
+    Ly = Lx*ny/nx
+    dx = Lx/nx
+    dy = Ly/ny
     # Average number of particles per cell
     npc = 256
     # Particle charge and mass
-    charge = 0.5
+    charge = 1.0
     mass = 1.0
     # Electron temperature
     Te = 1.0
     # Dimensionless amplitude of perturbation
-    A = 0.001
+    A = 1.0e-5
     # Wavenumbers
     ikx = 1
     iky = 1
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0.0, 0.0
-    # CFL number
-    cfl = 0.5
+
     # Number of periods to run for
     nperiods = 1
 
     # Sound speed
     cs = numpy.sqrt(Te/mass)
 
-    # Time step
-    dt = cfl/cs
+    vph = cs
 
     # Total number of particles in simulation
     np = npc*nx*ny
 
     # Wave vector and its modulus
-    kx = 2*numpy.pi*ikx/nx
-    ky = 2*numpy.pi*iky/ny
+    kx = 2*numpy.pi*ikx/Lx
+    ky = 2*numpy.pi*iky/Ly
     k = numpy.sqrt(kx*kx + ky*ky)
 
     # Frequency
-    omega = k*cs
+    omega = k*vph
+
+    # Time step
+    dt = 2**numpy.floor (numpy.log2 (0.5*dx/vph))
 
     # Simulation time
     tend = 2*numpy.pi*nperiods/omega
@@ -70,19 +76,20 @@ def test_ionacoustic(plot=False):
         # Uniform distribution of particle positions (quiet start)
         sqrt_npc = int(numpy.sqrt(npc))
         assert sqrt_npc**2 == npc
-        dx = dy = 1/sqrt_npc
+        dx1 = dx/sqrt_npc
+        dy1 = dy/sqrt_npc
         x, y = numpy.meshgrid(
-                numpy.arange(0, nx, dx),
-                numpy.arange(0, ny, dy))
+                numpy.arange(0, Lx, dx1),
+                numpy.arange(0, Ly, dy1))
         x = x.flatten()
         y = y.flatten()
     else:
-        x = nx*numpy.random.uniform(size=np).astype(Float)
-        y = ny*numpy.random.uniform(size=np).astype(Float)
+        x = Lx*numpy.random.uniform(size=np).astype(Float)
+        y = Ly*numpy.random.uniform(size=np).astype(Float)
 
     # Perturbation to particle velocities
-    vx = ux_an(x, y, t=0)
-    vy = uy_an(x, y, t=0)
+    vx = ux_an(x, y, t=dt/2)
+    vy = uy_an(x, y, t=dt/2)
 
     # Add thermal velocity
     vx += vtx*numpy.random.normal(size=np).astype(Float)
@@ -90,7 +97,8 @@ def test_ionacoustic(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm, nlbx=1, nubx=2, nlby=1, nuby=1)
+    manifold = Manifold(nx, ny, comm, nlbx=1, nubx=2, nlby=1, nuby=1,
+                        Lx=Lx, Ly=Ly)
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)
@@ -152,11 +160,11 @@ def test_ionacoustic(plot=False):
             plt.figure(1)
             plt.clf()
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
-            vmin, vmax = npc*charge*(1 - A), npc*charge*(1 + A)
-            im1 = ax1.imshow(global_rho, vmin=vmin, vmax=vmax)
-            im2 = ax2.imshow(global_rho_an, vmin=vmin, vmax=vmax)
-            im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
-                           xg[0, :], global_rho_an[0, :], 'k--')
+            vmin, vmax = charge*(1 - A), charge*(1 + A)
+            im1 = ax1.imshow(global_rho/npc, vmin=vmin, vmax=vmax)
+            im2 = ax2.imshow(global_rho_an/npc, vmin=vmin, vmax=vmax)
+            im3 = ax3.plot(xg[0, :], global_rho[0, :]/npc, 'b',
+                           xg[0, :], global_rho_an[0, :]/npc, 'k--')
             ax1.set_title(r'$\rho$')
             ax3.set_ylim(vmin, vmax)
             ax3.set_xlim(0, x[-1])
@@ -197,10 +205,10 @@ def test_ionacoustic(plot=False):
                 global_rho = concatenate(local_rho)
                 global_rho_an = concatenate(local_rho_an)
                 if comm.rank == 0:
-                    im1.set_data(global_rho)
-                    im2.set_data(global_rho_an)
-                    im3[0].set_ydata(global_rho[0, :])
-                    im3[1].set_ydata(global_rho_an[0, :])
+                    im1.set_data(global_rho/npc)
+                    im2.set_data(global_rho_an/npc)
+                    im3[0].set_ydata(global_rho[0, :]/npc)
+                    im3[1].set_ydata(global_rho_an[0, :]/npc)
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
