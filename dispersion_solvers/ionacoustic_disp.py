@@ -12,9 +12,9 @@ class IonacousticDispersion:
         self.Te = Te
         # Alpha parameter
         self.alpha = sqrt(Ti/Te)
-        # Order of interpolation
+        # Order of interpolation: p=1 (NGP), p=2 (CIC), p=3 (TSC)
         self.p = p
-        # Energy () or momentum conserving scheme
+        # Energy (b=1) or momentum conserving (b=0) scheme
         self.b = b
         # Tolerance for solutions
         self.tol = tol
