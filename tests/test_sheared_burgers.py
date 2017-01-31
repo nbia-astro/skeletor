@@ -14,7 +14,7 @@ from mpi4py.MPI import COMM_WORLD as comm
 def test_sheared_burgers(plot=False):
 
     # Time step
-    dt = 0.5e-3
+    dt = 0.5e-2
 
     # Initial time of particle positions
     t = -numpy.pi/3

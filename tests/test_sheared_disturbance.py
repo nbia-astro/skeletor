@@ -12,7 +12,7 @@ def test_sheared_disturbance(plot=False):
     quiet = True
 
     # Time step
-    dt = 0.5e-3
+    dt = 0.5e-2
 
     # Initial time of particle positions
     t = -numpy.pi/2
