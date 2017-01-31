@@ -1,7 +1,7 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
 from skeletor import Ohm, uniform_density, velocity_perturbation, Experiment
 from skeletor import IO
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.mpifft4py import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm

@@ -205,7 +205,7 @@ def test_sheared_burgers(plot=False):
 
     # Set the electric field to zero
     E = ShearField(manifold, comm, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
 
     def concatenate(arr):
         """Concatenate local arrays to obtain global arrays

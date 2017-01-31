@@ -1,5 +1,5 @@
 from skeletor import Float, Float2, Field, Ohm
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.mpifft4py import Manifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
 
@@ -44,7 +44,7 @@ def test_ohm(plot=False):
 
     # Initialize electric field
     E = Field(manifold, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
 
     # Solve Ohm's law
     ohm(rho, E)

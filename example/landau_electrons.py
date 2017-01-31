@@ -133,7 +133,7 @@ def landau_electrons(plot=False, fitplot=False):
 
     # Set the electric field to zero
     E = Field(manifold, comm, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
 
     # Initialize sources
     sources = Sources(manifold)
@@ -146,7 +146,7 @@ def landau_electrons(plot=False, fitplot=False):
     # Deposit sources
     sources.deposit(electrons)
     assert numpy.isclose(sources.rho.sum(), electrons.np*charge)
-    sources.rho.add_guards_ppic2()
+    sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
@@ -156,7 +156,7 @@ def landau_electrons(plot=False, fitplot=False):
     # Calculate electric field (Solve Gauss' law)
     poisson(sources.rho, E)
     # Set boundary condition
-    E.copy_guards_ppic2()
+    E.copy_guards()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -208,7 +208,7 @@ def landau_electrons(plot=False, fitplot=False):
         sources.deposit_ppic2(electrons)
 
         # Boundary calls
-        sources.rho.add_guards_ppic2()
+        sources.rho.add_guards()
 
         # Add ion charge density
         sources.rho += n0*npc
@@ -216,7 +216,7 @@ def landau_electrons(plot=False, fitplot=False):
         # Calculate forces (Solve Gauss' law)
         poisson(sources.rho, E)
         # Set boundary condition
-        E.copy_guards_ppic2()
+        E.copy_guards()
 
         # Compute square of Fourier amplitude by projecting the local density
         # onto the local Fourier basis

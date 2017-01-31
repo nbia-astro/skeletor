@@ -119,7 +119,7 @@ assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
 # Electric field in y-direction
 E_star = Field(grid, comm, dtype=Float2)
-E_star.fill((0.0, 0.0))
+E_star.fill((0.0, 0.0, 0.0))
 
 for i in range(nx+2):
     E_star['y'][:, i] = -2*S*(grid.yg-ny/2)*mass/charge*Omega

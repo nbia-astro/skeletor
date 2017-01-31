@@ -1,8 +1,6 @@
 from skeletor import Float, Float2, Field, Poisson
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.mpifft4py import Manifold
 from mpi4py.MPI import COMM_WORLD as comm
-from mpiFFT4py.line import R2C
-
 import numpy
 
 
@@ -24,7 +22,7 @@ def test_poisson(plot=False):
     np = nx*ny*npc
 
     #############################################
-    # Solve Gauss' law with PPIC's parallel FFT #
+    # Solve Gauss' law with mpifft4py's parallel FFT #
     #############################################
 
     # Create numerical grid
@@ -34,38 +32,20 @@ def test_poisson(plot=False):
     poisson = Poisson(manifold, np)
 
     # Coordinate arrays
-    x = numpy.arange(manifold.nx, dtype=Float)
-    y = manifold.noff + numpy.arange(manifold.nyp, dtype=Float)
-    xx, yy = numpy.meshgrid(x, y)
+    xx, yy = numpy.meshgrid(manifold.x, manifold.y)
 
     # Initialize density field
     qe = Field(manifold, dtype=Float)
     qe.fill(0.0)
     ikx, iky = 1, 2
-    qe[:manifold.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
+    qe.active = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
 
     # Initialize force field
     fxye = Field(manifold, dtype=Float2)
-    fxye.fill((0.0, 0.0))
+    fxye.fill((0.0, 0.0, 0.0))
 
     # Solve Gauss' law
     poisson(qe, fxye)
-
-    #######################################################
-    # Check that custom cppois22() yields the same result #
-    #######################################################
-
-    # Initialize force field
-    fxye_custom = Field(manifold, dtype=Float2)
-    fxye_custom.fill((0.0, 0.0))
-
-    # Solve Gauss' law
-    poisson(qe, fxye_custom, custom_cppois22=True)
-
-    # Result may differ up to round-off error
-    tol = numpy.finfo(qe.dtype).eps
-    for c in ("x", "y"):
-        assert numpy.allclose(fxye[c], fxye_custom[c], atol=tol, rtol=0.0)
 
     ##############################################
     # Solve Gauss' law with Numpy's built-in FFT #
@@ -104,63 +84,13 @@ def test_poisson(plot=False):
     fx = affp*numpy.fft.irfft2(-1j*kx*k21_eff*qt)
     fy = affp*numpy.fft.irfft2(-1j*ky*k21_eff*qt)
 
-    ##############################################
-    # Solve Gauss' law with mpiFFT4py #
-    ##############################################
+    ##########################################################################
+    ###### Compare the two solutions
+    ##########################################################################
 
-    # Length vector
-    L = numpy.array([ny, nx], dtype=float)
-    # Grid size vector
-    N = numpy.array([ny, nx], dtype=int)
-
-    # Create FFT object
-    FFT = R2C(N, L, comm, "single")
-
-    # Pre-allocate array for Fourier transform and force
-    qe_hat = numpy.zeros(FFT.complex_shape(), dtype=FFT.complex)
-
-    fx_mpi = numpy.zeros_like(qe.trim())
-    fy_mpi = numpy.zeros_like(qe.trim())
-
-    # Scaled local wavevector
-    k = FFT.get_scaled_local_wavenumbermesh()
-
-    # Define kx and ky (notice that they are swapped due to the grid ordering)
-    kx = k[1]
-    ky = k[0]
-
-    # Local wavenumber squared
-    k2 = numpy.sum(k*k, 0, dtype=float)
-    # Inverse of the wavenumber squared
-    k21 = 1 / numpy.where(k2 == 0, 1, k2).astype(float)
-
-    # Initialize force field
-    fxye = Field(manifold, dtype=Float2)
-    fxye.fill((0.0, 0.0))
-
-    # Normalization constant
-    affp = manifold.nx*manifold.ny/np
-
-    # Effective inverse wave number for finite size particles
-    k21_eff = k21*numpy.exp(-((kx*ax)**2 + (ky*ay)**2))
-
-    # Transform charge density to Fourier space
-    qe_hat = FFT.fft2(qe.trim(), qe_hat)
-
-    # Solve Gauss' law in Fourier space and transform back to real space
-    fx_mpi = affp*FFT.ifft2(-1j*kx*k21_eff*qe_hat, fx_mpi)
-    fy_mpi = affp*FFT.ifft2(-1j*ky*k21_eff*qe_hat, fy_mpi)
-
-    # Find global solution
-    global_fx_mpi = concatenate(fx_mpi)
-    global_fy_mpi = concatenate(fy_mpi)
-
-    # Make sure the three solutions are close to each other
+    # Make sure the two solutions are close to each other
     assert numpy.allclose(fx, global_fxye["x"])
     assert numpy.allclose(fy, global_fxye["y"])
-
-    assert numpy.allclose(global_fx_mpi, global_fxye["x"])
-    assert numpy.allclose(global_fy_mpi, global_fxye["y"])
 
     #############
     # Visualize #

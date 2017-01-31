@@ -217,7 +217,7 @@ ag = manifold.x
 
 # Electric field
 E = ShearField(manifold, dtype=Float2)
-E.fill((0.0, 0.0))
+E.fill((0.0, 0.0, 0.0))
 
 
 def concatenate(arr):

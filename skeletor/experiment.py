@@ -22,7 +22,7 @@ class Experiment:
 
         # Set the electric field to zero
         self.E = Field(manifold, comm, dtype=Float2)
-        self.E.fill((0.0, 0.0))
+        self.E.fill((0.0, 0.0, 0.0))
 
         # Initial time
         self.t = 0.0

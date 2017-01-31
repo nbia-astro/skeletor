@@ -1,5 +1,5 @@
 from skeletor import Float, Float2, Field
-from skeletor.manifolds.ppic2 import Manifold as ppic2
+# from skeletor.manifolds.ppic2 import Manifold as ppic2
 from skeletor.manifolds.mpifft4py import Manifold as mpifft4py
 from skeletor.manifolds.second_order import Manifold as second_order
 from mpi4py.MPI import COMM_WORLD as comm
@@ -52,16 +52,16 @@ def test_manifolds():
     phase = kx*xx + ky*yy
 
     # Error tolerance for single and double precision
-    eps_single = 2e-7
+    # eps_single = 2e-7
     eps_double = 1e-15
 
     # PPIC2 manifold
     # FIXME: How come this is effectively single precision? Didn't we
     # generalize PPIC2's routines?
-    manifold = ppic2(nx, ny, comm)
-    Ex, Ey = gradient(np.sin(phase), manifold)
-    assert rms_diff(Ex, kx*np.cos(phase)) < eps_single
-    assert rms_diff(Ey, ky*np.cos(phase)) < eps_single
+    # manifold = ppic2(nx, ny, comm)
+    # Ex, Ey = gradient(np.sin(phase), manifold)
+    # assert rms_diff(Ex, kx*np.cos(phase)) < eps_single
+    # assert rms_diff(Ey, ky*np.cos(phase)) < eps_single
 
     # mpiFFT4py manifold
     manifold = mpifft4py(nx, ny, comm)

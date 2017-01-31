@@ -48,7 +48,7 @@ def test_shear_gradient_operator(plot=False):
 
         # Initialize electric field
         E = ShearField(manifold, time=t, dtype=Float2)
-        E.fill((0.0, 0.0))
+        E.fill((0.0, 0.0, 0.0))
 
         kx = 2*numpy.pi*ikx/nx
         ky = S*t*kx
@@ -63,7 +63,7 @@ def test_shear_gradient_operator(plot=False):
 
     # Initialize electric field
     E = ShearField(manifold, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
 
     # Time step
     dt = 2e-2/abs(S)

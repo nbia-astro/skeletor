@@ -117,7 +117,7 @@ assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
 # Set the electric field to zero
 E = Field(manifold, dtype=Float2)
-E.fill((0.0, 0.0))
+E.fill((0.0, 0.0, 0.0))
 
 # Initialize sources
 sources = Sources(manifold)

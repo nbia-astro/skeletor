@@ -1,5 +1,5 @@
 from skeletor import Float, Float2, Field, Particles
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.mpifft4py import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -90,8 +90,8 @@ def test_gyromotion(plot=False):
 
     # Set the electric field to zero
     E = Field(manifold, dtype=Float2)
-    E.fill((0.0, 0.0))
-    E.copy_guards_ppic2()
+    E.fill((0.0, 0.0, 0.0))
+    E.copy_guards()
 
     # Make initial figure
     if plot:

@@ -48,7 +48,7 @@ def test_shear_gradient(plot=False):
 
         # Initialize electric field
         E = Field(grid, dtype=Float2)
-        E.fill((0.0, 0.0))
+        E.fill((0.0, 0.0, 0.0))
 
         kx = 2*numpy.pi*ikx/nx
         ky = S*t*kx
@@ -133,7 +133,7 @@ def test_shear_gradient(plot=False):
 
     # Initialize electric field
     E = Field(grid, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
 
     # Rate of shear
     S = 1.0

@@ -120,7 +120,7 @@ def landau_ions(plot=False, fitplot=False):
 
     # Set the electric field to zero
     E = Field(manifold, comm, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
 
     # Initialize sources
     sources = Sources(manifold)
@@ -133,14 +133,14 @@ def landau_ions(plot=False, fitplot=False):
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-    sources.rho.add_guards_ppic2()
+    sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     # Calculate electric field (Solve Ohm's law)
     ohm(sources.rho, E)
     # Set boundary condition
-    E.copy_guards_ppic2()
+    E.copy_guards()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -192,12 +192,12 @@ def landau_ions(plot=False, fitplot=False):
         sources.deposit_ppic2(ions)
 
         # Boundary calls
-        sources.rho.add_guards_ppic2()
+        sources.rho.add_guards()
 
         # Calculate forces (Solve Ohm's law)
         ohm(sources.rho, E)
         # Set boundary condition
-        E.copy_guards_ppic2()
+        E.copy_guards()
 
         # Compute square of Fourier amplitude by projecting the local density
         # onto the local Fourier basis

@@ -210,7 +210,7 @@ def test_sheared_disturbance(plot=False):
 
     # Electric field
     E = ShearField(manifold, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
 
     def concatenate(arr):
         """Concatenate local arrays to obtain global arrays

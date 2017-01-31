@@ -1,5 +1,5 @@
 from skeletor import Float, Particles, Sources, cppinit
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.mpifft4py import Manifold
 from mpi4py.MPI import COMM_WORLD as comm, SUM
 import numpy
 

@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float, Float2, Field, Particles, Sources
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.mpifft4py import Manifold
 from skeletor import Poisson
 import numpy
 from mpi4py import MPI
@@ -100,7 +100,7 @@ def test_twostream(plot=False, fitplot=False):
 
     # Set the electric field to zero
     E = Field(manifold, comm, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
 
     # Initialize sources
     sources = Sources(manifold)
@@ -111,14 +111,14 @@ def test_twostream(plot=False, fitplot=False):
     # Calculate initial density and force
 
     # Deposit sources
-    sources.deposit_ppic2(electrons)
-    sources.rho.add_guards_ppic2()
+    sources.deposit(electrons)
+    sources.rho.add_guards()
     sources.rho += n0*npc
 
     # Solve Gauss' law
     poisson(sources.rho, E)
     # Set boundary condition
-    E.copy_guards_ppic2()
+    E.copy_guards()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -177,17 +177,17 @@ def test_twostream(plot=False, fitplot=False):
         t += dt
 
         # Deposit sources
-        sources.deposit_ppic2(electrons)
+        sources.deposit(electrons)
 
         # Boundary calls
-        sources.rho.add_guards_ppic2()
+        sources.rho.add_guards()
         sources.rho += n0*npc
 
         # Solve Gauss' law
         poisson(sources.rho, E)
 
         # Set boundary condition
-        E.copy_guards_ppic2()
+        E.copy_guards()
 
         # sum(|E|) on each processor
         E_pot_id = (numpy.sqrt(E['x']**2 + E['y']**2)).sum()

@@ -1,5 +1,5 @@
 from skeletor import Float, Grid, Particles, Sources
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.mpifft4py import Manifold
 
 from mpi4py.MPI import COMM_WORLD as comm, SUM
 import numpy
@@ -61,14 +61,6 @@ def test_deposit():
     assert numpy.isclose(sources.rho.sum(), charge*particles.np)
 
 
-def test_deposit_ppic2():
-    """
-    Make sure that PPIC2's deposit routine gives the same charge density.
-    """
-    sources_ppic2.deposit_ppic2(particles)
-    assert numpy.allclose(sources.rho, sources_ppic2.rho)
-
-
 def test_add_guards():
     """
     After the charge deposited in the guard cells has been added to the
@@ -79,11 +71,3 @@ def test_add_guards():
     sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=SUM), np*charge)
-
-
-def test_add_guards_ppic2():
-    """
-    Make sure that PPIC2's add_guards routine gives the same charge density.
-    """
-    sources_ppic2.rho.add_guards_ppic2()
-    assert numpy.allclose(sources.rho.trim(), sources_ppic2.rho.trim())

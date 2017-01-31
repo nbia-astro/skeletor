@@ -1,7 +1,6 @@
 from skeletor import Float, Float2, Field
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.mpifft4py import Manifold
 from mpi4py.MPI import COMM_WORLD as comm
-from mpiFFT4py.line import R2C
 from mpi4py import MPI
 
 import numpy
@@ -15,30 +14,28 @@ def test_gradient(plot=False):
     ny = 1 << indy
 
     # Smoothed particle size in x/y direction
-    ax = 0.912871
-    ay = 0.912871
+    ax = 0.0#0.912871
+    ay = 0.0#0.912871
 
     #############################################
-    # Compute gradient with PPIC's parallel FFT #
+    # Compute gradient with mpifft4py's parallel FFT #
     #############################################
 
     # Create numerical grid
     manifold = Manifold(nx, ny, comm, ax=ax, ay=ay)
 
     # Coordinate arrays
-    x = numpy.arange(manifold.nx, dtype=Float)
-    y = manifold.noff + numpy.arange(manifold.nyp, dtype=Float)
-    xx, yy = numpy.meshgrid(x, y)
+    xx, yy = numpy.meshgrid(manifold.x, manifold.y)
 
     # Initialize density field
     qe = Field(manifold, dtype=Float)
     qe.fill(0.0)
     ikx, iky = 1, 2
-    qe[:manifold.nyp, :nx] = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
+    qe.active = numpy.sin(2*numpy.pi*(ikx*xx/nx + iky*yy/ny))
 
     # Initialize force field
     fxye = Field(manifold, dtype=Float2)
-    fxye.fill((0.0, 0.0))
+    fxye.fill((0.0, 0.0, 0.0))
 
     # Compute gradient
     manifold.gradient(qe, fxye)
@@ -77,57 +74,6 @@ def test_gradient(plot=False):
     # Make sure Numpy gives the same result
     assert numpy.allclose(fx, global_fxye["x"], atol=1e-6)
     assert numpy.allclose(fy, global_fxye["y"], atol=1e-6)
-
-    ###################################
-    # Compute gradient with mpiFFT4py #
-    ###################################
-
-    # Length vector
-    L = numpy.array([ny, nx], dtype=float)
-    # Grid size vector
-    N = numpy.array([ny, nx], dtype=int)
-
-    # Create FFT object
-    FFT = R2C(N, L, MPI.COMM_WORLD, "double")
-
-    # Pre-allocate array for Fourier transform and force
-    qe_hat = numpy.zeros(FFT.complex_shape(), dtype=FFT.complex)
-
-    fx_mpi = numpy.zeros_like(qe.trim())
-    fy_mpi = numpy.zeros_like(qe.trim())
-
-    # Scaled local wavevector
-    k = FFT.get_scaled_local_wavenumbermesh()
-
-    # Define kx and ky (notice that they are swapped due to the grid ordering)
-    kx = k[1]
-    ky = k[0]
-
-    # Initialize force field
-    fxye = Field(manifold, dtype=Float2)
-    fxye.fill((0.0, 0.0))
-
-    # Finite size particle shape factor
-    s = numpy.exp(-((kx*ax)**2 + (ky*ay)**2)/2)
-
-    # Effective wave numbers
-    kx_eff = kx*s
-    ky_eff = ky*s
-
-    # Transform charge density to Fourier space
-    qe_hat = FFT.fft2(qe.trim(), qe_hat)
-
-    # Solve Gauss' law in Fourier space and transform back to real space
-    fx_mpi = FFT.ifft2(1j*kx_eff*qe_hat, fx_mpi)
-    fy_mpi = FFT.ifft2(1j*ky_eff*qe_hat, fy_mpi)
-
-    # Find global solution
-    global_fx_mpi = concatenate(fx_mpi)
-    global_fy_mpi = concatenate(fy_mpi)
-
-    # Make sure mpiFFT4py gives the same result
-    assert numpy.allclose(global_fx_mpi, global_fxye["x"], atol=1e-6)
-    assert numpy.allclose(global_fy_mpi, global_fxye["y"], atol=1e-6)
 
     #############
     # Visualize #

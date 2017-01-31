@@ -177,13 +177,13 @@ sources = Sources(grid, comm, dtype=Float)
 # Deposit sources
 sources.deposit(ions)
 assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-sources.rho.add_guards_ppic2()
+sources.rho.add_guards()
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
 # Electric field in y-direction
 E_star = Field(grid, comm, dtype=Float2)
-E_star.fill((0.0, 0.0))
+E_star.fill((0.0, 0.0, 0.0))
 
 for i in range(nx+2):
     E_star['y'][:, i] = -2*S*(grid.yg-ny/2)*mass/charge*Omega
@@ -230,7 +230,7 @@ for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-    sources.rho.add_guards_ppic2()
+    sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
