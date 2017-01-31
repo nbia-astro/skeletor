@@ -11,7 +11,7 @@ def deposit(
     cdef real_t x, y
     cdef real_t dx, dy
     cdef real_t tx, ty
-    cdef real_t vx, vy
+    cdef real_t vx, vy, vz
     cdef int nyp = density.shape[0]
     cdef int nxp = density.shape[1]
     cdef int size = nxp*nyp
@@ -21,11 +21,13 @@ def deposit(
         den_local = <real_t *>malloc(size*sizeof(real_t))
         Jx_local = <real_t *>malloc(size*sizeof(real_t))
         Jy_local = <real_t *>malloc(size*sizeof(real_t))
+        Jz_local = <real_t *>malloc(size*sizeof(real_t))
 
         for k in range(size):
                 den_local[k] = 0.0
                 Jx_local[k] = 0.0
                 Jy_local[k] = 0.0
+                Jz_local[k] = 0.0
 
         for ip in prange(Np, schedule='static'):
 
@@ -35,6 +37,7 @@ def deposit(
             # Calculate the fluctuating x-velocity
             vx = particles[ip].vx + S*y
             vy = particles[ip].vy
+            vz = particles[ip].vz
 
             ix = <int> x
             iy = <int> y
@@ -68,6 +71,11 @@ def deposit(
             Jy_local[(iy+1)*nxp + ix] += dy*tx*vy
             Jy_local[(iy+1)*nxp + ix+1] += dy*dx*vy
 
+            Jz_local[iy*nxp + ix] += ty*tx*vz
+            Jz_local[iy*nxp + ix+1] += ty*dx*vz
+            Jz_local[(iy+1)*nxp + ix] += dy*tx*vz
+            Jz_local[(iy+1)*nxp + ix+1] += dy*dx*vz
+
         # Add up contributions from each processor
         with gil:
             for ky in range(nyp):
@@ -75,7 +83,9 @@ def deposit(
                     density[ky, kx] += den_local[ky*nxp + kx]*charge
                     J[ky, kx].x += Jx_local[ky*nxp + kx]
                     J[ky, kx].y += Jy_local[ky*nxp + kx]
+                    J[ky, kx].z += Jz_local[ky*nxp + kx]
             # Free memory
             free(den_local)
             free(Jx_local)
             free(Jy_local)
+            free(Jz_local)
