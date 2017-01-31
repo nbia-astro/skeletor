@@ -135,12 +135,12 @@ class Particles(numpy.ndarray):
 
         self.periodic_y()
 
-    def push(self, fxy, dt):
+    def push(self, E, B, dt):
         """
         A standard Boris push which updates positions and velocities.
 
         fxy is the electric field and dt is the time step.
-        If shear is turned on, fxy needs to be E_star
+        If shear is turned on, E needs to be E_star and B needs to be B_star
         """
         from .cython.particle_push import boris_push as push
 
@@ -149,11 +149,7 @@ class Particles(numpy.ndarray):
 
         qtmh = self.charge/self.mass*dt/2
 
-        bz = self.bz
-        if self.manifold.rotation:
-            bz += 2.0*self.mass/self.charge*self.manifold.Omega
-
-        push(self[:self.np], fxy, bz, qtmh, dt, self.manifold)
+        push(self[:self.np], E, B, qtmh, dt, self.manifold)
 
         # Shearing periodicity
         if self.manifold.shear:
