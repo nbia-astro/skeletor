@@ -1,7 +1,7 @@
 SHELL=bash
-
+LDFLAGS="-L/usr/local/opt/llvm/lib"
 python:
-	CC=mpicc python setup.py build_ext --inplace
+	CC=mpicc LDFLAGS=$(LDFLAGS) python setup.py build_ext --inplace
 
 clean:
 	CC=mpicc python setup.py clean
