@@ -15,13 +15,13 @@ plot = True
 dt = 0.5e-3
 
 # Initial time of particle positions
-t = dt/2
+t = 0
 
 # Simulation time
-tend = 2*numpy.pi
+tend = numpy.pi/2
 
 # Number of time steps
-nt = int(tend/dt)
+nt = int((tend-t)/dt)
 
 # Particle charge and mass
 charge = 1
@@ -37,17 +37,16 @@ S = -3/2
 kappa = numpy.sqrt(2*Omega*(2*Omega+S))
 
 # Amplitude of perturbation
-ampl = 0.1
+ampl = 2.
 
 # Number of grid points in x- and y-direction
-nx, ny = 32, 64
+nx, ny = 64, 64
 
 # Average number of particles per cell
-npc = 64
+npc = 16
 
 # Wave numbers
 kx = 2*numpy.pi/nx
-ky0 = 0
 
 # Total number of particles in simulation
 np = npc*nx*ny
@@ -57,26 +56,114 @@ if quiet:
     sqrt_npc = int(numpy.sqrt(npc))
     assert sqrt_npc**2 == npc
     dx = dy = 1/sqrt_npc
-    x, y = numpy.meshgrid(
+    a, b = numpy.meshgrid(
             numpy.arange(dx/2, nx+dx/2, dx),
             numpy.arange(dy/2, ny+dy/2, dy))
-    x = x.flatten()
-    y = y.flatten()
+    a = a.flatten()
+    b = b.flatten()
 else:
-    x = nx*numpy.random.uniform(size=np).astype(Float)
-    y = ny*numpy.random.uniform(size=np).astype(Float)
+    a = nx*numpy.random.uniform(size=np).astype(Float)
+    b = ny*numpy.random.uniform(size=np).astype(Float)
 
-# Particle velocity at t = 0
-vx = -S*y
-vy = numpy.zeros_like(x)
 
-# Add perturbation
-vx += ampl*numpy.cos(kx*x + ky0*y)
-vy += 2*Omega/kappa*ampl*numpy.sin(kx*x + ky0*y)
+def x_an(ap, bp, t):
+    phi = kx*ap
+    x = 2*Omega/kappa*ampl*(numpy.sin(kappa*t + phi) - numpy.sin(phi)) + ap \
+        - S*t*(bp - ampl*numpy.cos(phi))
+    return x
 
-# Drift forward by dt/2
-x += vx*dt/2
-y += vy*dt/2
+
+def y_an(ap, bp, t):
+    phi = kx*ap
+    y = ampl*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) + bp
+    return y
+
+
+def vx_an(ap, bp, t):
+    phi = kx*ap
+    vx = 2*Omega*ampl*numpy.cos(kappa*t + phi) - S*(bp - ampl*numpy.cos(phi))
+    return vx
+
+
+def vy_an(ap, bp, t):
+    phi = kx*ap
+    vy = -ampl*kappa*numpy.sin(kappa*t + phi)
+    return vy
+
+
+def euler(ap, bp, t):
+    return x_an(ap, bp, t) + S*t*y_an(ap, bp, t)
+
+
+def euler_prime(a, t):
+    phi = kx*a
+    dxda = 2*Omega/kappa*ampl*kx*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) \
+        + 1 - S*t*ampl*kx*numpy.sin(phi)
+    dyda = -ampl*kx*(numpy.sin(kappa*t + phi) - numpy.sin(phi))
+
+    return dxda + S*t*dyda
+
+
+def mean(f, axis=None):
+    """Compute mean of an array across processors."""
+    result = numpy.mean(f, axis=axis)
+    if axis is None or axis == 0:
+        # If the mean is to be taken over *all* axes or just the y-axis,
+        # then we need to communicate
+        result = comm.allreduce(result, op=MPI.SUM)/comm.size
+    return result
+
+
+def rms(f):
+    """Compute root-mean-square of an array across processors."""
+    return numpy.sqrt(mean(f**2))
+
+
+def lagrange(xp, t, tol=1.48e-8, maxiter=50):
+    """
+    Given the Eulerian coordinate x' = x + Sty and time t, this function
+    solves the definition x' = euler(a, t) for the Lagrangian coordinate a
+    via the Newton-Raphson method.
+    """
+    # Use Eulerian coordinate as initial guess
+    a = xp.copy()
+    for it in range(maxiter):
+        f = euler(a, 0, t) - xp
+        df = euler_prime(a, t)
+        b = a - f/df
+        # This is not the safest criterion, but seems good enough
+        err = rms(a - b)
+        if err < tol:
+            return b
+        a = b.copy()
+    msg = "maxiter={} exceeded without reaching tol={}. Solution w. rms={}"
+    raise RuntimeError(msg.format(maxiter, tol, err))
+
+
+def rho_an(a, t):
+    return 1/euler_prime(a, t)
+
+
+def find_a(x, y, t):
+    """
+    Calculate the Lagrangian coordinate, a, as a function of Eulerian grid
+    position, (x, y), and time, t. Accepts 2D arrays for x and y.
+    """
+    xp = x + S*y*t
+    a = lagrange(xp, t)
+    return a
+
+
+# Phase
+phi = kx*a
+
+# Particle velocities at time = t-dt/2
+vx = vx_an(a, b, t-dt/2)
+vy = vy_an(a, b, t-dt/2)
+
+# Particle positions at time=t
+x = x_an(a, b, t)
+y = y_an(a, b, t)
 
 # Start parallel processing
 idproc, nvp = cppinit(comm)
@@ -93,7 +180,7 @@ xx, yy = numpy.meshgrid(manifold.x, manifold.y)
 npmax = int(1.25*np/nvp)
 
 # Create particle array
-ions = Particles(manifold, npmax, time=t, charge=charge, mass=mass)
+ions = Particles(manifold, npmax, time=dt/2, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy)
@@ -110,6 +197,7 @@ assert comm.allreduce(ions.np, op=MPI.SUM) == np
 sources = Sources(manifold)
 sources.rho = ShearField(manifold, time=t, dtype=Float)
 rho_periodic = ShearField(manifold, time=0, dtype=Float)
+J_periodic = ShearField(manifold, time=0, dtype=Float2)
 
 # Deposit sources
 sources.deposit(ions)
@@ -117,40 +205,15 @@ assert numpy.isclose(sources.rho.sum(), ions.np*charge)
 sources.rho.add_guards()
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+sources.rho.copy_guards()
 
+# Copy density into a shear field
+rho_periodic.active = sources.rho.trim()
 
-def theta(a, t, phi=0):
-    return kx*a - kappa*t + phi
+sources.J.add_guards_vector()
+sources.J.copy_guards()
 
-
-def ux(a, t):
-    return ampl*numpy.exp(1j*theta(a, t))
-
-
-def uy(a, t):
-    return 2*Omega/(1j*kappa)*ux(a, t)
-
-
-def uxp(a, t):
-    return ux(a, t) + S*t*uy(a, t)
-
-
-def xp(a, t):
-    A = a - 1/(1j*kappa)*(uxp(a, t) - uxp(a, 0))
-    B = S/kappa**2*(uy(a, t) - uy(a, 0))
-    return A + B
-
-
-def alpha(a, t):
-    y = 1 + 1j*kx*(xp(a, t) - a)
-    return y
-
-
-def rho(a, t):
-    return numpy.real(1/alpha(a, t))
-
-
-a = manifold.x
+ag = manifold.x
 
 # Electric field
 E = ShearField(manifold, dtype=Float2)
@@ -166,23 +229,46 @@ def concatenate(arr):
 # Make initial figure
 if plot:
     import matplotlib.pyplot as plt
+    from matplotlib.cbook import mplDeprecation
+    import warnings
 
-    global_rho = concatenate(sources.rho)
+    global_rho = concatenate(sources.rho.trim())
+    global_rho_periodic = concatenate(rho_periodic.trim())
+    global_J = concatenate(sources.J.trim())
+    global_J_periodic = concatenate(J_periodic.trim())
 
     if comm.rank == 0:
         plt.rc('image', origin='upper', interpolation='nearest',
                cmap='coolwarm')
         plt.figure(1)
         plt.clf()
-        fig, axes = plt.subplots(num=1, ncols=2)
-        im1 = axes[0].imshow(global_rho)
-        im2 = axes[1].imshow(global_rho)
+        fig, axes = plt.subplots(num=1, ncols=2, nrows=3)
+        im1a = axes[0, 0].imshow(global_rho)
+        im2a = axes[0, 1].imshow(global_rho_periodic)
+        im1b = axes[1, 0].imshow(global_J['x']/global_rho)
+        im2b = axes[1, 1].imshow(global_J_periodic['x']/global_rho_periodic)
+        im1c = axes[2, 0].imshow(global_J['y']/global_rho)
+        im2c = axes[2, 1].imshow(global_J_periodic['y']/global_rho_periodic)
         plt.figure(2)
         plt.clf()
-        fig2, ax1 = plt.subplots(num=2, ncols=1)
-        im4 = ax1.plot(manifold.x, (rho_periodic.trim().mean(axis=0)-npc)/npc,
-                       'b', xp(a, 0), rho(a, 0) - 1, 'r')
-        ax1.set_ylim(-4*ampl, 4*ampl)
+        fig2, (ax1, ax2, ax3) = plt.subplots(num=2, nrows=3)
+        im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+                       'b',
+                       manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+                       'r--')
+        im5 = ax2.plot(manifold.x, (global_J_periodic['x']/global_rho_periodic)
+                       .mean(axis=0), 'b',
+                       manifold.x, (global_J_periodic['x']/global_rho_periodic)
+                       .mean(axis=0), 'r--')
+        im6 = ax3.plot(manifold.x, (global_J_periodic['y']/global_rho_periodic)
+                       .mean(axis=0), 'b',
+                       manifold.x, (global_J_periodic['y']/global_rho_periodic)
+                       .mean(axis=0), 'r--')
+        ax1.set_ylim(0.5, 1.8)
+        ax2.set_ylim(-1*ampl, 1*ampl)
+        ax3.set_ylim(-2*ampl, 2*ampl)
+        for ax in (ax1, ax2, ax3):
+            ax.set_xlim(0, nx)
 
 ##########################################################################
 # Main loop over time                                                    #
@@ -192,12 +278,12 @@ for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
     sources.rho.time = t
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+    sources.J.time = t
     sources.rho.add_guards()
-    assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+    sources.J.add_guards_vector()
 
     sources.rho.copy_guards()
+    sources.J.copy_guards()
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
@@ -206,24 +292,57 @@ for it in range(nt):
     # Update time
     t += dt
 
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
-
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
+    J_periodic.active = sources.J.trim()
 
     # Translate the density to be periodic in y
     rho_periodic.translate(-t)
     rho_periodic.copy_guards()
 
+    J_periodic.translate_vector(-t)
+    J_periodic.copy_guards()
+
     # Make figures
-    if plot:
-        if (it % 60 == 0):
+    if (it % 60 == 0):
+        # Calculate rms of numerical solution wrt to the analytical solution
+        a_2d = find_a(xx, yy, t)
+        err = rms(sources.rho.trim()/npc - rho_an(a_2d, t))
+        # Check if test is passed
+        assert err < 1e-2, err
+        if plot:
+            global_rho = concatenate(sources.rho.trim())
+            global_rho_periodic = concatenate(rho_periodic.trim())
+            global_J = concatenate(sources.J.trim())
+            global_J_periodic = concatenate(J_periodic.trim())
+
             if comm.rank == 0:
-                im1.set_data(sources.rho)
-                im2.set_data(rho_periodic)
-                im1.autoscale()
-                im2.autoscale()
-                im4[0].set_ydata((rho_periodic.trim().
-                                 mean(axis=0)-npc)/npc)
-                im4[1].set_data(xp(a, t), rho(a, t) - 1)
-                plt.pause(1e-7)
+                im1a.set_data(global_rho)
+                im2a.set_data(global_rho_periodic)
+                im1b.set_data(global_J['x']/global_rho)
+                im2b.set_data(global_J_periodic['x']/global_rho_periodic)
+                im1c.set_data(global_J['y']/global_rho)
+                im2c.set_data(global_J_periodic['y']/global_rho_periodic)
+                im1a.autoscale()
+                im2a.autoscale()
+                im1b.autoscale()
+                im2b.autoscale()
+                im1c.autoscale()
+                im2c.autoscale()
+                im4[0].set_ydata(global_rho_periodic.mean(axis=0)/npc)
+                im5[0].set_ydata((global_J_periodic['x']/global_rho_periodic).
+                                 mean(axis=0))
+                im6[0].set_ydata((global_J_periodic['y']/global_rho_periodic).
+                                 mean(axis=0))
+                xp_par = euler(ag, 0, t)
+                xp_par %= nx
+                ind = numpy.argsort(xp_par)
+                im4[1].set_data(xp_par[ind], rho_an(ag, t)[ind])
+                im5[1].set_data(xp_par[ind], vx_an(ag, 0, t)[ind]
+                                + S*y_an(ag, 0, t)[ind])
+                im6[1].set_data(xp_par[ind], vy_an(ag, 0, t)[ind])
+
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                            "ignore", category=mplDeprecation)
+                    plt.pause(1e-7)
