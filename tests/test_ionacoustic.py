@@ -1,7 +1,6 @@
 from skeletor import Float, Float2, Field, Particles, Sources
-from skeletor import Ohm
+from skeletor import Ohm, InitialCondition
 from skeletor.manifolds.ppic2 import Manifold
-from skeletor import uniform_density
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -25,10 +24,11 @@ def test_ionacoustic(plot=False):
     # Wavenumbers
     ikx = 1
     iky = 1
-    # Thermal velocity of electrons in x- and y-direction
-    vtx, vty = 0.0, 0.0
+
     # CFL number
     cfl = 0.5
+
+
     # Number of periods to run for
     nperiods = 1
 
@@ -67,17 +67,6 @@ def test_ionacoustic(plot=False):
         """Analytic y-velocity as function of x, y and t"""
         return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k
 
-    # Uniform distribution of particle positions
-    x, y = uniform_density(nx, ny, npc, quiet=quiet)
-
-    # Perturbation to particle velocities
-    vx = ux_an(x, y, t=0)
-    vy = uy_an(x, y, t=0)
-
-    # Add thermal velocity
-    vx += vtx*numpy.random.normal(size=np).astype(Float)
-    vy += vty*numpy.random.normal(size=np).astype(Float)
-
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     manifold = Manifold(nx, ny, comm, nlbx=1, nubx=2, nlby=1, nuby=1)
@@ -91,8 +80,14 @@ def test_ionacoustic(plot=False):
     # Create particle array
     ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
-    # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy)
+    # Create a uniform density field
+    init = InitialCondition(npc, quiet=True)
+    init(manifold, ions)
+
+    # Perturbation to particle velocities
+    ions['vx'] = ux_an(ions['x'], ions['y'], t=dt/2)
+    ions['vy'] = uy_an(ions['x'], ions['y'], t=dt/2)
+    # Convert to grid units
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
@@ -149,7 +144,7 @@ def test_ionacoustic(plot=False):
                            xg[0, :], global_rho_an[0, :], 'k--')
             ax1.set_title(r'$\rho$')
             ax3.set_ylim(vmin, vmax)
-            ax3.set_xlim(0, x[-1])
+            ax3.set_xlim(0, manifold.Lx)
 
     t = 0
     diff2 = 0
