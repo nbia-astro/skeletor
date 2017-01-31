@@ -1,6 +1,7 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
 from skeletor import Ohm, uniform_density, velocity_perturbation, Experiment
 from skeletor import IO
+from skeletor.manifolds.ppic2 import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -77,10 +78,10 @@ idproc, nvp = cppinit(comm)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-grid = Grid(nx, ny, comm)
+manifold = Manifold(nx, ny, comm, nlbx=1, nubx=2, nlby=1, nuby=1)
 
 # x- and y-grid
-xg, yg = numpy.meshgrid(grid.x, grid.y)
+xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
 # Total number of particles in simulation
 np = npc*nx*ny
@@ -94,16 +95,16 @@ io = IO(data_folder, locals(), __file__, tag)
 io.set_outputrate(100*dt)
 
 # Create particle array
-ions = Particles(npmax, charge, mass)
+ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
 # Assign particles to subdomains
-ions.initialize(x, y, vx, vy, grid)
+ions.initialize(x, y, vx, vy)
 
 # Initialize Ohm's law solver
-ohm = Ohm(grid, npc, temperature=Te, charge=charge)
+ohm = Ohm(manifold, temperature=Te, charge=charge)
 
 # Initialize experiment
-e = Experiment(grid, ions, ohm, io)
+e = Experiment(manifold, ions, ohm, io)
 
 # Deposit charges and calculate initial electric field
 e.prepare()
