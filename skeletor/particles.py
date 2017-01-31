@@ -187,7 +187,7 @@ class Particles(numpy.ndarray):
 
         return ek
 
-    def push(self, fxy, dt):
+    def push(self, E, B, dt, t=0):
         """
         A standard Boris push which updates positions and velocities.
 
@@ -199,14 +199,10 @@ class Particles(numpy.ndarray):
         # Update time
         self.time += dt
 
-        grid = fxy.grid
+        grid = E.grid
         qtmh = self.charge/self.mass*dt/2
 
-        bz = self.bz
-        if self.manifold.rotation:
-            bz += 2.0*self.mass/self.charge*self.manifold.Omega
-
-        push(self[:self.np], fxy, bz, qtmh, dt, grid.noff, grid.lbx, grid.lby)
+        push(self[:self.np], E, B, qtmh, dt, grid.noff, grid.lbx, grid.lby)
 
         # Shearing periodicity
         if self.manifold.shear:
