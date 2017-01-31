@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float, Float2, Field, Particles, Sources
-from skeletor.manifolds.mpifft4py import Manifold
+from skeletor.manifolds.ppic2 import Manifold
 from skeletor import Poisson
 import numpy
 from mpi4py import MPI
@@ -12,7 +12,11 @@ def test_twostream(plot=False, fitplot=False):
     quiet = True
 
     # Number of grid points in x- and y-direction
-    nx, ny = 64, 4
+    nx, ny = 32, 4
+
+    # Grid size in x- and y-direction
+    Lx = 1
+    Ly = Lx*ny/nx
 
     # Average number of particles per cell
     npc = 32
@@ -31,13 +35,13 @@ def test_twostream(plot=False, fitplot=False):
     dt = 0.05
 
     # wavenumber
-    kx = 2*numpy.pi/nx
+    kx = 2*numpy.pi/Lx
 
     # Total number of particles in simulation
     np = npc*nx*ny
 
     # Mean velocity of electrons in x-direction
-    vdx, vdy = 6.0, 0.
+    vdx, vdy = 1/10, 0.
 
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0., 0.
@@ -46,15 +50,16 @@ def test_twostream(plot=False, fitplot=False):
         # Uniform distribution of particle positions (quiet start)
         sqrt_npc = int(numpy.sqrt(npc//2))
         assert (sqrt_npc)**2*2 == npc
-        dx = dy = 1/sqrt_npc
+        dx = Lx/nx/sqrt_npc
+        dy = Ly/ny/sqrt_npc
         x, y = numpy.meshgrid(
-                numpy.arange(0, nx, dx),
-                numpy.arange(0, ny, dy))
+                numpy.arange(0, Lx, dx),
+                numpy.arange(0, Ly, dy))
         x = x.flatten()
         y = y.flatten()
     else:
-        x = nx*numpy.random.uniform(size=np).astype(Float)
-        y = ny*numpy.random.uniform(size=np).astype(Float)
+        x = Lx*numpy.random.uniform(size=np).astype(Float)
+        y = Ly*numpy.random.uniform(size=np).astype(Float)
 
     vx = vdx*numpy.ones_like(x)
     vy = vdy*numpy.ones_like(y)
@@ -78,7 +83,7 @@ def test_twostream(plot=False, fitplot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm)
+    manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
 
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/nvp)
@@ -133,6 +138,8 @@ def test_twostream(plot=False, fitplot=False):
         import warnings
         global_rho = concatenate(sources.rho.trim())
 
+        electrons.to_units()
+
         if comm.rank == 0:
             plt.rc('image', origin='lower', interpolation='nearest',
                    aspect='auto')
@@ -140,16 +147,21 @@ def test_twostream(plot=False, fitplot=False):
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, nrows=3)
             im1 = ax1.imshow(global_rho)
             im2 = ax2.imshow(global_E['x'])
-            im3 = ax3.plot(electrons['x'][:np], electrons['vx'][:np], 'o',
-                           fillstyle='full', ms=1)
+            # im3 = ax3.plot(electrons['x'][:np]*manifold.dx,
+            #                electrons['vx'][:np]*manifold.dx,
+            #                'o', fillstyle='full', ms=1)
+            im3 = ax3.plot(electrons['x'][:np],
+                           electrons['vx'][:np],
+                           'o', fillstyle='full', ms=1)
             ax1.set_title(r'$\rho$')
             ax2.set_title(r'$E_x$')
             ax3.set_ylim(-2*vdx, 2*vdx)
-            ax3.set_xlim(0, nx)
+            ax3.set_xlim(0, Lx)
             for ax in (ax1, ax2, ax3):
                 ax.set_xlabel(r'$x$')
                 ax.set_ylabel(r'$y$')
             ax3.set_ylabel(r'$v_x$')
+        electrons.from_units()
 
     t = 0
     ##########################################################################
@@ -188,6 +200,7 @@ def test_twostream(plot=False, fitplot=False):
             if (it % 10 == 0):
                 global_rho = concatenate(sources.rho.trim())
                 global_E = concatenate(E.trim())
+                electrons.to_units()
                 if comm.rank == 0:
                     im1.set_data(global_rho)
                     im2.set_data(global_E['x'])
@@ -199,6 +212,7 @@ def test_twostream(plot=False, fitplot=False):
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
+                electrons.from_units()
 
     # Test if growth rate is correct
     if comm.rank == 0:
@@ -213,13 +227,13 @@ def test_twostream(plot=False, fitplot=False):
 
         # Fit exponential to the evolution of sqrt(mean(B_x**2))
         # Disregard first half of data
-        first = int(0.34*nt)
-        last = int(0.6*nt)
+        first = int(0.25*nt)
+        last = int(0.40*nt)
         popt, pcov = curve_fit(lin_func, time[first:last],
                                numpy.log(E_pot[first:last]))
 
         # Theoretical gamma (TODO: Solve dispersion relation here)
-        gamma_t = 0.352982
+        gamma_t = 0.3532818590
 
         # Gamma from the fit
         gamma_f = popt[1]
@@ -228,10 +242,10 @@ def test_twostream(plot=False, fitplot=False):
         err = abs((gamma_f-gamma_t))/gamma_t
 
         # Tolerance
-        tol = 4e-3
+        tol = 2e-2
 
         # Did it work?
-        assert (err < tol)
+        assert err < tol, err
 
         if plot or fitplot:
             import matplotlib.pyplot as plt

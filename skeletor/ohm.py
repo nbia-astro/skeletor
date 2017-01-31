@@ -23,5 +23,7 @@ class Ohm:
     def __call__(self, rho, E):
 
         self.gradient(self.log(rho), E)
-        E['x'] *= -self.alpha
-        E['y'] *= -self.alpha
+        E['x'] *= -self.alpha/E.grid.dx
+        E['y'] *= -self.alpha/E.grid.dy
+
+
