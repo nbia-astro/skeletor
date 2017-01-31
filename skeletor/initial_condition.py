@@ -1,3 +1,52 @@
+class InitialCondition():
+
+    def __init__(self, npc, quiet=False, vt=0.0):
+
+        # Quiet start?
+        self.quiet = quiet
+
+        # Particles per cell
+        self.npc = npc
+
+        # Ion thermal velocity
+        self.vt = vt
+
+    def __call__(self, manifold, ions):
+
+        from numpy import sqrt, arange, meshgrid
+        from numpy.random import uniform, normal
+
+        # Total number particles in one MPI domain
+        np = manifold.nx*manifold.nyp*self.npc
+
+        if self.quiet:
+            # Uniform distribution of particle positions (quiet start)
+            sqrt_npc = int(sqrt(self.npc))
+            assert sqrt_npc**2 == self.npc
+            npx = manifold.nx*sqrt_npc
+            npy = manifold.nyp*sqrt_npc
+            x1 = manifold.Lx*(arange(npx) + 0.5)/npx
+            y1 = manifold.edges[0]*manifold.dy + \
+                 manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
+            x, y =  meshgrid(x1, y1)
+            x = x.flatten()
+            y = y.flatten()
+        else:
+            x = manifold.Lx*uniform(size=np)
+            y = manifold.edges[0]*manifold.dy + \
+                manifold.Ly/manifold.comm.size*uniform(size=np)
+
+        # Set initial position
+        ions['x'][:np] = x
+        ions['y'][:np] = y
+
+        # Draw particle velocities from a normal distribution
+        # with zero mean and width 'vt'
+        ions['vx'][:np] = self.vt*normal (size=np)
+        ions['vy'][:np] = self.vt*normal (size=np)
+
+        ions.np = np
+
 def uniform_density(nx, ny, npc, quiet):
     """Return Uniform distribution of particle positions"""
 
