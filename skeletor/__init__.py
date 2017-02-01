@@ -10,5 +10,4 @@ from .faraday import Faraday
 from .sources import Sources
 from .initial_condition import uniform_density, velocity_perturbation
 from .initial_condition import InitialCondition
-from .experiment import Experiment
 from .io import IO

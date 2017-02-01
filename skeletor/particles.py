@@ -67,7 +67,7 @@ class Particles(numpy.ndarray):
         dx = self.manifold.dx
         dy = self.manifold.dy
         # Cells should be cubic
-        dz = dx
+        dz = self.manifold.dz
 
         ind = logical_and(y >= self.manifold.edges[0]*dy,
                           y < self.manifold.edges[1]*dy)
@@ -248,6 +248,7 @@ class Particles(numpy.ndarray):
         self["y"] *= self.manifold.dy
         self["vx"] *= self.manifold.dx
         self["vy"] *= self.manifold.dy
+        self["vz"] *= self.manifold.dz
 
         self.units = True
 
@@ -261,5 +262,6 @@ class Particles(numpy.ndarray):
         self["y"] /= self.manifold.dy
         self["vx"] /= self.manifold.dx
         self["vy"] /= self.manifold.dy
+        self["vz"] /= self.manifold.dz
 
         self.units = False
