@@ -97,12 +97,10 @@ npmax = int(1.5*np/comm.size)
 
 # Create particle array
 ions = Particles(manifold, npmax, charge=charge, mass=mass)
-ions2 = Particles(manifold, npmax, charge=charge, mass=mass)
 
 # Create a uniform density field
 init = InitialCondition(npc, quiet=quiet)
 init(manifold, ions)
-init(manifold, ions2)
 
 # Perturbation to particle velocities
 ions['vx'] += ux_an(ions['x'], ions['y'], t=dt/2)
@@ -123,7 +121,7 @@ B.fill((Bx, By, Bz))
 ohm = Ohm(manifold, temperature=Te, charge=charge, npc=npc)
 
 # Initialize experiment
-e = Experiment(manifold, ions, ions2, ohm, B, io=None)
+e = Experiment(manifold, ions, ohm, B, io=None)
 
 # Deposit charges and calculate initial electric field
 e.prepare()
@@ -150,18 +148,26 @@ if plot:
         plt.clf()
         fig, axes = plt.subplots(num=1, ncols=3, nrows=3)
         vmin, vmax = charge*(1 - A), charge*(1 + A)
-        im1 = axes[0,0].imshow(global_rho, vmin=vmin, vmax=vmax)
+        im1 = axes[0,0].imshow(global_rho/npc, vmin=vmin, vmax=vmax)
         im2 = axes[0,1].plot(xg[0, :], global_B['z'][0, :], 'b',
                              xg[0, :], global_Bz_an[0, :], 'k--')
         im3 = axes[0,2].plot(xg[0, :], global_rho[0, :]/npc, 'b',
                        xg[0, :], global_rho_an[0, :]/npc, 'k--')
         im4 = axes[1,0].imshow(global_B['x'])
         im5 = axes[1,1].imshow(global_B['y'])
-        im6 = axes[1,2].imshow(global_B['z'])
-        im7 = axes[2,0].imshow(e.E['x'])
-        im8 = axes[2,1].imshow(e.E['y'])
+        im6 = axes[1,2].imshow(global_B['z'], vmin=vmin, vmax=vmax)
+        im7 = axes[2,0].imshow(e.E['x'], vmin=-A, vmax=A)
+        im8 = axes[2,1].imshow(e.E['y'], vmin=-A, vmax=A)
         im9 = axes[2,2].imshow(e.E['z'])
-        # ax1.set_title(r'$\rho$')
+        axes[0,0].set_title(r'$\rho$')
+        axes[0,1].set_title(r'$B_z$')
+        axes[0,2].set_title(r'$\rho$')
+        axes[1,0].set_title(r'$B_x$')
+        axes[1,1].set_title(r'$B_y$')
+        axes[1,2].set_title(r'$B_z$')
+        axes[2,0].set_title(r'$E_x$')
+        axes[2,1].set_title(r'$E_y$')
+        axes[2,2].set_title(r'$E_z$')
         axes[0,2].set_ylim(vmin, vmax)
         axes[0,1].set_ylim(vmin, vmax)
         axes[0,2].set_xlim(0, Lx)
@@ -173,8 +179,7 @@ diff2 = 0
 for it in range(nt):
 
     # The update is handled by the experiment class
-    # e.step(dt, update=True)
-    e.step(dt, update=True)
+    e.iterate(dt)
 
     # Difference between numerical and analytic solution
     local_rho = e.sources.rho.trim()
@@ -187,9 +192,9 @@ for it in range(nt):
             global_rho = concatenate(local_rho)
             global_rho_an = concatenate(local_rho_an)
             global_B = concatenate(e.B.trim())
-            global_Bz_an = concatenate(Bz_an(xg, yg, e.t))
+            global_Bz_an = concatenate(Bz_an(xg+manifold.dx/2, yg, e.t))
             if comm.rank == 0:
-                im1.set_data(global_rho)
+                im1.set_data(global_rho/npc)
                 im2[0].set_ydata(global_B['z'][0, :])
                 im2[1].set_ydata(global_Bz_an[0, :])
                 im4.set_data(global_B['x'])
@@ -200,8 +205,6 @@ for it in range(nt):
                 im9.set_data(e.E['z'])
                 im3[0].set_ydata(global_rho[0, :]/npc)
                 im3[1].set_ydata(global_rho_an[0, :]/npc)
-                for im in (im1, im4, im5, im6, im7, im8, im9):
-                    im.autoscale()
                 with warnings.catch_warnings():
                     warnings.filterwarnings(
                             "ignore", category=mplDeprecation)
