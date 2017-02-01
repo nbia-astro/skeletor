@@ -14,8 +14,6 @@ class Sources:
 
         self.rho = Field(manifold, dtype=Float, **kwds)
         self.J = Field(manifold, dtype=Float2, **kwds)
-        self.J.staggering['x'] = True
-        self.J.staggering['y'] = True
 
     def deposit(self, particles, erase=True, set_boundaries=False):
 

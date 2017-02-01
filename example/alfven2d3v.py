@@ -17,7 +17,7 @@ Ly = Lx*ny/nx
 dx = Lx/nx
 dy = Ly/ny
 # Average number of particles per cell
-npc = 256
+npc = 64
 # Particle charge and mass
 charge = 1.0
 mass = 1.0
@@ -67,6 +67,10 @@ nt = int(tend/dt)
 def rho_an(x, y, t):
     """Analytic density as function of x, y and t"""
     return npc*charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+
+def Bz_an(x, y, t):
+    """Analytic density as function of x, y and t"""
+    return Bz*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
 
 def ux_an(x, y, t):
     """Analytic x-velocity as function of x, y and t"""
@@ -161,7 +165,7 @@ sources.rho.copy_guards()
 sources.J.copy_guards()
 
 # Calculate electric field (Solve Ohm's law)
-ohm(sources.rho, E, B, sources.J)
+ohm(sources, B, E)
 
 # Set boundary condition
 E.copy_guards()
@@ -180,6 +184,7 @@ if plot:
     global_rho = concatenate(sources.rho.trim())
     global_rho_an = concatenate(rho_an(xg, yg, 0))
     global_B = concatenate(B.trim())
+    global_Bz_an = concatenate(Bz_an(xg, yg, 0))
 
     if comm.rank == 0:
         plt.rc('image', origin='lower', interpolation='nearest')
@@ -188,7 +193,8 @@ if plot:
         fig, axes = plt.subplots(num=1, ncols=3, nrows=3)
         vmin, vmax = charge*(1 - A), charge*(1 + A)
         im1 = axes[0,0].imshow(global_rho, vmin=vmin, vmax=vmax)
-        im2, = axes[0,1].plot(xg[0, :], global_B['z'][0, :], 'b')
+        im2 = axes[0,1].plot(xg[0, :], global_B['z'][0, :], 'b',
+                             xg[0, :], global_Bz_an[0, :], 'k--')
         im3 = axes[0,2].plot(xg[0, :], global_rho[0, :]/npc, 'b',
                        xg[0, :], global_rho_an[0, :]/npc, 'k--')
         im4 = axes[1,0].imshow(B['x'])
@@ -225,7 +231,7 @@ for it in range(nt):
     sources.J.copy_guards()
 
     # Calculate forces (Solve Ohm's law)
-    ohm(sources.rho, E, B, sources.J)
+    ohm(sources, B, E)
     E.copy_guards()
 
     faraday(E, B, dt)
@@ -238,13 +244,15 @@ for it in range(nt):
 
     # Make figures
     if plot:
-        if (it % 1 == 0):
+        if (it % 10 == 0):
             global_rho = concatenate(local_rho)
             global_rho_an = concatenate(local_rho_an)
             global_B = concatenate(B.trim())
+            global_Bz_an = concatenate(Bz_an(xg, yg, t))
             if comm.rank == 0:
                 im1.set_data(global_rho)
-                im2.set_ydata(global_B['z'][0, :])
+                im2[0].set_ydata(global_B['z'][0, :])
+                im2[1].set_ydata(global_Bz_an[0, :])
                 im4.set_data(B['x'])
                 im5.set_data(B['y'])
                 im6.set_data(B['z'])
