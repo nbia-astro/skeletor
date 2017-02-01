@@ -45,12 +45,46 @@ class Experiment:
         # Initial time
         self.t = 0.0
 
-    def prepare(self):
+    def prepare(self, dt, tol=1.48e-8, maxiter=100):
+
+        from numpy import sqrt
+
         # Deposit sources
         self.sources.deposit(self.ions, set_boundaries=True)
 
         # Calculate electric field (Solve Ohm's law)
         self.ohm(self.sources, self.B, self.E, set_boundaries=True)
+
+        # Drift particle positions by a half time step
+        self.ions['x'] += self.ions['vx']*dt/2
+        self.ions['y'] += self.ions['vy']*dt/2
+
+        # Iterate to find true electric field at time 0
+        for it in range (maxiter):
+
+            # Compute electric field at time 1/2
+            self.step (dt, update=False)
+
+            # Average to get electric field at time 0
+            for dim in ('x', 'y', 'z'):
+                self.E3[dim][...] = 0.5*(self.E[dim] + self.E2[dim])
+
+            # Compute difference to previous iteration
+            diff = 0
+            for dim in ('x', 'y', 'z'):
+                diff += sqrt(((self.E3[dim] - self.E[dim]).trim ()**2).mean())
+            print ("Difference to previous iteration: {}".format (diff))
+            if self.manifold.comm.rank == 0:
+                print ("Difference to previous iteration: {}".format (diff))
+
+            # Update electric field
+            self.E[...] = self.E3
+
+            # Return if difference is sufficiently small
+            if diff < tol: return
+
+        raise RuntimeError ("Exceeded maxiter={} iterations!".format (maxiter))
+
 
     def step(self, dt, update):
 
@@ -76,7 +110,6 @@ class Experiment:
         self.ohm(self.sources2, self.B2, self.E2, set_boundaries=True)
 
         if update:
-            # Not working? It seems they end up with the same address
             self.B[:] = self.B2
             self.E[:] = self.E2
             self.ions[:] = self.ions2

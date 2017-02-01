@@ -103,9 +103,9 @@ init = InitialCondition(npc, quiet=quiet)
 init(manifold, ions)
 
 # Perturbation to particle velocities
-ions['vx'] += ux_an(ions['x'], ions['y'], t=dt/2)
-ions['vy'] += uy_an(ions['x'], ions['y'], t=dt/2)
-ions['vz'] += uz_an(ions['x'], ions['y'], t=dt/2)
+ions['vx'] += ux_an(ions['x'], ions['y'], t=0)
+ions['vy'] += uy_an(ions['x'], ions['y'], t=0)
+ions['vz'] += uz_an(ions['x'], ions['y'], t=0)
 
 ions.from_units()
 
@@ -124,7 +124,7 @@ ohm = Ohm(manifold, temperature=Te, charge=charge, npc=npc)
 e = Experiment(manifold, ions, ohm, B, io=None)
 
 # Deposit charges and calculate initial electric field
-e.prepare()
+e.prepare(dt)
 
 # Concatenate local arrays to obtain global arrays
 # The result is available on all processors.
