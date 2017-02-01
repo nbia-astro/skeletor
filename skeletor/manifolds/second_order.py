@@ -44,7 +44,7 @@ class Manifold(Grid):
 
         return numpy_log(f)
 
-    def ddxn(self, f):
+    def ddxdn(self, f):
         from ..cython.finite_difference import ddxdn
         from numpy import zeros_like
 
@@ -56,7 +56,7 @@ class Manifold(Grid):
 
         return df
 
-    def ddyn(self, f):
+    def ddydn(self, f):
         from ..cython.finite_difference import ddydn
         from numpy import zeros_like
 
@@ -68,12 +68,107 @@ class Manifold(Grid):
 
         return df
 
-    def curl(self, f, curl):
+
+    def ddxup(self, f):
+        from ..cython.finite_difference import ddxup
+        from numpy import zeros_like
+
+        df = zeros_like(f)
+
+        ddxup(f, df, self.lbx, self.ubx, self.lby, self.uby)
+
+        df /= self.dx
+
+        return df
+
+    def ddyup(self, f):
+        from ..cython.finite_difference import ddyup
+        from numpy import zeros_like
+
+        df = zeros_like(f)
+
+        ddyup(f, df, self.lbx, self.ubx, self.lby, self.uby)
+
+        df /= self.dy
+
+        return df
+
+    def curl(self, f, curl, down=True):
         """Calculate the curl of vector f"""
 
-        curl['x'] = self.ddyn(f['z'])
-        curl['y'] = -self.ddxn(f['z'])
-        curl['z'] = self.ddxn(f['y']) - self.ddyn(f['x'])
+        if down:
+            curl['x'] = self.ddydn(f['z'])
+            curl['y'] = -self.ddxdn(f['z'])
+            curl['z'] = self.ddxdn(f['y']) - self.ddydn(f['x'])
+        else:
+            curl['x'] = self.ddyup(f['z'])
+            curl['y'] = -self.ddxup(f['z'])
+            curl['z'] = self.ddxup(f['y']) - self.ddyup(f['x'])
+
+
+    def xup(self, f):
+        from ..cython.finite_difference import xup
+        from numpy import zeros_like
+
+        assert not f.staggering['x']
+
+        df = zeros_like(f)
+
+        xup(f, df, self.lbx, self.ubx, self.lby, self.uby)
+
+        f = df
+        f.staggering['x'] = True
+        f.copy_guards()
+
+        return f
+
+    def xup(self, f):
+        from ..cython.finite_difference import yup
+        from numpy import zeros_like
+
+        assert not f.staggering['y']
+
+        df = zeros_like(f)
+
+        yup(f, df, self.lbx, self.ubx, self.lby, self.uby)
+
+        f = df
+        f.staggering['y'] = True
+        f.copy_guards()
+
+        return f
+
+    def xdn(self, f):
+        from ..cython.finite_difference import xdn
+        from numpy import zeros_like
+
+        assert f.staggering['x']
+
+        df = zeros_like(f)
+
+        xdn(f, df, self.lbx, self.ubx, self.lby, self.uby)
+
+        f = df
+        f.staggering['x'] = False
+        f.copy_guards()
+
+        return f
+
+    def ydn(self, f):
+        from ..cython.finite_difference import ydn
+        from numpy import zeros_like
+
+        assert f.staggering['y']
+
+        df = zeros_like(f)
+
+        ydn(f, df, self.lbx, self.ubx, self.lby, self.uby)
+
+        f = df
+        f.staggering['y'] = False
+        f.copy_guards()
+
+        return f
 
     def grad_inv_del(self, qe, fxye):
 

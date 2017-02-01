@@ -25,6 +25,9 @@ class Field(ndarray):
         # Time of the field
         obj.time = time
 
+        # Staggering of the array
+        obj.staggering = {'x': False, 'y': False, 'z': False}
+
         return obj
 
     def __array_finalize__(self, obj):
@@ -38,6 +41,7 @@ class Field(ndarray):
         self.scr = getattr(obj, "scr", None)
         self.boundaries_set = getattr(obj, "boundaries_set", None)
         self.time = getattr(obj, "time", None)
+        self.staggering = getattr(obj, "staggering", None)
 
     def send_up(self, sendbuf):
         return self.grid.comm.sendrecv(

@@ -1,11 +1,11 @@
 class Experiment:
 
-    def __init__ (self, manifold, ions, ohm, B, io=None):
+    def __init__ (self, manifold, ions, ions2, ohm, B, io=None):
 
         from skeletor import Float2, Field, Sources, Faraday
         from mpi4py.MPI import COMM_WORLD as comm
 
-        # Numerical grid
+        # Numerical grid with differential operators
         self.manifold = manifold
 
         # Ions
@@ -29,59 +29,80 @@ class Experiment:
 
         self.B = B
 
+        # Extra arrays (Get rid of some of them)
+        self.ions2 = ions2
+        self.sources2 = Sources(manifold)
+        self.E2 = Field(manifold, comm, dtype=Float2)
+        self.E3 = Field(manifold, comm, dtype=Float2)
+        self.B2 = Field(manifold, comm, dtype=Float2)
+
+        self.B2[:] = B
+        self.ions2[:] = ions
+
+
         # Initial time
         self.t = 0.0
 
     def prepare(self):
         # Deposit sources
-        self.sources.deposit(self.ions)
-
-        # Add guards
-        self.sources.rho.add_guards()
-        self.sources.rho.copy_guards()
-
-        self.sources.J.add_guards_vector()
-        self.sources.J.copy_guards()
+        self.sources.deposit(self.ions, set_boundaries=True)
 
         # Calculate electric field (Solve Ohm's law)
-        self.ohm(self.sources.rho, self.E, self.B, self.sources.J)
-        # Set boundary condition
-        self.E.copy_guards()
+        self.ohm(self.sources, self.B, self.E, set_boundaries=True)
 
-    def step(self, dt):
-        # Push particles on each processor. This call also sends and
-        # receives particles to and from other processors/subdomains.
-        self.ions.push(self.E, self.B, dt)
+    def step(self, dt, update):
 
-        # Update time
-        self.t += dt
+        # Copy magnetic and electric field
+        self.B2[:] = self.B
+        self.E2[:] = self.E
 
+        # Evolve magnetic field by a half step to n (n+1)
+        self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
+
+        self.ions2.push(self.E2, self.B2, dt)
         # Deposit sources
-        self.sources.deposit(self.ions)
+        self.sources2.deposit(self.ions2, set_boundaries=True)
 
-        # Boundary calls on sources
-        self.sources.rho.add_guards()
-        self.sources.rho.copy_guards()
-        self.sources.J.add_guards_vector()
-        self.sources.J.copy_guards()
+        # Evolve magnetic field by a half step to n+1/2 (n+3/2)
+        self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
 
-        # Ohm's law
-        self.ohm(self.sources.rho, self.E, self.B, self.sources.J)
-        # Set boundary condition on E
-        self.E.copy_guards()
+        # Electric field at n+1/2 (n+3/2)
+        self.ohm(self.sources2, self.B2, self.E2, set_boundaries=True)
 
-        # Faraday's law
-        self.faraday(self.E, self.B, dt)
-        # Set boundary condition on B
-        self.B.copy_guards()
+        if update:
+            # Not working? It seems they end up with the same address
+            self.B[:] = self.B2
+            self.E[:] = self.E2
+            self.ions[:] = self.ions2
+            self.sources.rho[:] = self.sources2.rho
+            self.sources.J[:] = self.sources2.J
+            self.t += dt
 
+    def iterate(self, dt):
+
+        # Predictor step
+        # Get electric field at n+1/2
+        self.step (dt, update=True)
+        self.E3[...] = self.E2
+
+        # Predict electric field at n+1
+        for dim in ('x', 'y', 'z'):
+            self.E[dim][...] = 2.0*self.E3[dim] - self.E[dim]
+
+        # Corrector step
+        # Get electric field at n+3/2
+        self.step (dt, update=False)
+
+        # Predict electric field at n+1
+        for dim in ('x', 'y', 'z'):
+            self.E[dim][...] = 0.5*(self.E3[dim] + self.E2[dim])
 
     def run(self, dt, nt):
 
         if self.io is None:
             for it in range(nt):
                 # Update experiment
-                self.step(dt)
+                self.iterate(dt)
         else:
             # Dump initial data
             self.io.output_fields(self.sources, self.E, self.manifold, self.t)

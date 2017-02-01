@@ -24,29 +24,34 @@ class Ohm:
         # Ratio of temperature to charge
         return self.temperature/self.charge
 
-    def __call__(self, rho, E, B, J):
+    def __call__(self, sources, B, E, set_boundaries=False):
         from numpy import empty_like
 
-        self.gradient(self.log(rho), E)
+        self.gradient(self.log(sources.rho), E)
         E['x'] *= -self.alpha
         E['y'] *= -self.alpha
 
-        Je = empty_like(J)
+        Je = empty_like(sources.J)
 
         # Ampere's law to calculate total current
         self.curl(B, Je)
 
         # Subtract ion current to get electron current
-        Je['x'] -= J['x']/self.npc
-        Je['y'] -= J['y']/self.npc
-        Je['z'] -= J['z']/self.npc
+        Je['x'] -= sources.J['x']/self.npc
+        Je['y'] -= sources.J['y']/self.npc
+        Je['z'] -= sources.J['z']/self.npc
 
         E['x'] += Je['y']*B['z'] - Je['z']*B['y']
         E['y'] += Je['z']*B['x'] - Je['x']*B['z']
         E['z'] += Je['x']*B['y'] - Je['y']*B['x']
 
-        # Convert to dimensionless units (Hardcoded to cubic cells!)
+        # Convert to dimensionless units
         E['x'] /= E.grid.dx
         E['y'] /= E.grid.dy
-        E['z'] /= E.grid.dx
+        E['z'] /= E.grid.dz
+
+        if set_boundaries:
+            E.copy_guards()
+
+
 

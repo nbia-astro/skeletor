@@ -10,7 +10,7 @@ plot = True
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 64, 64
+nx, ny = 32, 32
 # Grid size in x- and y-direction (square cells!)
 Lx = nx
 Ly = Lx*ny/nx
@@ -60,6 +60,10 @@ def rho_an(x, y, t):
     """Analytic density as function of x, y and t"""
     return npc*charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
 
+def Bz_an(x, y, t):
+    """Analytic density as function of x, y and t"""
+    return Bz*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+
 def ux_an(x, y, t):
     """Analytic x-velocity as function of x, y and t"""
     return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*kx/k
@@ -93,10 +97,12 @@ npmax = int(1.5*np/comm.size)
 
 # Create particle array
 ions = Particles(manifold, npmax, charge=charge, mass=mass)
+ions2 = Particles(manifold, npmax, charge=charge, mass=mass)
 
 # Create a uniform density field
 init = InitialCondition(npc, quiet=quiet)
 init(manifold, ions)
+init(manifold, ions2)
 
 # Perturbation to particle velocities
 ions['vx'] += ux_an(ions['x'], ions['y'], t=dt/2)
@@ -113,14 +119,11 @@ assert comm.allreduce(ions.np, op=MPI.SUM) == np
 B = Field(manifold, dtype=Float2)
 B.fill((Bx, By, Bz))
 
-# Initialize sources
-sources = Sources(manifold)
-
 # Initialize Ohm's law solver
 ohm = Ohm(manifold, temperature=Te, charge=charge, npc=npc)
 
 # Initialize experiment
-e = Experiment(manifold, ions, ohm, B, io=None)
+e = Experiment(manifold, ions, ions2, ohm, B, io=None)
 
 # Deposit charges and calculate initial electric field
 e.prepare()
@@ -139,6 +142,7 @@ if plot:
     global_rho = concatenate(e.sources.rho.trim())
     global_rho_an = concatenate(rho_an(xg, yg, 0))
     global_B = concatenate(e.B.trim())
+    global_Bz_an = concatenate(Bz_an(xg, yg, 0))
 
     if comm.rank == 0:
         plt.rc('image', origin='lower', interpolation='nearest')
@@ -147,7 +151,8 @@ if plot:
         fig, axes = plt.subplots(num=1, ncols=3, nrows=3)
         vmin, vmax = charge*(1 - A), charge*(1 + A)
         im1 = axes[0,0].imshow(global_rho, vmin=vmin, vmax=vmax)
-        im2, = axes[0,1].plot(xg[0, :], global_B['z'][0, :], 'b')
+        im2 = axes[0,1].plot(xg[0, :], global_B['z'][0, :], 'b',
+                             xg[0, :], global_Bz_an[0, :], 'k--')
         im3 = axes[0,2].plot(xg[0, :], global_rho[0, :]/npc, 'b',
                        xg[0, :], global_rho_an[0, :]/npc, 'k--')
         im4 = axes[1,0].imshow(global_B['x'])
@@ -168,7 +173,8 @@ diff2 = 0
 for it in range(nt):
 
     # The update is handled by the experiment class
-    e.step(dt)
+    # e.step(dt, update=True)
+    e.step(dt, update=True)
 
     # Difference between numerical and analytic solution
     local_rho = e.sources.rho.trim()
@@ -181,9 +187,11 @@ for it in range(nt):
             global_rho = concatenate(local_rho)
             global_rho_an = concatenate(local_rho_an)
             global_B = concatenate(e.B.trim())
+            global_Bz_an = concatenate(Bz_an(xg, yg, e.t))
             if comm.rank == 0:
                 im1.set_data(global_rho)
-                im2.set_ydata(global_B['z'][0, :])
+                im2[0].set_ydata(global_B['z'][0, :])
+                im2[1].set_ydata(global_Bz_an[0, :])
                 im4.set_data(global_B['x'])
                 im5.set_data(global_B['y'])
                 im6.set_data(global_B['z'])

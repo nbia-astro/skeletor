@@ -14,8 +14,10 @@ class Sources:
 
         self.rho = Field(manifold, dtype=Float, **kwds)
         self.J = Field(manifold, dtype=Float2, **kwds)
+        self.J.staggering['x'] = True
+        self.J.staggering['y'] = True
 
-    def deposit(self, particles, erase=True):
+    def deposit(self, particles, erase=True, set_boundaries=False):
 
         if erase:
             self.rho.fill(0.0)
@@ -32,6 +34,15 @@ class Sources:
 
         self.rho.boundaries_set = False
         self.J.boundaries_set = False
+
+        if set_boundaries:
+            # Add guards
+            self.rho.add_guards()
+            self.J.add_guards_vector()
+            # Copy guards
+            self.rho.copy_guards()
+            self.J.copy_guards()
+
 
     def deposit_ppic2(self, particles, erase=True):
 
