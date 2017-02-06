@@ -9,5 +9,5 @@ from .ohm import Ohm
 from .faraday import Faraday
 from .sources import Sources
 from .initial_condition import uniform_density, velocity_perturbation
-from .initial_condition import InitialCondition
+from .initial_condition import InitialCondition, DensityPertubation
 from .io import IO
