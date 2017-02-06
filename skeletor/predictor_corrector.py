@@ -73,7 +73,6 @@ class Experiment:
             diff = 0
             for dim in ('x', 'y', 'z'):
                 diff += sqrt(((self.E3[dim] - self.E[dim]).trim ()**2).mean())
-            print ("Difference to previous iteration: {}".format (diff))
             if self.manifold.comm.rank == 0:
                 print ("Difference to previous iteration: {}".format (diff))
 
