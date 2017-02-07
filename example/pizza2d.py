@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Particles, Sources
+from skeletor import cppinit, Float, Float2, Particles, Sources
 from skeletor import ShearField
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy
@@ -59,6 +59,18 @@ def y_an(ap, bp, t):
     return y
 
 
+def vx_an(ap, bp, t):
+    phi = kx*ap
+    vx = 2*Omega*ampl*numpy.cos(kappa*t + phi) - S*(bp - ampl*numpy.cos(phi))
+    return vx
+
+
+def vy_an(ap, bp, t):
+    phi = kx*ap
+    vy = -ampl*kappa*numpy.sin(kappa*t + phi)
+    return vy
+
+
 def alpha_particle(ap, t):
     phi = kx*ap
     dxda = 2*Omega/kappa*ampl*kx*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) \
@@ -114,6 +126,7 @@ assert comm.allreduce(ions.np, op=MPI.SUM) == np
 sources = Sources(manifold)
 sources.rho = ShearField(manifold, time=0, dtype=Float)
 rho_periodic = ShearField(manifold, time=0, dtype=Float)
+J_periodic = ShearField(manifold, time=0, dtype=Float2)
 
 # Deposit sources
 sources.deposit(ions)
@@ -134,6 +147,8 @@ def update(t):
 
     ions['x'][:np] = x_an(a, b, t)
     ions['y'][:np] = y_an(a, b, t)
+    ions['vx'][:np] = vx_an(a, b, t)
+    ions['vy'][:np] = vy_an(a, b, t)
     ions.time = t
     ions.shear_periodic_y()
     ions.periodic_x()
@@ -141,57 +156,92 @@ def update(t):
     # Deposit sources
     sources.deposit(ions)
     sources.rho.time = t
+    sources.J.time = t
 
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
     sources.rho.add_guards()
+    sources.J.add_guards_vector()
 
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
     sources.rho.copy_guards()
+    sources.J.copy_guards()
 
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
+    J_periodic.active = sources.J.trim()
 
     # Translate the density to be periodic in y
     rho_periodic.translate(-t)
     rho_periodic.copy_guards()
 
+    J_periodic.translate_vector(-t)
+    J_periodic.copy_guards()
+
     global_rho = concatenate(sources.rho.trim())
     global_rho_periodic = concatenate(rho_periodic.trim())
+    global_J = concatenate(sources.J.trim())
+    global_J_periodic = concatenate(J_periodic.trim())
     if comm.rank == 0:
         im1a.set_data(global_rho)
         im2a.set_data(global_rho_periodic)
+        im1b.set_data(global_J['x']/global_rho)
+        im2b.set_data(global_J_periodic['x']/global_rho_periodic)
+        im1c.set_data(global_J['y']/global_rho)
+        im2c.set_data(global_J_periodic['y']/global_rho_periodic)
         im1a.autoscale()
         im2a.autoscale()
-        im4[1].set_ydata(global_rho_periodic.mean(axis=0)/npc)
-        xp_par = x_an(a, b, t) + S*y_an(a, b, t)*t
+        im1b.autoscale()
+        im2b.autoscale()
+        im1c.autoscale()
+        im2c.autoscale()
+        im4[0].set_ydata(global_rho_periodic.mean(axis=0)/npc)
+        im5[0].set_ydata((global_J_periodic['x']/global_rho_periodic).
+                         mean(axis=0))
+        im6[0].set_ydata((global_J_periodic['y']/global_rho_periodic).
+                         mean(axis=0))
+        xp_par = x_an(manifold.x, 0, t) + S*y_an(manifold.x, 0, t)*t
         xp_par %= nx
-        im4[0].set_data(xp_par, rho_an_particle(a, t))
+        ind = numpy.argsort(xp_par)
+        im4[1].set_data(xp_par[ind], rho_an_particle(manifold.x, t)[ind])
+        im6[1].set_data(xp_par[ind], vy_an(manifold.x, 0, t)[ind])
+        im5[1].set_data(xp_par[ind], vx_an(manifold.x, 0, t)[ind]+S*y_an
+                        (manifold.x, 0, t)[ind])
 
 
 if comm.rank == 0:
     global_rho = concatenate(sources.rho.trim())
     global_rho_periodic = concatenate(rho_periodic.trim())
+    global_J = concatenate(sources.J.trim())
+    global_J_periodic = concatenate(J_periodic.trim())
 
     plt.rc('image', origin='upper', interpolation='nearest',
            cmap='coolwarm')
     plt.figure(1)
     plt.clf()
-    fig, axes = plt.subplots(num=1, nrows=2)
-    im1a = axes[0].imshow(global_rho)
-    im2a = axes[1].imshow(global_rho_periodic)
+    fig, axes = plt.subplots(num=1, ncols=2, nrows=3)
+    im1a = axes[0, 0].imshow(global_rho)
+    im2a = axes[0, 1].imshow(global_rho_periodic)
+    im1b = axes[1, 0].imshow(global_J['x']/global_rho)
+    im2b = axes[1, 1].imshow(global_J_periodic['x']/global_rho_periodic)
+    im1c = axes[2, 0].imshow(global_J['y']/global_rho)
+    im2c = axes[2, 1].imshow(global_J_periodic['y']/global_rho_periodic)
     axtime1 = plt.axes([0.125, 0.1, 0.775, 0.03])
     stime1 = mw.Slider(axtime1, 'Time', -numpy.pi, numpy.pi/2, 0)
     stime1.on_changed(update)
 
     plt.figure(2)
     plt.clf()
-    fig2, ax1 = plt.subplots(num=2)
+    fig2, (ax1, ax2, ax3) = plt.subplots(num=2, nrows=3)
     plt.subplots_adjust(bottom=0.25)
     ax1.set_ylim(0, 2)
+    ax2.set_ylim(-1*ampl, 1*ampl)
+    ax3.set_ylim(-2*ampl, 2*ampl)
+    for ax in (ax1, ax2, ax3):
+        ax.set_xlim(0, nx)
     ax1.set_xlabel(r"$x'$")
     ax1.set_title(r'$\rho/\rho_0$')
     # Create slider widget for changing time
@@ -201,7 +251,17 @@ if comm.rank == 0:
     xp_par = x_an(a, b, 0) + S*y_an(a, b, 0)*0
     xp_par %= nx
     xp_par = numpy.sort(xp_par)
-    im4 = ax1.plot(xp_par, rho_an_particle(xp_par, 0), 'k-',
-                   manifold.x, (global_rho_periodic.mean(axis=0))/npc, 'r-')
+    im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+                   'b',
+                   manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+                   'r--')
+    im5 = ax2.plot(manifold.x, (global_J_periodic['x']/global_rho_periodic)
+                   .mean(axis=0), 'b',
+                   manifold.x, (global_J_periodic['x']/global_rho_periodic)
+                   .mean(axis=0), 'r--')
+    im6 = ax3.plot(manifold.x, (global_J_periodic['y']/global_rho_periodic)
+                   .mean(axis=0), 'b',
+                   manifold.x, (global_J_periodic['y']/global_rho_periodic)
+                   .mean(axis=0), 'r--')
     update(0)
     plt.show()
