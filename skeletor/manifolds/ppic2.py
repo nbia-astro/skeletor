@@ -5,7 +5,7 @@ class Manifold(Grid):
 
     def __init__(
             self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1):
+            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1, Lx=None, Ly=None):
 
         from ..cython.dtypes import Complex, Complex2, Float, Float2, Int
         from ..cython.ppic2_wrapper import cwpfft2rinit, cppois22
@@ -13,7 +13,8 @@ class Manifold(Grid):
         from numpy import zeros
 
         super().__init__(
-                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby)
+                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby,
+                Lx=Lx, Ly=Ly)
 
         self.indx = int(log2(nx))
         self.indy = int(log2(ny))
@@ -94,6 +95,10 @@ class Manifold(Grid):
 
         fxye.boundaries_set = False
 
+        # Divide by dx and dy to account for nx != Lx and ny != Ly
+        fxye['x'] /= fxye.grid.dx
+        fxye['y'] /= fxye.grid.dy
+
         return ttp
 
     def log(self, f):
@@ -144,5 +149,9 @@ class Manifold(Grid):
         fxye.active = self.fxye[:-1, :-2]
 
         fxye.boundaries_set = False
+
+        # Multiply by dx and dy to account for nx != Lx and ny != Ly
+        fxye['x'] *= fxye.grid.dx
+        fxye['y'] *= fxye.grid.dy
 
         return ttp, we

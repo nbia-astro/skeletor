@@ -13,5 +13,5 @@ class Poisson:
     def __call__(self, rho, E, **kwds):
 
         self.grad_inv_del(rho, E, **kwds)
-        E['x'] *= self.affp
-        E['y'] *= self.affp
+        E['x'] *= self.affp/E.grid.dx
+        E['y'] *= self.affp/E.grid.dy
