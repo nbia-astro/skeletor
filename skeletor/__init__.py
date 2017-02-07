@@ -7,3 +7,6 @@ from .particle_sort import ParticleSort
 from .poisson import Poisson
 from .ohm import Ohm
 from .sources import Sources
+from .initial_condition import uniform_density, velocity_perturbation
+from .experiment import Experiment
+from .io import IO
