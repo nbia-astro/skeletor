@@ -1,24 +1,26 @@
 from ctypes cimport real_t, real2_t, particle_t
+from cython.parallel import prange
 
 
 def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
                real_t qtmh, real_t dt, int noff, int lbx, int lby):
 
+    cdef int Np = particles.shape[0]
     cdef real_t ex, ey
-
     cdef real_t vmx, vmy
     cdef real_t vpx, vpy
     cdef real_t fac
 
-    cdef int ix, iy
+    # It might be better to use `Py_ssize_t` instead of `int`
+    cdef int ip, ix, iy
     cdef real_t x, y
     cdef real_t dx, dy
     cdef real_t tx, ty
 
     # Rescale magnetic field with qtmh = 0.5*dt*charge/mass
-    bz *= qtmh
+    bz = qtmh*bz
 
-    for ip in range(particles.shape[0]):
+    for ip in prange(Np, nogil=True, schedule='static'):
 
         # Interpolate field onto particle (TODO: Move to separate function)
         x = particles[ip].x
@@ -33,10 +35,10 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
         tx = 1.0 - dx
         ty = 1.0 - dy
 
-        iy -= noff
+        iy = iy - noff
 
-        ix += lbx
-        iy += lby
+        ix = ix + lbx
+        iy = iy + lby
 
         ex = dy*(dx*E[iy+1, ix+1].x + tx*E[iy+1, ix].x)  \
             + ty*(dx*E[iy, ix+1].x + tx*E[iy, ix].x)
@@ -45,8 +47,8 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
             + ty*(dx*E[iy, ix+1].y + tx*E[iy, ix].y)
 
         # Rescale electric field with qtmh = 0.5*dt*charge/mass
-        ex *= qtmh
-        ey *= qtmh
+        ex = qtmh*ex
+        ey = qtmh*ey
 
         vmx = particles[ip].vx + ex
         vmy = particles[ip].vy + ey
@@ -59,32 +61,32 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
         particles[ip].vx = vmx + fac*vpy*bz + ex
         particles[ip].vy = vmy - fac*vpx*bz + ey
 
-        particles[ip].x += particles[ip].vx*dt
-        particles[ip].y += particles[ip].vy*dt
+        particles[ip].x = particles[ip].x + particles[ip].vx*dt
+        particles[ip].y = particles[ip].y + particles[ip].vy*dt
 
 
 def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
                         real_t qtmh, real_t dt, int noff, int lbx, int lby,
                         real_t Omega, real_t S):
 
+    cdef int Np = particles.shape[0]
     cdef real_t ex, ey
-
     cdef real_t vmx, vmy
     cdef real_t vpx, vpy
     cdef real_t fac
 
-    cdef int ix, iy
+    cdef int ip, ix, iy
     cdef real_t x, y
     cdef real_t dx, dy
     cdef real_t tx, ty
 
     # Rescale magnetic field with qtmh = 0.5*dt*charge/mass
-    bz *= qtmh
+    bz = qtmh*bz
 
     # Modify fields due to rotation and shear
-    bz += Omega*dt
+    bz = bz + Omega*dt
 
-    for ip in range(particles.shape[0]):
+    for ip in prange(Np, nogil=True, schedule='static'):
 
         # Interpolate field onto particle (TODO: Move to separate function)
         x = particles[ip].x
@@ -99,10 +101,10 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
         tx = 1.0 - dx
         ty = 1.0 - dy
 
-        iy -= noff
+        iy = iy - noff
 
-        ix += lbx
-        iy += lby
+        ix = ix + lbx
+        iy = iy + lby
 
         ex = dy*(dx*E[iy+1, ix+1].x + tx*E[iy+1, ix].x)  \
             + ty*(dx*E[iy, ix+1].x + tx*E[iy, ix].x)
@@ -111,11 +113,11 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
             + ty*(dx*E[iy, ix+1].y + tx*E[iy, ix].y)
 
         # Rescale electric & magnetic field with qtmh = 0.5*dt*charge/mass
-        ex *= qtmh
-        ey *= qtmh
+        ex = qtmh*ex
+        ey = qtmh*ey
 
         # Modify fields due to rotation and shear
-        ey -= S*y*bz
+        ey = ey - S*y*bz
 
         vmx = particles[ip].vx + ex
         vmy = particles[ip].vy + ey
@@ -128,13 +130,15 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
         particles[ip].vx = vmx + fac*vpy*bz + ex
         particles[ip].vy = vmy - fac*vpx*bz + ey
 
-        particles[ip].x += particles[ip].vx*dt
-        particles[ip].y += particles[ip].vy*dt
+        particles[ip].x = particles[ip].x + particles[ip].vx*dt
+        particles[ip].y = particles[ip].y + particles[ip].vy*dt
 
 
 def drift(particle_t[:] particles, real_t dt):
 
-    for ip in range(particles.shape[0]):
+    cdef int Np = particles.shape[0]
+    cdef int ip
+    for ip in prange(Np, nogil=True, schedule='static'):
 
-        particles[ip].x += particles[ip].vx*dt
-        particles[ip].y += particles[ip].vy*dt
+        particles[ip].x = particles[ip].x + particles[ip].vx*dt
+        particles[ip].y = particles[ip].y + particles[ip].vy*dt
