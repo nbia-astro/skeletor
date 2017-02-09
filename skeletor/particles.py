@@ -191,14 +191,13 @@ class Particles(numpy.ndarray):
         # Update time
         self.time += dt
 
-        grid = fxy.grid
         qtmh = self.charge/self.mass*dt/2
 
         bz = self.bz
         if self.manifold.rotation:
             bz += 2.0*self.mass/self.charge*self.manifold.Omega
 
-        push(self[:self.np], fxy, bz, qtmh, dt, grid.noff, grid.lbx, grid.lby)
+        push(self[:self.np], fxy, bz, qtmh, dt, self.manifold)
 
         # Shearing periodicity
         if self.manifold.shear:
