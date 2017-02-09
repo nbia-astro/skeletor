@@ -1,4 +1,5 @@
 from .cython.ppic2_wrapper import grid_t
+from .cython.dtypes import Float
 
 
 class Grid(grid_t):
@@ -30,7 +31,9 @@ class Grid(grid_t):
         self.noff = self.nyp*comm.rank
 
         # edges[0:1] = lower:upper boundary of particle partition
-        self.edges = array([self.noff, self.noff + self.nyp])
+        # Note that self.edges is always a floating point list as defined in
+        # the Cython extension type "grid_t" that this class inherits from.
+        self.edges = [self.noff, self.noff + self.nyp]
 
         # Ghost zone setup
         # nlbx, nlby = number of ghost zones at lower boundary in x, y
