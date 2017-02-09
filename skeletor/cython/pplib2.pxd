@@ -1,5 +1,5 @@
 from mpi4py.libmpi cimport MPI_Comm
-from ctypes cimport real_t
+from types cimport real_t
 
 cdef extern from "../../picksc/ppic2/pplib2.h":
 

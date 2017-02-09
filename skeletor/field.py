@@ -1,5 +1,5 @@
 from numpy import ndarray, asarray, zeros, dtype
-from .cython.dtypes import Float, Float2
+from .cython.types import Float, Float2
 from .cython.ppic2_wrapper import cppaguard2xl, cppnaguard2l
 from .cython.ppic2_wrapper import cppcguard2xl, cppncguard2l
 

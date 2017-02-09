@@ -1,6 +1,6 @@
 from .cython.deposit import deposit as cython_deposit
 from .cython.ppic2_wrapper import cppgpost2l
-from .cython.dtypes import Float, Float2
+from .cython.types import Float, Float2
 
 
 class Sources:

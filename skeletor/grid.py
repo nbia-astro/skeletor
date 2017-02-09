@@ -1,5 +1,5 @@
 from .cython.ppic2_wrapper import grid_t
-from .cython.dtypes import Float
+from .cython.types import Float
 
 
 class Grid(grid_t):

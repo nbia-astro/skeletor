@@ -8,7 +8,7 @@ class Particles(numpy.ndarray):
 
     def __new__(cls, manifold, npmax, time=0.0, charge=1.0, mass=1.0, bz=0):
 
-        from .cython.dtypes import Int, Particle
+        from .cython.types import Int, Particle
 
         # Size of buffer for passing particles between processors
         nbmax = int(max(0.1*npmax, 1))
