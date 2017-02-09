@@ -11,3 +11,6 @@ Complex2 = [('x', Complex), ('y', Complex)]
 Particle = dtype(
         [('x', Float), ('y', Float), ('vx', Float), ('vy', Float)],
         align=True)
+
+cdef class grid_t(object):
+    pass

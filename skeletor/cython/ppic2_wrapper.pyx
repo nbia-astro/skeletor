@@ -1,6 +1,6 @@
 # distutils: sources = picksc/ppic2/pplib2.c picksc/ppic2/ppush2.c
 
-from types cimport complex_t, complex2_t, real_t, real2_t, particle_t
+from types cimport complex_t, complex2_t, real_t, real2_t, particle_t, grid_t
 from types import Float, Int
 cimport pplib2, ppush2
 from numpy cimport ndarray
@@ -25,15 +25,6 @@ cdef int ntpose = 1
 
 # Processor ID and number of processors (to be set in cppinit below)
 cdef int idproc, nvp
-
-
-cdef class grid_t(object):
-    """Grid extension type.
-    This is inherited by the Grid class (see grid.py)."""
-    cdef public int nx, ny
-    cdef public MPI.Comm comm
-    cdef public real_t edges[2]
-    cdef public int nyp, noff, nypmx, nypmn
 
 
 def cppinit(MPI.Comm comm):
