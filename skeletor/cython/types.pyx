@@ -1,4 +1,4 @@
-from ctypes cimport real_t, complex_t
+from types cimport real_t, complex_t
 from numpy import dtype
 
 Int = dtype("i{}".format(sizeof(int)))

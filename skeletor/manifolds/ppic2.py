@@ -7,7 +7,7 @@ class Manifold(Grid):
             self, nx, ny, comm,
             ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1):
 
-        from ..cython.dtypes import Complex, Complex2, Float, Float2, Int
+        from ..cython.types import Complex, Complex2, Float, Float2, Int
         from ..cython.ppic2_wrapper import cwpfft2rinit, cppois22
         from math import log2
         from numpy import zeros

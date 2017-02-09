@@ -1,4 +1,4 @@
-from ctypes cimport real_t, real2_t
+from types cimport real_t, real2_t
 
 def gradient(real_t[:,:] f, real2_t[:,:] grad, int lbx, int ubx, int lby,
              int uby):

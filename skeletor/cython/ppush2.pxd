@@ -1,4 +1,4 @@
-from ctypes cimport real_t, complex_t
+from types cimport real_t, complex_t
 
 cdef extern from "../../picksc/ppic2/ppush2.h":
 

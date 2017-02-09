@@ -1,4 +1,4 @@
-from ctypes cimport real_t, real2_t, particle_t
+from types cimport real_t, real2_t, particle_t
 from cython.parallel import prange, parallel
 from libc.stdlib cimport abort, malloc, free
 

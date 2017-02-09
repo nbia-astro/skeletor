@@ -5,7 +5,7 @@ class ParticleSort:
 
     def __init__(self, grid):
 
-        from .cython.dtypes import Int
+        from .cython.types import Int
         from numpy import empty
 
         self.grid = grid

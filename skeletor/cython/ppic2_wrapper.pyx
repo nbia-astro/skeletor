@@ -1,7 +1,7 @@
 # distutils: sources = picksc/ppic2/pplib2.c picksc/ppic2/ppush2.c
 
-from ctypes cimport complex_t, complex2_t, real_t, real2_t, particle_t
-from dtypes import Float, Int
+from types cimport complex_t, complex2_t, real_t, real2_t, particle_t
+from types import Float, Int
 cimport pplib2, ppush2
 from numpy cimport ndarray
 cimport mpi4py.MPI as MPI
