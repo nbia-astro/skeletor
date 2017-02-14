@@ -126,10 +126,8 @@ class Particles(numpy.ndarray):
            particles between processors.
         """
         from .cython.particle_boundary import calculate_ihole
-        from numpy import array
 
-        calculate_ihole(self[:self.np], self.ihole,
-                        array(self.manifold.edges))
+        calculate_ihole(self[:self.np], self.ihole, self.manifold)
 
         self.move()
 
