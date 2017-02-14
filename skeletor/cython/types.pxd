@@ -1,5 +1,8 @@
 cimport mpi4py.MPI as MPI
 
+# See https://bitbucket.org/mpi4py/mpi4py/issues/1/mpi4py-cython-openmpi
+cdef extern from 'mpi-compat.h': pass
+
 # Make sure these definitions match those in "picksc/ppic2/precision.h"
 ctypedef double real_t
 ctypedef double complex complex_t
