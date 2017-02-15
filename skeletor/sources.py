@@ -27,8 +27,7 @@ class Sources:
             S = self.rho.grid.S
 
         cython_deposit(particles[:particles.np], self.rho, self.J,
-                       particles.charge, self.rho.grid.noff,
-                       self.rho.grid.lbx, self.rho.grid.lby, S)
+                       particles.charge, self.rho.grid, S)
 
         self.rho.boundaries_set = False
         self.J.boundaries_set = False

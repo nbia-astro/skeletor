@@ -1,10 +1,10 @@
-from types cimport real_t, real2_t, particle_t
+from types cimport real_t, real2_t, particle_t, grid_t
 from cython.parallel import prange, parallel
 from libc.stdlib cimport abort, malloc, free
 
 def deposit(
         particle_t[:] particles, real_t[:,:] density, real2_t[:,:] J,
-        real_t charge, int noff, int lbx, int lby, real_t S):
+        real_t charge, grid_t grid, real_t S):
 
     cdef int Np = particles.shape[0]
     cdef int ip, ix, iy, k, ky, kx
@@ -45,10 +45,10 @@ def deposit(
             tx = 1.0 - dx
             ty = 1.0 - dy
 
-            iy = iy - noff
+            iy = iy - grid.noff
 
-            ix = ix + lbx
-            iy = iy + lby
+            ix = ix + grid.lbx
+            iy = iy + grid.lby
 
             # Store values in 1D arrays.
             # We use that the position [iy, ix] in the matrix corresponds to
