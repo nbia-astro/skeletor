@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
-from skeletor import Ohm, uniform_density, velocity_perturbation, Experiment
+from skeletor import Ohm, InitialCondition, Experiment
 from skeletor import IO
 from skeletor.manifolds.ppic2 import Manifold
 import numpy
@@ -65,13 +65,13 @@ def rho_an(x, y, t):
     """Analytic density as function of x, y and t"""
     return npc*charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
 
-# Uniform distribution of particle positions
-x, y = uniform_density(nx, ny, npc, quiet=quiet)
+def ux_an(x, y, t):
+    """Analytic x-velocity as function of x, y and t"""
+    return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*kx/k
 
-# Perturbation in velocity
-ampl_vx = -omega/k*A*kx/k
-ampl_vy = -omega/k*A*ky/k
-vx, vy = velocity_perturbation(x, y, kx, ky, ampl_vx, ampl_vy, vtx, vty)
+def uy_an(x, y, t):
+    """Analytic y-velocity as function of x, y and t"""
+    return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k
 
 # Start parallel processing
 idproc, nvp = cppinit(comm)
@@ -97,8 +97,13 @@ io.set_outputrate(100*dt)
 # Create particle array
 ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
-# Assign particles to subdomains
-ions.initialize(x, y, vx, vy)
+# Create a uniform density field
+init = InitialCondition(npc, quiet=True)
+init(manifold, ions)
+
+# Perturbation to particle velocities
+ions['vx'] = ux_an(ions['x'], ions['y'], t=dt/2)
+ions['vy'] = uy_an(ions['x'], ions['y'], t=dt/2)
 
 # Initialize Ohm's law solver
 ohm = Ohm(manifold, temperature=Te, charge=charge)
