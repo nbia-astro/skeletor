@@ -66,7 +66,7 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
 
 
 def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
-                        real_t qtmh, real_t dt, int noff, int lbx, int lby,
+                        real_t qtmh, real_t dt, grid_t grid,
                         real_t Omega, real_t S):
 
     cdef int Np = particles.shape[0]
@@ -101,10 +101,10 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E, real_t bz,
         tx = 1.0 - dx
         ty = 1.0 - dy
 
-        iy = iy - noff
+        iy = iy - grid.noff
 
-        ix = ix + lbx
-        iy = iy + lby
+        ix = ix + grid.lbx
+        iy = iy + grid.lby
 
         ex = dy*(dx*E[iy+1, ix+1].x + tx*E[iy+1, ix].x)  \
             + ty*(dx*E[iy, ix+1].x + tx*E[iy, ix].x)
