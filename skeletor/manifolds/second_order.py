@@ -29,7 +29,7 @@ class Manifold(Grid):
         assert f.boundaries_set, msg
         from ..cython.finite_difference import gradient as cython_gradient
 
-        cython_gradient(f, grad, self.lbx, self.ubx, self.lby, self.uby)
+        cython_gradient(f, grad, self)
 
         grad.boundaries_set = False
 
