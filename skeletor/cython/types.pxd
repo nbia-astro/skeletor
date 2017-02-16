@@ -16,7 +16,7 @@ cdef struct real2_t:
 cdef struct complex2_t:
     complex_t x, y
 
-cdef class grid_t(object):
+cdef class grid_t:
     """Grid extension type.
     This is inherited by the Grid class (see grid.py)."""
     # TODO: Either define *all* attributes of the grid class or only those that

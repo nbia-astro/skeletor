@@ -12,5 +12,5 @@ Particle = dtype(
         [('x', Float), ('y', Float), ('vx', Float), ('vy', Float)],
         align=True)
 
-cdef class grid_t(object):
+cdef class grid_t:
     pass
