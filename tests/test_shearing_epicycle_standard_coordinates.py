@@ -108,7 +108,7 @@ def test_shearing_epicycle(plot=False):
     E_star = Field(manifold, dtype=Float2)
     E_star.fill((0.0, 0.0))
     E_star['x'][:-1, :-2] = -2*S*(xg-nx/2)*mass/charge*Omega
-    E_star.copy_guards_ppic2()
+    E_star.copy_guards()
 
     # Make initial figure
     if plot:

@@ -93,39 +93,6 @@ def cppgpost2l(
     ppush2.cppgpost2l(&particles[0].x, &rho[0,0], np, noff, charge, idimp,
             npmax, nxe, nypmx)
 
-def cppaguard2xl(real_t[:,:] rho, grid_t grid):
-
-    cdef int nxe = rho.shape[1]
-
-    ppush2.cppaguard2xl(&rho[0,0], grid.nyp, grid.nx, nxe, grid.nypmx)
-
-
-def cppnaguard2l(
-        real_t[:,:] rho, real_t[:,:] scr, grid_t grid):
-
-    cdef int nxe = rho.shape[1]
-    cdef int kstrt = idproc + 1
-
-    pplib2.cppnaguard2l(
-            &rho[0,0], &scr[0,0], grid.nyp, grid.nx,
-            kstrt, nvp, nxe, grid.nypmx)
-
-
-def cppcguard2xl(real2_t[:,:] fxy, grid_t grid):
-
-    cdef int nxe = fxy.shape[1]
-
-    ppush2.cppcguard2xl(&fxy[0,0].x, grid.nyp, grid.nx, ndim, nxe, grid.nypmx)
-
-
-def cppncguard2l(real2_t[:,:] fxy, grid_t grid):
-
-    cdef int nxe = fxy.shape[1]
-    cdef int kstrt = idproc + 1
-
-    pplib2.cppncguard2l(
-            &fxy[0,0].x, grid.nyp, kstrt, nvp, 2*nxe, grid.nypmx)
-
 def cwpfft2rinit(int[:] mixup, complex_t[:] sct, int indx, int indy):
 
     cdef int nxhy = mixup.shape[0]

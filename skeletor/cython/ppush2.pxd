@@ -22,11 +22,6 @@ cdef extern from "../../picksc/ppic2/ppush2.h":
     void cppgpost2l(real_t part[], real_t q[], int npp, int noff, real_t qm,
             int idimp, int npmax, int nxv, int nypmx)
 
-    void cppaguard2xl(real_t q[], int nyp, int nx, int nxe, int nypmx)
-
-    void cppcguard2xl(real_t fxy[], int nyp, int nx, int ndim, int nxe,
-            int nypmx)
-
     void cwpfft2rinit(int mixup[], complex_t sct[], int indx, int indy,
                       int nxhyd, int nxyhd)
 

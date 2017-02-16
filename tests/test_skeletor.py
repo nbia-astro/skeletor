@@ -97,13 +97,9 @@ def test_skeletor():
         ##########################
 
         sources = Sources(manifold)
-        sources2 = Sources(manifold)
 
         sources.deposit(electrons)
-        sources2.deposit_ppic2(electrons)
 
-        # Make sure the two deposit routines give the same result
-        assert numpy.allclose(sources.rho, sources2.rho)
         # Make sure the charge deposited into *all* cells (active plus guard)
         # equals the number of particles times the particle charge
         assert numpy.isclose(sources.rho.sum(), electrons.np*charge)
@@ -111,10 +107,7 @@ def test_skeletor():
         # Add charge from guard cells to corresponding active cells.
         # Afterwards erases charge in guard cells.
         sources.rho.add_guards()
-        sources2.rho.add_guards_ppic2()
 
-        # Make sure the two add_guards routines give the same result
-        assert numpy.allclose(sources.rho, sources2.rho)
         # Make sure the charge deposited into *active* cells (no guard cells)
         # equals the number of particles times the particle charge
         assert numpy.isclose(comm.allreduce(
@@ -132,15 +125,14 @@ def test_skeletor():
 
         # Solve Gauss's law
         poisson(sources.rho, fxy)
-        fxy2 = fxy.copy()
 
         # Copy data to guard cells from corresponding active cells
         fxy.copy_guards()
-        fxy2.copy_guards_ppic2()
 
-        # Make sure the two copy_guards routines give the same result
-        assert numpy.allclose(fxy["x"], fxy2["x"])
-        assert numpy.allclose(fxy["y"], fxy2["y"])
+        # TODO: Previously the solution of Gauss' law obtained above was
+        # compared to the solution obtained by PPIC2, assuming that the latter
+        # is correct. Now we should probably make sure that our numerical
+        # solution is reasonably close to the exact solutiion.
 
     # Make sure the the final particle phase space coordinates do not depend
     # on how many processors have been used

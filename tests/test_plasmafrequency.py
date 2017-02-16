@@ -125,7 +125,7 @@ def test_plasmafrequency(plot=False):
     # Adjust density (we should do this somewhere else)
     # sources.rho /= npc
     # assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
-    sources.rho.add_guards_ppic2()
+    sources.rho.add_guards()
     sources.rho += n0*npc
     # assert numpy.isclose(comm.allreduce(
     # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
@@ -133,7 +133,7 @@ def test_plasmafrequency(plot=False):
     # Solve Gauss' law
     poisson(sources.rho, E)
     # Set boundary condition
-    E.copy_guards_ppic2()
+    E.copy_guards()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -173,12 +173,12 @@ def test_plasmafrequency(plot=False):
         t += dt
 
         # Deposit sources
-        sources.deposit_ppic2(electrons)
+        sources.deposit(electrons)
         # Adjust density (TODO: we should do this somewhere else)
         # sources.rho /= npc
         # assert numpy.isclose(sources.rho.sum(),electrons.np*charge/npc)
         # Boundary calls
-        sources.rho.add_guards_ppic2()
+        sources.rho.add_guards()
         sources.rho += n0*npc
 
         # assert numpy.isclose(comm.allreduce(
@@ -188,7 +188,7 @@ def test_plasmafrequency(plot=False):
         poisson(sources.rho, E)
 
         # Set boundary condition
-        E.copy_guards_ppic2()
+        E.copy_guards()
 
         # Make figures
         if plot:

@@ -1,7 +1,5 @@
 from numpy import ndarray, asarray, zeros, dtype
 from .cython.types import Float, Float2
-from .cython.ppic2_wrapper import cppaguard2xl, cppnaguard2l
-from .cython.ppic2_wrapper import cppcguard2xl, cppncguard2l
 
 
 class Field(ndarray):
@@ -135,30 +133,6 @@ class Field(ndarray):
         self[uby:, :] = 0.0
         self[:, ubx:] = 0.0
         self[:, :lbx] = 0.0
-
-    def add_guards_ppic2(self):
-
-        # This routine *only* works for scalar fields
-        assert self.dtype == dtype(Float)
-
-        # This routine only works for ppic grid layout
-        assert(self.grid.nubx == 2 and self.grid.nuby == 1 and
-               self.grid.lbx == 0 and self.grid.lby == 0)
-
-        cppaguard2xl(self, self.grid)
-        cppnaguard2l(self, self.scr, self.grid)
-
-    def copy_guards_ppic2(self):
-
-        # This routine *only* works for vector fields
-        assert self.dtype == dtype(Float2)
-
-        # This routine only works for ppic grid layout
-        assert(self.grid.nubx == 2 and self.grid.nuby == 1 and
-               self.grid.lbx == 0 and self.grid.lby == 0)
-
-        cppncguard2l(self, self.grid)
-        cppcguard2xl(self, self.grid)
 
 
 class ShearField(Field):
@@ -352,9 +326,3 @@ class ShearField(Field):
 
         # Set boundary condition?
         self.boundaries_set = False
-
-    def add_guards_ppic2(self):
-        raise 'add_guards_ppic2 not implemented for shearing fields'
-
-    def copy_guards_ppic2(self):
-        raise 'copy_guards_ppic2 not implemented for shearing fields'
