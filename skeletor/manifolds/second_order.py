@@ -33,6 +33,21 @@ class Manifold(Grid):
 
         grad.boundaries_set = False
 
+    def curl(self, f, curl, down=True):
+        """Calculate the curl of f"""
+
+        msg = 'Boundaries need to be set on f for second order differences'
+        assert f.boundaries_set, msg
+
+        if down:
+            from ..cython.finite_difference import curl_down as cython_curl
+        else:
+            from ..cython.finite_difference import curl_up as cython_curl
+
+        cython_curl(f['x'], f['y'], f['z'], curl, self)
+
+        curl.boundaries_set = False
+
     def log(self, f):
         from numpy import log as numpy_log
 
