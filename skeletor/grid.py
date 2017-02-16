@@ -1,4 +1,4 @@
-from .cython.types import Float, grid_t
+from .cython.types import grid_t
 
 
 class Grid(grid_t):
@@ -6,7 +6,6 @@ class Grid(grid_t):
     def __init__(self, nx, ny, comm, nlbx=0, nubx=2, nlby=0, nuby=1):
 
         from .cython.ppic2_wrapper import cppinit
-        from numpy import array
 
         # Number of grid points in x- and y-direction
         self.nx = nx
