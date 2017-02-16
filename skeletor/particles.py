@@ -184,3 +184,7 @@ class Particles(numpy.ndarray):
     def drift(self, dt):
         from .cython.particle_push import drift as cython_drift
         cython_drift(self[:self.np], dt)
+
+        # Apply periodicity in x and y
+        self.periodic_x()
+        self.periodic_y()
