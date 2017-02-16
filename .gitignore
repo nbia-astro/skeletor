@@ -23,3 +23,6 @@ __pycache__
 
 # Jupyter notebook checkpoints
 /ipython/.ipynb_checkpoints
+
+# Data directory created by tests/test_experiment_class.py
+/data/run_oct1
