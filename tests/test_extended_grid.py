@@ -1,4 +1,4 @@
-from skeletor import Float, Particles, Sources, cppinit
+from skeletor import Float, Particles, Sources
 from skeletor.manifolds.ppic2 import Manifold
 from mpi4py.MPI import COMM_WORLD as comm, SUM
 import numpy
@@ -13,9 +13,6 @@ npc = 32
 charge = 1.0
 mass = 1.0
 
-# Start parallel processing
-idproc, nvp = cppinit(comm)
-
 # Create numerical grid with weird setup of ghost layers
 manifold = Manifold(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
 
@@ -25,7 +22,7 @@ sources = Sources(manifold)
 # Total number of particles
 np = npc*nx*ny
 # Maximum number of particles in each partition
-npmax = int(1.5*np/nvp)
+npmax = int(1.5*np/comm.size)
 
 # Create particle array
 particles = Particles(manifold, npmax, charge=charge, mass=mass)

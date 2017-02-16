@@ -4,7 +4,7 @@ analytical solution. This disturbance correponds to the standard 1D Burgers'
 equation in the primed coordinate, x' = x + Sty. See also test_burgers.py.
 """
 
-from skeletor import cppinit, Float, Float2, Particles, Sources, ShearField
+from skeletor import Float, Float2, Particles, Sources, ShearField
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy
 from mpi4py import MPI
@@ -145,9 +145,6 @@ def test_sheared_burgers(plot=False):
         """Particle x-position as a function of time"""
         return a + vx_an(a, b, t)*t
 
-    # Start parallel processing
-    idproc, nvp = cppinit(comm)
-
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
@@ -157,7 +154,7 @@ def test_sheared_burgers(plot=False):
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
-    npmax = int(5*np/nvp)
+    npmax = int(5*np/comm.size)
 
     # Create particle array
     ions = Particles(manifold, npmax, time=t, charge=charge, mass=mass)

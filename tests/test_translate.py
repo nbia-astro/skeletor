@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Grid, ShearField
+from skeletor import Float, Grid, ShearField
 from skeletor.manifolds.mpifft4py import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
@@ -12,9 +12,6 @@ def test_translate(plot=False):
     indx, indy = 5, 4
     nx = 1 << indx
     ny = 1 << indy
-
-    # Start parallel processing.
-    idproc, nvp = cppinit(comm)
 
     # Shear
     S = -3/2

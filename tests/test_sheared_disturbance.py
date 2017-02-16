@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Particles, Sources
+from skeletor import Float, Float2, Particles, Sources
 from skeletor import ShearField
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy
@@ -144,9 +144,6 @@ def test_sheared_disturbance(plot=False):
         a = lagrange(xp, t)
         return a
 
-    # Start parallel processing
-    idproc, nvp = cppinit(comm)
-
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
@@ -156,7 +153,7 @@ def test_sheared_disturbance(plot=False):
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
-    npmax = int(2*np/nvp)
+    npmax = int(2*np/comm.size)
 
     # Create particle array
     ions = Particles(manifold, npmax, time=dt/2, charge=charge, mass=mass)

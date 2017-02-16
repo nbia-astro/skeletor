@@ -18,7 +18,7 @@ between the exact and numerical solutions from each step are added up, averaged
 in the end, and verified to be reasonably small (currently < 1e-3).
 """
 
-from skeletor import cppinit, Float, Particles, Sources
+from skeletor import Float, Particles, Sources
 from skeletor.manifolds.second_order import Manifold
 import numpy as np
 from mpi4py import MPI
@@ -91,9 +91,6 @@ def test_burgers(plot=False):
                 return b
             a = b.copy()
 
-    # Start parallel processing
-    idproc, nvp = cppinit(comm)
-
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     manifold = Manifold(nx, ny, comm)
@@ -103,7 +100,7 @@ def test_burgers(plot=False):
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
-    npmax = int(1.25*npc*nx*ny/nvp)
+    npmax = int(1.25*npc*nx*ny/comm.size)
 
     # Create particle array
     ions = Particles(manifold, npmax, time=0.0, charge=1.0, mass=1.0)

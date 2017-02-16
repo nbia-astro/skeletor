@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Field, ShearField, Grid
+from skeletor import Float, Field, ShearField, Grid
 from skeletor.manifolds.second_order import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
@@ -16,9 +16,6 @@ def test_copy_guards_with_shear(plot=False):
     # Shear
     S = -3/2
     t = 0.2
-
-    # Start parallel processing.
-    idproc, nvp = cppinit(comm)
 
     # Create numerical grid
     manifold = ShearingManifold(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4,
