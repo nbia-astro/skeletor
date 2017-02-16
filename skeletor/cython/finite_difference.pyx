@@ -9,6 +9,7 @@ def gradient(real_t[:,:] f, real2_t[:,:] grad, grid_t grid):
         for ix in range(grid.lbx, grid.ubx):
             grad[iy, ix].x = 0.5*(f[iy, ix+1] - f[iy, ix-1])
             grad[iy, ix].y = 0.5*(f[iy+1, ix] - f[iy-1, ix])
+            grad[iy, ix].z = 0.0
 
 def curl_up(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real2_t[:,:] curl,
             grid_t grid):
