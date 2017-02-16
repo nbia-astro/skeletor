@@ -2,14 +2,6 @@ from types cimport real_t, complex_t
 
 cdef extern from "../../picksc/ppic2/ppush2.h":
 
-    void cpdicomp2l (real_t edges[], int *nyp, int *noff, int *nypmx,
-            int *nypmn, int ny, int kstrt, int nvp, int idps)
-
-    void cppgpush2l (real_t part[], real_t fxy[], real_t edges[], int npp,
-            int noff, int ihole[], real_t qbm, real_t dt, real_t *ek,
-            int nx, int ny, int idimp, int npmax, int nxv,
-            int nypmx, int idps, int ntmax, int ipbc)
-
     void cwpfft2rinit(int mixup[], complex_t sct[], int indx, int indy,
                       int nxhyd, int nxyhd)
 
