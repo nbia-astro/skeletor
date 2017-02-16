@@ -165,17 +165,3 @@ def cppdsortp2yl(
     ppush2.cppdsortp2yl(
             &particles[0].x, &particles2[0].x, &npic[0],
             npp, grid.noff, grid.nyp, idimp, npmax, grid.nypmx)
-
-def cpdistr2(particle_t[:] particles, real_t vtx, real_t vty,
-        real_t vdx, real_t vdy, int npx, int npy, grid_t grid):
-
-    cdef int nps = 1
-    cdef int npp = 0
-    cdef int npmax = particles.shape[0]
-    cdef int ierr
-
-    ppush2.cpdistr2(&particles[0].x, grid.edges, &npp, nps,
-            vtx, vty, vdx, vdy, npx, npy, grid.nx, grid.ny,
-            idimp, npmax, idps, ipbc, &ierr)
-
-    return npp, ierr
