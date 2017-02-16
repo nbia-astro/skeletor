@@ -134,38 +134,6 @@ class Particles(numpy.ndarray):
 
         self.periodic_y()
 
-    def push_ppic2(self, fxy, dt):
-
-        from .cython.ppic2_wrapper import cppgbpush2l
-
-        # Update time
-        self.time += dt
-
-        grid = fxy.grid
-
-        # This routine only works for ppic2 grid layout
-        assert(grid.nubx == 2 and grid.nuby == 1 and
-               grid.lbx == 0 and grid.lby == 0)
-
-        qm = self.charge/self.mass
-
-        bz = self.bz
-        if self.manifold.rotation:
-            bz += 2.0*self.mass/self.charge*self.manifold.Omega
-
-        ek = cppgbpush2l(self, fxy, bz, self.np, self.ihole, qm, dt, grid)
-
-        # Shearing periodicity
-        if self.manifold.shear:
-            self.shear_periodic_y()
-        else:
-            self.periodic_y()
-
-        # Apply periodicity in x
-        self.periodic_x()
-
-        return ek
-
     def push(self, fxy, dt):
         """
         A standard Boris push which updates positions and velocities.
