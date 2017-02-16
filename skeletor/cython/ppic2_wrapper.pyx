@@ -48,37 +48,6 @@ def cppexit():
     assert Is_finalized()
 
 
-def cpdicomp(int ny):
-    # edges[0] = lower boundary of particle partition
-    # edges[1] = upper boundary of particle partition
-    cdef real_t edges[2]
-    # nyp = number of primary (complete) gridpoints in particle partition
-    # noff = lowermost global gridpoint in particle partition
-    # nypmx = maximum size of particle partition, including guard cells
-    # nypmn = minimum value of nyp
-    cdef int nyp, noff, nypmx, nypmn
-    cdef int kstrt = idproc + 1
-    ppush2.cpdicomp2l(
-            &edges[0], &nyp, &noff, &nypmx, &nypmn, ny, kstrt, nvp, idps)
-    return edges, nyp, noff, nypmx, nypmn
-
-
-def cppgpush2l(
-        particle_t[:] particles, real2_t[:,:] fxy,
-        int npp, int[:] ihole, real_t qm, real_t dt, grid_t grid):
-
-    cdef real_t ek = 0.0
-    cdef int npmax = particles.shape[0]
-    cdef int nxe = fxy.shape[1]
-    cdef int ntmax = ihole.shape[0] - 1
-
-    ppush2.cppgpush2l(
-            &particles[0].x, &fxy[0,0].x, grid.edges, npp, grid.noff,
-            &ihole[0], qm, dt, &ek, grid.nx, grid.ny, idimp, npmax, nxe,
-            grid.nypmx, idps, ntmax, ipbc)
-
-    return ek
-
 def cppgbpush2l(
         particle_t[:] particles, real2_t[:,:] fxy, real_t bz,
         int npp, int[:] ihole, real_t qm, real_t dt, grid_t grid):
