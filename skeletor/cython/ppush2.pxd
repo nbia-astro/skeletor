@@ -19,9 +19,6 @@ cdef extern from "../../picksc/ppic2/ppush2.h":
             int nx, int ny, int idimp, int npmax, int nxv,
             int nypmx, int idps, int ntmax, int ipbc)
 
-    void cppgpost2l(real_t part[], real_t q[], int npp, int noff, real_t qm,
-            int idimp, int npmax, int nxv, int nypmx)
-
     void cwpfft2rinit(int mixup[], complex_t sct[], int indx, int indy,
                       int nxhyd, int nxyhd)
 

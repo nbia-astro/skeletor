@@ -83,16 +83,6 @@ def cppmove2(
 
     return npp
 
-def cppgpost2l(
-        particle_t[:] particles, real_t[:,:] rho, int np, int noff,
-        real_t charge, int npmax):
-
-    cdef int nxe = rho.shape[1]
-    cdef int nypmx = rho.shape[0]
-
-    ppush2.cppgpost2l(&particles[0].x, &rho[0,0], np, noff, charge, idimp,
-            npmax, nxe, nypmx)
-
 def cwpfft2rinit(int[:] mixup, complex_t[:] sct, int indx, int indy):
 
     cdef int nxhy = mixup.shape[0]
