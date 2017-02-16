@@ -48,6 +48,20 @@ class Manifold(Grid):
 
         curl.boundaries_set = False
 
+    def interpolate(self, f, g, set_boundaries=False):
+        """Calculate the interpolated field g"""
+
+        msg = 'Boundaries need to be set on f for interpolation'
+        assert f.boundaries_set, msg
+        from ..cython.finite_difference import interpolate as cython_inter
+
+        cython_inter(f, g, self)
+
+        g.boundaries_set = False
+
+        if set_boundaries:
+            g.copy_guards()
+
     def log(self, f):
         from numpy import log as numpy_log
 

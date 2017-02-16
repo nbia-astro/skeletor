@@ -45,4 +45,16 @@ cdef inline real_t ddydn(real_t[:, :] f, int ix, int iy):
 cdef inline real_t ddxdn(real_t[:, :] f, int ix, int iy):
     return 0.5*(f[iy,ix] + f[iy-1,ix] - f[iy,ix-1] - f[iy-1,ix-1])
 
+def interpolate(real2_t[:,:] f, real2_t[:,:] g, grid_t grid):
+    cdef int ix, iy
+
+    for iy in range(grid.lby, grid.uby):
+        for ix in range(grid.lbx, grid.ubx):
+            g[iy, ix].x = 0.25*(f[iy+1,ix+1].x + f[iy+1,ix].x +
+                                f[iy  ,ix+1].x + f[iy  ,ix].x)
+            g[iy, ix].y = 0.25*(f[iy+1,ix+1].y + f[iy+1,ix].y +
+                                f[iy  ,ix+1].y + f[iy  ,ix].y)
+            g[iy, ix].z = 0.25*(f[iy+1,ix+1].z + f[iy+1,ix].z +
+                                f[iy  ,ix+1].z + f[iy  ,ix].z)
+
 
