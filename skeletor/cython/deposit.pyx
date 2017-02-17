@@ -2,6 +2,30 @@ from types cimport real_t, real2_t, particle_t, grid_t
 from cython.parallel import prange, parallel
 from libc.stdlib cimport abort, malloc, free
 
+from types import Float
+from libc.stdio cimport printf
+from numpy import empty
+cimport openmp
+
+cdef class CythonDeposit:
+
+    cdef int num_threads
+    cdef real_t[:,:,:,:] current
+
+    def __cinit__(self, shape_xy):
+        # Determine how many OpenMP threads are running
+        with nogil, parallel():
+            self.num_threads = openmp.omp_get_num_threads()
+        # The dimensions of the current array are such that the "four-vector"
+        # components vary the fastest
+        shape = (self.num_threads,) + shape_xy + (3,)
+        self.current = empty(shape, dtype=Float)
+
+    def __call__(self, particle_t[:] particles,
+            real_t[:,:] rho, real2_t[:,:] J, real_t charge):
+        cdef Py_ssize_t[:] s = self.current.shape
+        printf("shape = (%lu, %lu, %lu, %lu)\n", s[0], s[1], s[2], s[3])
+
 def deposit(
         particle_t[:] particles, real_t[:,:] density, real2_t[:,:] J,
         real_t charge, grid_t grid, real_t S):

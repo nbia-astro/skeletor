@@ -1,4 +1,4 @@
-from .cython.deposit import deposit as cython_deposit
+from .cython.deposit import deposit as cython_deposit, CythonDeposit
 from .cython.types import Float, Float2
 
 
@@ -14,6 +14,8 @@ class Sources:
         self.rho = Field(manifold, dtype=Float, **kwds)
         self.J = Field(manifold, dtype=Float2, **kwds)
 
+        self.cython_deposit = CythonDeposit(self.rho.shape)
+
     def deposit(self, particles, erase=True):
 
         if erase:
@@ -27,6 +29,8 @@ class Sources:
 
         cython_deposit(particles[:particles.np], self.rho, self.J,
                        particles.charge, self.rho.grid, S)
+        self.cython_deposit(particles[:particles.np], self.rho, self.J,
+                            particles.charge)
 
         self.rho.boundaries_set = False
         self.J.boundaries_set = False
