@@ -76,6 +76,13 @@ class Manifold(Grid):
         if set_boundaries:
             g.copy_guards()
 
+    def divergence(self, f, g):
+        """Calculate the divergence of the vector field f"""
+
+        from ..cython.finite_difference import divergence
+
+        divergence(f['x'], f['y'], g, self)
+
     def log(self, f):
         from numpy import log as numpy_log
 

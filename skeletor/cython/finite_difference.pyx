@@ -1,5 +1,6 @@
 from types cimport real_t, real2_t, grid_t
 cimport cython
+from libc.math cimport fabs
 
 def gradient(real_t[:,:] f, real2_t[:,:] grad, grid_t grid):
 
@@ -32,6 +33,16 @@ def curl_down(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz,
             curl[iy, ix].x =   ddydn(fz, ix, iy)
             curl[iy, ix].y = - ddxdn(fz, ix, iy)
             curl[iy, ix].z = ddxdn(fy, ix, iy) - ddydn(fx, ix, iy)
+
+def divergence(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] div, grid_t
+                     grid):
+    """Calculate the divergence of f"""
+
+    cdef int ix, iy
+
+    for iy in range(grid.lby, grid.uby):
+        for ix in range(grid.lbx, grid.ubx):
+            div[iy, ix] = ddxdn(fx, ix, iy) + ddydn(fy, ix, iy)
 
 cdef inline real_t ddyup(real_t[:, :] f, int ix, int iy):
     return 0.5*(f[iy+1,ix+1] + f[iy+1,ix] - f[iy,ix+1] - f[iy,ix])
