@@ -12,7 +12,7 @@ plot = True
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 64, 1
+nx, ny = 64, 64
 # Grid size in x- and y-direction (square cells!)
 Lx = nx
 Ly = Lx*ny/nx
@@ -24,7 +24,7 @@ mass = 1.0
 # Electron temperature
 Te = 0.0
 # Dimensionless amplitude of perturbation
-A = 1e-3
+A = 0.005
 # Wavenumbers
 ikx = 1
 iky = 0
@@ -119,22 +119,38 @@ init = InitialCondition(npc)
 init(manifold, ions)
 
 # Perturbation to particle velocities
-ions['vx'] = Ux_an(ions['x'], ions['y'], t=0)
-ions['vy'] = Uy_an(ions['x'], ions['y'], t=0)
-ions['vz'] = Uz_an(ions['x'], ions['y'], t=0)
+ions['vx'] = Ux_an(ions['x'], ions['y'], t=-dt/2)
+ions['vy'] = Uy_an(ions['x'], ions['y'], t=-dt/2)
+ions['vz'] = Uz_an(ions['x'], ions['y'], t=-dt/2)
 
 def B_an(t):
     B_an = Field(manifold, dtype=Float2)
-    B_an['x'].active = Bx_an(xg+manifold.dx, yg+manifold.dy, t=t)
-    B_an['y'].active = By_an(xg+manifold.dx, yg+manifold.dy, t=t)
-    B_an['z'].active = Bz_an(xg+manifold.dx, yg+manifold.dy, t=t)
-    return B_an.trim()
+    B_an['x'].active = Bx_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
+    B_an['y'].active = By_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
+    B_an['z'].active = Bz_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
+    return B_an
 
+# Create vector potential
+A_an = Field(manifold, dtype=Float2)
+A_an['x'].active = 0
+A_an['y'].active = -((Bz + B0*(di.vec[m]['bz']*phase(xg, yg, -dt/2)))/
+                    (1j*kx)).real
+A_an['z'].active =  ((By + B0*(di.vec[m]['by']*phase(xg, yg, -dt/2)))/
+                    (1j*kx)).real
+A_an.copy_guards()
+
+# Set initial magnetic field perturbation using the vector potential
 B = Field(manifold, dtype=Float2)
-B['x'].active = Bx_an(xg+manifold.dx, yg+manifold.dy, t=0)
-B['y'].active = By_an(xg+manifold.dx, yg+manifold.dy, t=0)
-B['z'].active = Bz_an(xg+manifold.dx, yg+manifold.dy, t=0)
+manifold.curl(A_an, B, down=False)
+# Add background magnetic field
+B['x'].active += Bx
+B['y'].active += By
+B['z'].active += Bz
 B.copy_guards()
+
+div = Field(manifold, dtype=Float)
+div.fill(0)
+manifold.divergence(B, div)
 
 
 # Initialize Ohm's law solver
@@ -160,7 +176,8 @@ if plot:
     global_rho = concatenate(e.sources.rho.trim())
     global_rho_an = concatenate(rho_an(xg, yg, 0))
     global_B = concatenate(e.B.trim())
-    global_B_an = concatenate(B_an(t=0))
+    global_B_an = concatenate((B_an(t=0)).trim())
+    global_E   = concatenate(e.E.trim())
 
     if comm.rank == 0:
         plt.rc('image', origin='lower', interpolation='nearest')
@@ -176,10 +193,10 @@ if plot:
         im4 = axes[1,0].imshow(global_B['x'], vmin=vmin, vmax=vmax)
         im5 = axes[1,1].imshow(global_B['y'], vmin=-A, vmax=A)
         im6 = axes[1,2].imshow(global_B['z'], vmin=-A, vmax=A)
-        im7 = axes[2,0].imshow(e.E['x'], vmin=-A, vmax=A)
-        im8 = axes[2,1].imshow(e.E['y'], vmin=-A, vmax=A)
-        im9 = axes[2,2].imshow(e.E['z'], vmin=-A, vmax=A)
-        axes[0,0].set_title(r'$\rho$')
+        im7 = axes[2,0].imshow(global_E['x'], vmin=-A, vmax=A)
+        im8 = axes[2,1].imshow(global_E['y'], vmin=-A, vmax=A)
+        im9 = axes[2,2].imshow(global_E['z'], vmin=-A, vmax=A)
+        axes[0,0].set_title(r'$\nabla \cdot \mathbf{B}$')
         axes[0,1].set_title(r'$B_z$')
         axes[0,2].set_title(r'$B_y$')
         axes[1,0].set_title(r'$B_x$')
@@ -200,7 +217,9 @@ for it in range(nt):
 
     # The update is handled by the experiment class
     e.iterate(dt)
-    # e.step(dt, update=True)
+    manifold.divergence(e.B, div)
+    divBmean = numpy.sqrt((div.trim()**2).mean())
+    comm.allreduce(divBmean, op=MPI.SUM)
 
     # Difference between numerical and analytic solution
     local_rho = e.sources.rho.trim()
@@ -213,9 +232,12 @@ for it in range(nt):
             global_rho = concatenate(local_rho)
             global_rho_an = concatenate(local_rho_an)
             global_B = concatenate(e.B.trim())
-            global_B_an = concatenate(B_an(e.t))
+            global_B_an = concatenate((B_an(e.t)).trim())
+            global_div = concatenate(div.trim())
+            global_E   = concatenate(e.E.trim())
             if comm.rank == 0:
-                im1.set_data(global_rho/npc)
+                print("div B", divBmean)
+                im1.set_data(global_div)
                 im2[0].set_ydata(global_B['z'][0, :])
                 im2[1].set_ydata(global_B_an['z'][0, :])
                 im3[0].set_ydata(global_B['y'][0, :])
@@ -223,9 +245,10 @@ for it in range(nt):
                 im4.set_data(global_B['x'])
                 im5.set_data(global_B['y'])
                 im6.set_data(global_B['z'])
-                im7.set_data(e.E['x'])
-                im8.set_data(e.E['y'])
-                im9.set_data(e.E['z'])
+                im7.set_data(global_E['x'])
+                im8.set_data(global_E['y'])
+                im9.set_data(global_E['z'])
+                im1.autoscale()
 
                 with warnings.catch_warnings():
                     warnings.filterwarnings(
