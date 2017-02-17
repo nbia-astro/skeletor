@@ -91,7 +91,7 @@ def test_gyromotion(plot=False):
     # Set the electric field to zero
     E = Field(manifold, dtype=Float2)
     E.fill((0.0, 0.0))
-    E.copy_guards_ppic2()
+    E.copy_guards()
 
     # Make initial figure
     if plot:

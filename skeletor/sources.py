@@ -1,5 +1,4 @@
 from .cython.deposit import deposit as cython_deposit
-from .cython.ppic2_wrapper import cppgpost2l
 from .cython.types import Float, Float2
 
 
@@ -31,12 +30,3 @@ class Sources:
 
         self.rho.boundaries_set = False
         self.J.boundaries_set = False
-
-    def deposit_ppic2(self, particles, erase=True):
-
-        if erase:
-            self.rho.fill(0.0)
-
-        cppgpost2l(
-                particles, self.rho, particles.np, self.rho.grid.noff,
-                particles.charge, particles.size)
