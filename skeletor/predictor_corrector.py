@@ -100,7 +100,7 @@ class Experiment:
         # Push particle positions to n+1 (n+2) and velocities to n+1/2 (n+3/2)
         # Interpolate magnetic field onto cell centers
         # (particle interpolation is thus the same for E and B-fields)
-        self.manifold.interpolate(self.B2, self.B3, set_boundaries=True)
+        self.manifold.unstagger(self.B2, self.B3, set_boundaries=True)
         self.ions2.push(self.E2, self.B3, dt)
 
         # Deposit sources at n+1/2 (n+3/2) (this could be improved)

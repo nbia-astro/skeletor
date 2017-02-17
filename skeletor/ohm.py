@@ -12,7 +12,7 @@ class Ohm:
         self.gradient = manifold.gradient
         self.log = manifold.log
         self.curl = manifold.curl
-        self.interpolate = manifold.interpolate
+        self.unstagger = manifold.unstagger
 
         # Charge
         self.charge = charge
@@ -62,7 +62,7 @@ class Ohm:
             self.Je[dim] /= rho
 
         # Interpolate the B-field onto the location of E
-        self.interpolate(B, self.B)
+        self.unstagger(B, self.B)
 
         # Take the cross product J_e times B
         E['x'] += self.Je['y']*self.B['z'] - self.Je['z']*self.B['y']

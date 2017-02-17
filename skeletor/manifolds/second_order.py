@@ -48,14 +48,28 @@ class Manifold(Grid):
 
         curl.boundaries_set = False
 
-    def interpolate(self, f, g, set_boundaries=False):
-        """Calculate the interpolated field g"""
+    def unstagger(self, f, g, set_boundaries=False):
+        """Interpolate the staggered field f to cell centers"""
 
         msg = 'Boundaries need to be set on f for interpolation'
         assert f.boundaries_set, msg
-        from ..cython.finite_difference import interpolate as cython_inter
+        from ..cython.finite_difference import unstagger as cython_unstagger
 
-        cython_inter(f, g, self)
+        cython_unstagger(f['x'], f['y'], f['z'], g, self)
+
+        g.boundaries_set = False
+
+        if set_boundaries:
+            g.copy_guards()
+
+    def stagger(self, f, g, set_boundaries=False):
+        """Interpolate the cell-centered field f to cell corners"""
+
+        msg = 'Boundaries need to be set on f for interpolation'
+        assert f.boundaries_set, msg
+        from ..cython.finite_difference import stagger as cython_stagger
+
+        cython_stagger(f['x'], f['y'], f['z'], g, self)
 
         g.boundaries_set = False
 
