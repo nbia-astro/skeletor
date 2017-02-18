@@ -174,6 +174,7 @@ if plot:
     import warnings
 
     global_rho = concatenate(e.sources.rho.trim())
+    global_J = concatenate(e.sources.J.trim())
     global_rho_an = concatenate(rho_an(xg, yg, 0))
     global_B = concatenate(e.B.trim())
     global_B_an = concatenate((B_an(t=0)).trim())
@@ -183,7 +184,7 @@ if plot:
         plt.rc('image', origin='lower', interpolation='nearest')
         plt.figure(1)
         plt.clf()
-        fig, axes = plt.subplots(num=1, ncols=3, nrows=3)
+        fig, axes = plt.subplots(num=1, ncols=3, nrows=4)
         vmin, vmax = charge*(1 - A), charge*(1 + A)
         im1 = axes[0,0].imshow(global_rho/npc, vmin=vmin, vmax=vmax)
         im2 = axes[0,1].plot(xg[0, :], global_B['z'][0, :], 'b',
@@ -196,6 +197,9 @@ if plot:
         im7 = axes[2,0].imshow(global_E['x'], vmin=-A, vmax=A)
         im8 = axes[2,1].imshow(global_E['y'], vmin=-A, vmax=A)
         im9 = axes[2,2].imshow(global_E['z'], vmin=-A, vmax=A)
+        im10 = axes[3,0].imshow(global_J['x']/npc, vmin=-A, vmax=A)
+        im11 = axes[3,1].imshow(global_J['y']/npc, vmin=-A, vmax=A)
+        im12 = axes[3,2].imshow(global_J['z']/npc, vmin=-A, vmax=A)
         axes[0,0].set_title(r'$\nabla \cdot \mathbf{B}$')
         axes[0,1].set_title(r'$B_z$')
         axes[0,2].set_title(r'$B_y$')
@@ -205,6 +209,9 @@ if plot:
         axes[2,0].set_title(r'$E_x$')
         axes[2,1].set_title(r'$E_y$')
         axes[2,2].set_title(r'$E_z$')
+        axes[3,0].set_title(r'$J_x$')
+        axes[3,1].set_title(r'$J_y$')
+        axes[3,2].set_title(r'$J_z$')
         axes[0,2].set_ylim(-A, A)
         axes[0,1].set_ylim(-A, A)
         axes[0,2].set_xlim(0, Lx)
@@ -230,6 +237,7 @@ for it in range(nt):
     if plot:
         if (it % 10 == 0):
             global_rho = concatenate(local_rho)
+            global_J = concatenate(e.sources.J.trim())
             global_rho_an = concatenate(local_rho_an)
             global_B = concatenate(e.B.trim())
             global_B_an = concatenate((B_an(e.t)).trim())
@@ -248,6 +256,9 @@ for it in range(nt):
                 im7.set_data(global_E['x'])
                 im8.set_data(global_E['y'])
                 im9.set_data(global_E['z'])
+                im10.set_data(global_J['x'])
+                im11.set_data(global_J['y'])
+                im12.set_data(global_J['z'])
                 im1.autoscale()
 
                 with warnings.catch_warnings():
