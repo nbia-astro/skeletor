@@ -17,7 +17,7 @@ nx, ny = 64, 64
 Lx = nx
 Ly = Lx*ny/nx
 # Average number of particles per cell
-npc = 256
+npc = 1
 # Particle charge and mass
 charge = 1.0
 mass = 1.0
@@ -115,7 +115,7 @@ npmax = int(1.5*np/comm.size)
 ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
 # Create a uniform density field
-init = InitialCondition(npc)
+init = InitialCondition(npc, quiet=quiet)
 init(manifold, ions)
 
 # Perturbation to particle velocities
