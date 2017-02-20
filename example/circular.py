@@ -12,14 +12,14 @@ plot = True
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 64, 64
+nx, ny = 32, 1
 # Grid size in x- and y-direction (square cells!)
 Lx = nx
 Ly = Lx*ny/nx
 # Average number of particles per cell
 npc = 1
 # Particle charge and mass
-charge = 1.0
+charge = 0.001
 mass = 1.0
 # Electron temperature
 Te = 0.0
@@ -33,7 +33,7 @@ vtx, vty = 0.0, 0.0
 # CFL number
 cfl = 0.1
 # Number of periods to run for
-nperiods = 1.0
+nperiods = 4.0
 
 # Sound speed
 cs = numpy.sqrt(Te/mass)
@@ -76,7 +76,20 @@ m = 0
 
 omega = di.omega[m].real
 
-vph = omega/k
+def frequency (kzva):
+    hel = 1
+    from numpy import sqrt
+    return kzva*(sqrt (1.0 + (0.5*kzva/oc)**2) + 0.5*kzva/(hel*oc))
+
+def get_dt(kzva):
+    from numpy import pi, floor, log2
+    dt = 1/frequency (kzva)
+    dt = 2.0**(floor (log2 (dt)))
+    return dt
+
+kmax = numpy.pi
+
+vph = omega/kmax
 
 # Simulation time
 tend = 2*numpy.pi*nperiods/omega
@@ -98,7 +111,8 @@ Uz_an = lambda x, y, t:         (di.vec[m]['vz']*phase(x, y, t)).real
 manifold = Manifold(nx, ny, comm, nlbx=1, nubx=1, nlby=1, nuby=1)
 
 # Time step
-dt = cfl*manifold.dx/vph
+# dt = cfl*manifold.dx/vph
+dt = get_dt(kmax*va)
 
 # Number of time steps
 nt = int(tend/dt)
@@ -235,7 +249,7 @@ for it in range(nt):
 
     # Make figures
     if plot:
-        if (it % 10 == 0):
+        if (it % 100 == 0):
             global_rho = concatenate(local_rho)
             global_J = concatenate(e.sources.J.trim())
             global_rho_an = concatenate(local_rho_an)
