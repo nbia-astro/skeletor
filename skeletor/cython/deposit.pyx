@@ -73,8 +73,8 @@ def deposit(
             for ky in range(nyp):
                 for kx in range(nxp):
                     density[ky, kx] += den_local[ky*nxp + kx]*charge
-                    J[ky, kx].x += Jx_local[ky*nxp + kx]
-                    J[ky, kx].y += Jy_local[ky*nxp + kx]
+                    J[ky, kx].x += Jx_local[ky*nxp + kx]*charge
+                    J[ky, kx].y += Jy_local[ky*nxp + kx]*charge
             # Free memory
             free(den_local)
             free(Jx_local)
