@@ -34,8 +34,17 @@ cdef class CythonDeposit:
 
         cdef int thid, n
         cdef real_t x, y, vx, vy
-        cdef int ix, iy
+        cdef int ix, iy, j
         cdef real_t dx, dy, tx, ty
+
+        with nogil, parallel():
+
+            # Erase charge and current array
+            for thid in prange(self.num_threads, schedule='static'):
+                for iy in range(self.grid.nypmx):
+                    for ix in range(self.grid.nxpmx):
+                        for j in range(3):
+                            self.current[thid, iy, ix, j] = 0.0
 
         with nogil, parallel():
 
@@ -110,9 +119,6 @@ cdef class CythonDeposit:
                         rho[iy, ix] += self.current[thid, iy, ix, 0]
                         J[iy, ix].x += self.current[thid, iy, ix, 1]
                         J[iy, ix].y += self.current[thid, iy, ix, 2]
-
-        # TODO: Are these separate "nogil, parallel" blocks necessary?
-        with nogil, parallel():
 
             # Rescale charge density by the particle charge itself
             for iy in prange(self.grid.nypmx, schedule='static'):
