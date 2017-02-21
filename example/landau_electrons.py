@@ -97,6 +97,7 @@ def landau_electrons(plot=False, fitplot=False):
     # Perturbation to particle velocities
     vx = ux_an(x, y, t=0)
     vy = uy_an(x, y, t=0)
+    vz = numpy.zeros_like(vx)
 
     # Add thermal velocity
     vx += vtx*numpy.random.normal(size=np).astype(Float)
@@ -125,7 +126,7 @@ def landau_electrons(plot=False, fitplot=False):
     electrons = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
-    electrons.initialize(x, y, vx, vy)
+    electrons.initialize(x, y, vx, vy, vz)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
@@ -133,30 +134,35 @@ def landau_electrons(plot=False, fitplot=False):
 
     # Set the electric field to zero
     E = Field(manifold, comm, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
+    E.copy_guards()
+
+    B = Field(manifold, comm, dtype=Float2)
+    B.fill((0.0, 0.0, 0.0))
+    B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold)
+    sources = Sources(manifold, npc)
 
     # Initialize Poisson solver
-    poisson = Poisson(manifold, np)
+    poisson = Poisson(manifold)
 
     # Calculate initial density and force
 
     # Deposit sources
     sources.deposit(electrons)
-    assert numpy.isclose(sources.rho.sum(), electrons.np*charge)
-    sources.rho.add_guards_ppic2()
+    assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
+    sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
     # Add ion charge density
-    sources.rho += n0*npc
+    sources.rho += n0
 
     # Calculate electric field (Solve Gauss' law)
     poisson(sources.rho, E)
     # Set boundary condition
-    E.copy_guards_ppic2()
+    E.copy_guards()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -198,25 +204,25 @@ def landau_electrons(plot=False, fitplot=False):
     for it in range(nt):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        electrons.push(E, dt)
+        electrons.push(E, B, dt)
 
         # Update time
         t += dt
         time += [t]
 
         # Deposit sources
-        sources.deposit_ppic2(electrons)
+        sources.deposit(electrons)
 
         # Boundary calls
-        sources.rho.add_guards_ppic2()
+        sources.rho.add_guards()
 
         # Add ion charge density
-        sources.rho += n0*npc
+        sources.rho += n0
 
         # Calculate forces (Solve Gauss' law)
         poisson(sources.rho, E)
         # Set boundary condition
-        E.copy_guards_ppic2()
+        E.copy_guards()
 
         # Compute square of Fourier amplitude by projecting the local density
         # onto the local Fourier basis
