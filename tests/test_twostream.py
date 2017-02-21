@@ -72,6 +72,7 @@ def test_twostream(plot=False, fitplot=False):
     # Add thermal component
     vx += vtx*numpy.random.normal(size=np).astype(Float)
     vy += vty*numpy.random.normal(size=np).astype(Float)
+    vz = numpy.zeros_like(vx)
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
@@ -84,7 +85,7 @@ def test_twostream(plot=False, fitplot=False):
     electrons = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
-    electrons.initialize(x, y, vx, vy)
+    electrons.initialize(x, y, vx, vy, vz)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
@@ -92,20 +93,25 @@ def test_twostream(plot=False, fitplot=False):
 
     # Set the electric field to zero
     E = Field(manifold, comm, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
+
+
+    B = Field(manifold, dtype=Float2)
+    B.fill((0.0, 0.0, 0.0))
+    B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold)
+    sources = Sources(manifold, npc)
 
     # Initialize Poisson solver
-    poisson = Poisson(manifold, np)
+    poisson = Poisson(manifold)
 
     # Calculate initial density and force
 
     # Deposit sources
     sources.deposit(electrons)
     sources.rho.add_guards()
-    sources.rho += n0*npc
+    sources.rho += n0
 
     # Solve Gauss' law
     poisson(sources.rho, E)
@@ -156,7 +162,7 @@ def test_twostream(plot=False, fitplot=False):
 
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        electrons.push(E, dt)
+        electrons.push(E, B, dt)
 
         # Update time
         t += dt
@@ -166,7 +172,7 @@ def test_twostream(plot=False, fitplot=False):
 
         # Boundary calls
         sources.rho.add_guards()
-        sources.rho += n0*npc
+        sources.rho += n0
 
         # Solve Gauss' law
         poisson(sources.rho, E)
