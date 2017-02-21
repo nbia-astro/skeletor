@@ -1,6 +1,6 @@
 from skeletor import Float, Float2, Field, Particles, Sources
 from skeletor.manifolds.mpifft4py import Manifold
-from skeletor import Poisson
+from skeletor import Poisson, InitialCondition
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -24,8 +24,6 @@ def test_plasmafrequency(plot=False):
     # Wavenumbers
     ikx = 1
     iky = 1
-    # Thermal velocity of electrons in x- and y-direction
-    vtx, vty = 0.0, 0.0
     # Number of periods to run for
     nperiods = 1
 
@@ -57,7 +55,7 @@ def test_plasmafrequency(plot=False):
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return npc*charge*A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t)
+        return charge*A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t)
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
@@ -66,30 +64,6 @@ def test_plasmafrequency(plot=False):
     def uy_an(x, y, t):
         """Analytic y-velocity as function of x, y and t"""
         return -omega*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k**2
-
-    if quiet:
-        # Uniform distribution of particle positions (quiet start)
-        sqrt_npc = int(numpy.sqrt(npc))
-        assert sqrt_npc**2 == npc
-        dx = dy = 1/sqrt_npc
-        x, y = numpy.meshgrid(
-                numpy.arange(0, nx, dx),
-                numpy.arange(0, ny, dy))
-        x = x.flatten()
-        y = y.flatten()
-    else:
-        x = nx*numpy.random.uniform(size=np).astype(Float)
-        y = ny*numpy.random.uniform(size=np).astype(Float)
-
-    # Perturbation to particle velocities
-    vx = ux_an(x, y, t=0)
-    vy = uy_an(x, y, t=0)
-
-    # x -= A/kx*numpy.sin(kx*x+ky*y)
-
-    # Add thermal velocity
-    vx += vtx*numpy.random.normal(size=np).astype(Float)
-    vy += vty*numpy.random.normal(size=np).astype(Float)
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
@@ -101,8 +75,13 @@ def test_plasmafrequency(plot=False):
     # Create particle array
     electrons = Particles(manifold, npmax, charge=charge, mass=mass)
 
-    # Assign particles to subdomains
-    electrons.initialize(x, y, vx, vy)
+    # Create a uniform density field
+    init = InitialCondition(npc, quiet=quiet)
+    init(manifold, electrons)
+
+    # Perturbation to particle velocities
+    electrons['vx'] = ux_an(electrons['x'], electrons['y'], t=0)
+    electrons['vy'] = uy_an(electrons['x'], electrons['y'], t=0)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
@@ -110,13 +89,17 @@ def test_plasmafrequency(plot=False):
 
     # Set the electric field to zero
     E = Field(manifold, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
+
+    B = Field(manifold, dtype=Float2)
+    B.fill((0.0, 0.0, 0.0))
+    B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold)
+    sources = Sources(manifold, npc)
 
     # Initialize integro-differential operators
-    poisson = Poisson(manifold, np)
+    poisson = Poisson(manifold)
 
     # Calculate initial density and force
 
@@ -126,7 +109,7 @@ def test_plasmafrequency(plot=False):
     # sources.rho /= npc
     # assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
     sources.rho.add_guards()
-    sources.rho += n0*npc
+    sources.rho += n0
     # assert numpy.isclose(comm.allreduce(
     # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
@@ -151,14 +134,14 @@ def test_plasmafrequency(plot=False):
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
-            vmin, vmax = npc*charge*A, -npc*charge*A
+            vmin, vmax = charge*A, -charge*A
             im1 = ax1.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
             im2 = ax2.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
             im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
                            xg[0, :], rho_an(xg, yg, 0)[0, :], 'k--')
             ax1.set_title(r'$\rho$')
             ax3.set_ylim(vmin, vmax)
-            ax3.set_xlim(0, x[-1])
+            ax3.set_xlim(0, manifold.Lx)
 
     t = 0
     ##########################################################################
@@ -167,7 +150,7 @@ def test_plasmafrequency(plot=False):
     for it in range(nt):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        electrons.push(E, dt)
+        electrons.push(E, B, dt)
 
         # Update time
         t += dt
@@ -179,7 +162,7 @@ def test_plasmafrequency(plot=False):
         # assert numpy.isclose(sources.rho.sum(),electrons.np*charge/npc)
         # Boundary calls
         sources.rho.add_guards()
-        sources.rho += n0*npc
+        sources.rho += n0
 
         # assert numpy.isclose(comm.allreduce(
         #     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
@@ -207,7 +190,7 @@ def test_plasmafrequency(plot=False):
     # Check if test has passed
     global_rho = concatenate(sources.rho.trim())
     if comm.rank == 0:
-        tol = 1e-4*npc
+        tol = 1e-4
         err = numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho))
         assert (err < tol)
 
