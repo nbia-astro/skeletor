@@ -160,7 +160,7 @@ def test_sheared_burgers(plot=False):
     ions = Particles(manifold, npmax, time=t, charge=charge, mass=mass)
 
     # Assign particles to subdomains (zero velocity and uniform distribution)
-    ions.initialize(a, b, a*0, b*0)
+    ions.initialize(a, b, a*0, b*0, b*0)
 
     # Position and velocities for this subdomain only
     x_sub = numpy.copy(ions['x'][:ions.np])
@@ -184,25 +184,30 @@ def test_sheared_burgers(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Initialize sources
-    sources = Sources(manifold)
+    sources = Sources(manifold, npc)
     sources.rho = ShearField(manifold, time=0, dtype=Float)
     rho_periodic = ShearField(manifold, time=0, dtype=Float)
     J_periodic = ShearField(manifold, time=0, dtype=Float2)
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
     sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
     sources.rho.copy_guards()
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
 
     # Set the electric field to zero
-    E = ShearField(manifold, comm, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E = ShearField(manifold, dtype=Float2)
+    E.fill((0.0, 0.0, 0.0))
+    E.copy_guards()
+
+    B = ShearField(manifold, dtype=Float2)
+    B.fill((0.0, 0.0, 0.0))
+    B.copy_guards()
 
     def concatenate(arr):
         """Concatenate local arrays to obtain global arrays
@@ -244,9 +249,9 @@ def test_sheared_burgers(plot=False):
             # Create slider widget for changing time
             xp = euler(manifold.x, 0)
             xp = numpy.sort(xp)
-            im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+            im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0)),
                            'b',
-                           manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+                           manifold.x, (global_rho_periodic.mean(axis=0)),
                            'r--')
             im5 = ax2.plot(manifold.x, (global_J_periodic['x']
                            / global_rho_periodic).mean(axis=0), 'b',
@@ -267,7 +272,7 @@ def test_sheared_burgers(plot=False):
 
         # Push particles on each processor. This call also sends and receives
         # particles to and from other processors/subdomains.
-        ions.push_modified(E, dt)
+        ions.push_modified(E, B, dt)
 
         # Update the time
         t += dt
@@ -295,7 +300,7 @@ def test_sheared_burgers(plot=False):
         J_periodic.copy_guards()
 
         # Calculate rms of numerical solution wrt to the analytical solution
-        err = rms(sources.rho.trim()/npc - rho2d_an(xx, yy, t))
+        err = rms(sources.rho.trim() - rho2d_an(xx, yy, t))
 
         global_rho = concatenate(sources.rho.trim())
         global_rho_periodic = concatenate(rho_periodic.trim())
@@ -315,7 +320,7 @@ def test_sheared_burgers(plot=False):
                     for im in (im1a, im2a, im1b, im2b):
                         im.autoscale()
                     # Update 1D solutions (numerical and analytical)
-                    im4[0].set_ydata(global_rho_periodic.mean(axis=0)/npc)
+                    im4[0].set_ydata(global_rho_periodic.mean(axis=0))
                     im5[0].set_ydata((global_J_periodic['x']
                                      / global_rho_periodic).mean(axis=0))
                     xp = euler(manifold.x, t)
