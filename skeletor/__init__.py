@@ -9,5 +9,4 @@ from .ohm import Ohm
 from .faraday import Faraday
 from .sources import Sources
 from .initial_condition import InitialCondition, DensityPertubation
-from .experiment import Experiment
 from .io import IO
