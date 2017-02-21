@@ -4,8 +4,7 @@ class Ohm:
 
     """Solve Ohm's law"""
 
-    def __init__(self, manifold, charge=1.0, temperature=0.0, eta=0.0,
-                 npc=None):
+    def __init__(self, manifold, charge=1.0, temperature=0.0, eta=0.0):
         from .field import Field
 
         # Store the operators here for easy access
@@ -21,9 +20,6 @@ class Ohm:
         # Resistivity
         self.eta = eta
 
-        # Particles per cell
-        self.npc = npc
-
         # Pre-allocate array for electron current and interpolated B-field
         self.Je = Field(manifold, dtype=Float2)
         self.B = Field(manifold, dtype=Float2)
@@ -36,12 +32,6 @@ class Ohm:
         return self.temperature/self.charge
 
     def __call__(self, sources, B, E, set_boundaries=False):
-
-        # Normalize charge and current with number of particles per cell (npc)
-        # This really should be done in sources.py
-        sources.rho /= self.npc
-        for dim in ('x', 'y', 'z'):
-            sources.J[dim] /= self.npc
 
         # Short-hand for rho
         rho = sources.rho

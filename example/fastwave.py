@@ -116,10 +116,10 @@ B.fill((Bx, By, Bz))
 B.copy_guards()
 
 # Initialize Ohm's law solver
-ohm = Ohm(manifold, temperature=Te, charge=charge, npc=npc)
+ohm = Ohm(manifold, temperature=Te, charge=charge)
 
 # Initialize experiment
-e = Experiment(manifold, ions, ohm, B, io=None)
+e = Experiment(manifold, ions, ohm, B, npc, io=None)
 
 # Deposit charges and calculate initial electric field
 e.prepare(dt)
@@ -146,7 +146,7 @@ if plot:
         plt.clf()
         fig, axes = plt.subplots(num=1, ncols=3, nrows=3)
         vmin, vmax = charge*(1 - A), charge*(1 + A)
-        im1 = axes[0,0].imshow(global_rho/npc, vmin=vmin, vmax=vmax)
+        im1 = axes[0,0].imshow(global_rho, vmin=vmin, vmax=vmax)
         im2 = axes[0,1].plot(xg[0, :], global_B['z'][0, :]-1, 'b',
                              xg[0, :], global_Bz_an[0, :]-1, 'k--')
         im3 = axes[0,2].plot(xg[0, :], global_rho[0, :]-1, 'b',
@@ -194,7 +194,7 @@ for it in range(nt):
             global_Bz_an = concatenate(Bz_an(xg+manifold.dx/2,
                                        yg+manifold.dy/2, e.t))
             if comm.rank == 0:
-                im1.set_data(global_rho/npc)
+                im1.set_data(global_rho)
                 im2[0].set_ydata(global_B['z'][0, :]-1)
                 im2[1].set_ydata(global_Bz_an[0, :]-1)
                 im4.set_data(global_B['x'])
@@ -211,7 +211,7 @@ for it in range(nt):
                     plt.pause(1e-7)
 
 val = numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt)
-tol = 6e-5*charge*npc
+tol = 6e-5*charge
 
 # Check if test has passed
 assert (val < tol), (val, tol)

@@ -4,7 +4,10 @@ from .cython.types import Float, Float2
 
 class Sources:
 
-    def __init__(self, manifold, **kwds):
+    def __init__(self, manifold, npc, **kwds):
+
+        # Particles per cell
+        self.npc = npc
 
         if not manifold.shear:
             from .field import Field
@@ -27,6 +30,11 @@ class Sources:
 
         cython_deposit(particles[:particles.np], self.rho, self.J,
                        particles.charge, self.rho.grid, S)
+
+        # Normalize charge and current with number of particles per cell
+        self.rho /= self.npc
+        for dim in ('x', 'y', 'z'):
+            self.J[dim] /= self.npc
 
         self.rho.boundaries_set = False
         self.J.boundaries_set = False

@@ -1,6 +1,6 @@
 class Experiment:
 
-    def __init__ (self, manifold, ions, ohm, B, io=None):
+    def __init__ (self, manifold, ions, ohm, B, npc, io=None):
 
         from skeletor import Float2, Field, Sources, Faraday, Particles
         from mpi4py.MPI import COMM_WORLD as comm
@@ -21,7 +21,7 @@ class Experiment:
         self.io = io
 
         # Initialize sources
-        self.sources = Sources(manifold)
+        self.sources = Sources(manifold, npc)
 
         # Set the electric field to zero
         self.E = Field(manifold, comm, dtype=Float2)
@@ -33,7 +33,7 @@ class Experiment:
         # Crate extra arrays (Get rid of some of them later)
         self.ions2 = Particles(manifold, ions.shape[0],
                                charge=ions.charge, mass=ions.mass)
-        self.sources2 = Sources(manifold)
+        self.sources2 = Sources(manifold, npc)
         self.E2 = Field(manifold, comm, dtype=Float2)
         self.E3 = Field(manifold, comm, dtype=Float2)
         self.B2 = Field(manifold, comm, dtype=Float2)

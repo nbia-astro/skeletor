@@ -168,10 +168,10 @@ manifold.divergence(B, div)
 
 
 # Initialize Ohm's law solver
-ohm = Ohm(manifold, temperature=Te, charge=charge, npc=npc, eta=eta)
+ohm = Ohm(manifold, temperature=Te, charge=charge, eta=eta)
 
 # Initialize experiment
-e = Experiment(manifold, ions, ohm, B, io=None)
+e = Experiment(manifold, ions, ohm, B, npc, io=None)
 
 # Deposit charges and calculate initial electric field
 e.prepare(dt)
@@ -200,7 +200,7 @@ if plot:
         plt.clf()
         fig, axes = plt.subplots(num=1, ncols=3, nrows=4)
         vmin, vmax = charge*(1 - A), charge*(1 + A)
-        im1 = axes[0,0].imshow(global_rho/npc, vmin=vmin, vmax=vmax)
+        im1 = axes[0,0].imshow(global_rho, vmin=vmin, vmax=vmax)
         im2 = axes[0,1].plot(xg[0, :], global_B['z'][0, :], 'b',
                              xg[0, :], global_B_an['z'][0, :], 'k--')
         im3 = axes[0,2].plot(xg[0, :], global_B['y'][0, :], 'b',
@@ -211,9 +211,9 @@ if plot:
         im7 = axes[2,0].imshow(global_E['x'], vmin=-A, vmax=A)
         im8 = axes[2,1].imshow(global_E['y'], vmin=-A, vmax=A)
         im9 = axes[2,2].imshow(global_E['z'], vmin=-A, vmax=A)
-        im10 = axes[3,0].imshow(global_J['x']/npc, vmin=-A, vmax=A)
-        im11 = axes[3,1].imshow(global_J['y']/npc, vmin=-A, vmax=A)
-        im12 = axes[3,2].imshow(global_J['z']/npc, vmin=-A, vmax=A)
+        im10 = axes[3,0].imshow(global_J['x'], vmin=-A, vmax=A)
+        im11 = axes[3,1].imshow(global_J['y'], vmin=-A, vmax=A)
+        im12 = axes[3,2].imshow(global_J['z'], vmin=-A, vmax=A)
         axes[0,0].set_title(r'$\nabla \cdot \mathbf{B}$')
         axes[0,1].set_title(r'$B_z$')
         axes[0,2].set_title(r'$B_y$')
@@ -281,7 +281,7 @@ for it in range(nt):
                     plt.pause(1e-7)
 
 val = numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt)
-tol = 6e-5*charge*npc
+tol = 6e-5*charge
 
 # Check if test has passed
 assert (val < tol), (val, tol)
