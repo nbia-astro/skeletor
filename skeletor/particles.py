@@ -6,7 +6,7 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, manifold, npmax, time=0.0, charge=1.0, mass=1.0, bz=0):
+    def __new__(cls, manifold, npmax, time=0.0, charge=1.0, mass=1.0):
 
         from .cython.types import Int, Particle
 
@@ -21,9 +21,6 @@ class Particles(numpy.ndarray):
         # Particle charge and mass
         obj.charge = charge
         obj.mass = mass
-
-        # Constant magnetic field
-        obj.bz = bz
 
         obj.manifold = manifold
 
@@ -160,16 +157,16 @@ class Particles(numpy.ndarray):
         # Apply periodicity in x
         self.periodic_x()
 
-    def push_modified(self, fxy, dt):
+    def push_modified(self, E, B, dt):
         from .cython.particle_push import modified_boris_push as push
 
         # Update time
         self.time += dt
 
-        grid = fxy.grid
+        grid = E.grid
         qtmh = self.charge/self.mass*dt/2
 
-        push(self[:self.np], fxy, self.bz, qtmh, dt, grid,
+        push(self[:self.np], E, B, qtmh, dt, grid,
              self.manifold.Omega, self.manifold.S)
 
         # Shearing periodicity
