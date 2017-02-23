@@ -1,4 +1,4 @@
-from .cython.deposit import deposit as cython_deposit
+from .cython.deposit import deposit_inline as cython_deposit
 from .cython.types import Float, Float2
 
 
