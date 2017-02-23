@@ -8,12 +8,13 @@ def periodic_x(particle_t[:] particles, int nx):
     cdef int ip
 
     for ip in prange(Np, nogil=True, schedule='static'):
+        periodic_x_cdef(&particles[ip], Lx)
 
-        while particles[ip].x < 0.0:
-            particles[ip].x = particles[ip].x + Lx
-        while particles[ip].x >= Lx:
-            particles[ip].x = particles[ip].x - Lx
-
+cdef inline void periodic_x_cdef(particle_t *particle, real_t Lx) nogil:
+    while particle.x < 0.0:
+        particle.x = particle.x + Lx
+    while particle.x >= Lx:
+        particle.x = particle.x - Lx
 
 def calculate_ihole(particle_t[:] particles, int[:] ihole, grid_t grid):
     cdef int ih = 0
