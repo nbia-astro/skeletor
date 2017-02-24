@@ -6,17 +6,18 @@ import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 from numpy import cos, sin, pi, arctan
+from scipy.special import erfinv
 
 plot = True
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 32, 32
+nx, ny = 128, 32
 # Grid size in x- and y-direction (square cells!)
 Lx = nx
 Ly = Lx*ny/nx
 # Average number of particles per cell
-npc = 1024
+npc = 64
 # Particle charge and mass
 charge = 1.0
 mass = 1.0
@@ -27,6 +28,7 @@ A = 0.005
 # Wavenumbers
 ikx = 1
 iky = 0
+ampl= 1e-8
 # Thermal velocity of electrons in x- and y-direction
 vtx, vty, vtz = 4., 12., 12.
 
@@ -52,12 +54,42 @@ B0 = 1
 # Simulation time
 tend = 10
 
+# Uniform distribution of particle positions (quiet start)
+sqrt_npc = int(numpy.sqrt(npc))
+assert sqrt_npc**2 == npc
+a = (numpy.arange(sqrt_npc) + 0.5)/sqrt_npc
+x_cell, y_cell = numpy.meshgrid(a, a)
+x_cell = x_cell.flatten()
+y_cell = y_cell.flatten()
+
+R = (numpy.arange(npc) + 0.5)/npc
+vx_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtx
+vy_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vty
+vz_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtz
+numpy.random.shuffle(vx_cell)
+numpy.random.shuffle(vy_cell)
+numpy.random.shuffle(vz_cell)
+for i in range(nx):
+    for j in range(ny):
+        if i == 0 and j == 0:
+            x = x_cell + i
+            y = y_cell + j
+            vx = vx_cell
+            vy = vy_cell
+            vz = vz_cell
+        else:
+            x = numpy.concatenate((x, x_cell + i))
+            y = numpy.concatenate((y, y_cell + j))
+            vx = numpy.concatenate((vx, vx_cell))
+            vy = numpy.concatenate((vy, vy_cell))
+            vz = numpy.concatenate((vz, vz_cell))
+
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
 manifold = Manifold(nx, ny, comm, nlbx=1, nubx=1, nlby=1, nuby=1)
 
 # Time step
-dt = 5e-3
+dt = 1e-2
 
 # Number of time steps
 nt = int(tend/dt)
@@ -73,19 +105,25 @@ npmax = int(1.5*np/comm.size)
 # Create particle array
 ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
+# Assign particles to subdomains
+ions.initialize(x, y, vx, vy, vz)
+
 # Create a uniform density field
-init = InitialCondition(npc, quiet=quiet)
-init(manifold, ions)
+# init = InitialCondition(npc, quiet=quiet)
+# init(manifold, ions)
 
 # Perturbation to particle velocities
 from numpy.random import normal
-ions['vx'][:ions.np] = vtx*normal(size=ions.np)
-ions['vy'][:ions.np] = vty*normal(size=ions.np)
-ions['vz'][:ions.np] = vtz*normal(size=ions.np)
+# ions['vx'][:ions.np] = vtx*normal(size=ions.np)
+# ions['vy'][:ions.np] = vty*normal(size=ions.np)
+# ions['vz'][:ions.np] = vtz*normal(size=ions.np)
 
 # Add background magnetic field
 B = Field(manifold, dtype=Float2)
 B.fill((Bx, By, Bz))
+B['x'] += ampl*normal(size=B['x'].shape)
+B['y'] += ampl*normal(size=B['y'].shape)
+B['z'] += ampl*normal(size=B['z'].shape)
 B.copy_guards()
 
 
