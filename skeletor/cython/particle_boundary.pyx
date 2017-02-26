@@ -18,21 +18,29 @@ cdef inline void periodic_x_cdef(particle_t *particle, real_t Lx) nogil:
 
 def calculate_ihole(particle_t[:] particles, int[:] ihole, grid_t grid):
     cdef int ih = 0
-    cdef int nh = 0
-    cdef int ntmax = ihole.shape[0] - 1
     cdef int ip
 
     for ip in range(particles.shape[0]):
-        if (particles[ip].y < grid.edges[0]) or (particles[ip].y >= grid.edges[1]):
-            if ih < ntmax:
-                ihole[ih+1] = ip + 1
-            else:
-                nh = 1
-            ih += 1
-    # set end of file flag
-    if nh > 0:
-        ih = -ih
-    ihole[0] = ih
+        ih = calculate_ihole_cdef(particles[ip], ihole, grid, ih, ip)
+
+    # set end of file flag if it has not failed inside the loop
+    if ihole[0] >= 0:
+        ihole[0] = ih
+
+cdef inline int calculate_ihole_cdef(particle_t particle, int[:] ihole,
+                           grid_t grid, int ih, int ip) nogil:
+
+    cdef int ntmax = ihole.shape[0] - 1
+
+    if (particle.y < grid.edges[0]) or (particle.y >= grid.edges[1]):
+        if ih < ntmax:
+            ihole[ih+1] = ip + 1
+        else:
+            ihole[0] = -ih
+        ih += 1
+
+    return ih
+
 
 def shear_periodic_y(particle_t[:] particles, int ny, real_t S, real_t t):
     """Shearing periodic boundaries along y.
