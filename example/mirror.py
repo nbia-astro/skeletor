@@ -12,25 +12,33 @@ plot = True
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 128, 32
+nx, ny = 64, 64
 # Grid size in x- and y-direction (square cells!)
 Lx = nx
-Ly = Lx*ny/nx
+Ly = ny
 # Average number of particles per cell
 npc = 64
 # Particle charge and mass
 charge = 1.0
 mass = 1.0
 # Electron temperature
-Te = 0.0
+Te = 1.0
 # Dimensionless amplitude of perturbation
 A = 0.005
 # Wavenumbers
 ikx = 1
 iky = 0
-ampl= 1e-8
+ampl= 1e-6
 # Thermal velocity of electrons in x- and y-direction
-vtx, vty, vtz = 4., 12., 12.
+
+# Magnetic field strength
+B0 = 1
+va = B0
+beta_para = 500
+beta_perp = 2000
+vtx = numpy.sqrt(va**2*beta_para/2)
+vty = numpy.sqrt(va**2*beta_perp/2)
+vtz = vty
 
 # Sound speed
 cs = numpy.sqrt(Te/mass)
@@ -45,9 +53,6 @@ k = numpy.sqrt(kx*kx + ky*ky)
 
 # Angle of k-vector with respect to x-axis
 theta = arctan(iky/ikx) if ikx != 0 else pi/2
-
-# Magnetic field strength
-B0 = 1
 
 (Bx, By, Bz) = (B0*cos(theta), B0*sin(theta), 0)
 
