@@ -29,12 +29,13 @@ class Sources:
             S = self.rho.grid.S
 
         cython_deposit(particles[:particles.np], self.rho, self.J,
-                       particles.charge, self.rho.grid, S)
+                       self.rho.grid, S)
 
-        # Normalize charge and current with number of particles per cell
-        self.rho /= self.npc
+        # Normalize charge and current with number of particles per cell and
+        # the charge per particle
+        self.rho *= particles.charge/self.npc
         for dim in ('x', 'y', 'z'):
-            self.J[dim] /= self.npc
+            self.J[dim] *= particles.charge/self.npc
 
         self.rho.boundaries_set = False
         self.J.boundaries_set = False

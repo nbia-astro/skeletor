@@ -5,23 +5,14 @@ from libc.stdlib cimport abort, malloc, free
 
 def deposit_inline(
         particle_t[:] particles, real_t[:, :] density, real2_t[:,:] J,
-        real_t charge, grid_t grid, real_t S):
+        grid_t grid, real_t S):
 
     cdef int Np = particles.shape[0]
-    cdef int ix, iy, ip
-    cdef int nyp = density.shape[0]
-    cdef int nxp = density.shape[1]
+    cdef int ip
 
     # Density deposition
     for ip in range(Np):
         deposit_particle(particles[ip], density, J, grid, S)
-
-    for iy in range(nyp):
-        for ix in range(nxp):
-            density[iy, ix]*= charge
-            J[iy, ix].x *= charge
-            J[iy, ix].y *= charge
-            J[iy, ix].z *= charge
 
 cdef inline void deposit_particle(particle_t particle, real_t[:,:] density,
                     real2_t[:,:] J, grid_t grid, real_t S) nogil:
