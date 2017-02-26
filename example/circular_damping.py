@@ -19,7 +19,7 @@ nx, ny = 32, 1
 Lx = nx
 Ly = Lx*ny/nx
 # Average number of particles per cell
-npc = 2**14
+npc = 2**16
 # Particle charge and mass
 charge = 0.19634954084936207
 mass = 1.0
@@ -79,7 +79,7 @@ di = HallDispersion(kperp=0, kpar=k, va=va, cs=cs, etaH=etaH, eta=eta,
 # Mode number
 m = 0
 
-omega = di.omega[m].real
+omega = -0.14922889208545562+0.095051744736327104j
 
 def frequency (kzva):
     hel = 1
@@ -94,13 +94,13 @@ def get_dt(kzva):
 
 kmax = numpy.pi
 
-vph = omega/kmax
+vph = omega.real/kmax
 
 # Simulation time
 tend = 20.
 
 # Phase factor
-phase = lambda x, y, t: A*numpy.exp(1j*(di.omega[m]*t - kx*x - ky*y))
+phase = lambda x, y, t: A*numpy.exp(1j*(omega*t - kx*x - ky*y))
 
 # Linear solutions in real space
 rho_an = lambda x, y, t: rho0 + rho0*(di.vec[m]['drho']*phase(x, y, t)).real
