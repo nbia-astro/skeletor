@@ -80,7 +80,7 @@ class Particles(numpy.ndarray):
         self["vy"][:self.np] = vy[ind]
         self["vz"][:self.np] = vz[ind]
 
-    def move(self):
+    def cppmove2(self):
         """Uses ppic2's cppmove2 routine for moving particles
            between processors."""
 
@@ -116,7 +116,7 @@ class Particles(numpy.ndarray):
 
         calculate_ihole(self[:self.np], self.ihole, self.manifold)
 
-        self.move()
+        self.cppmove2()
 
     def shear_periodic_y(self):
         """Shearing periodic boundaries along y.
