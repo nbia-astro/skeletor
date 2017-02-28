@@ -4,6 +4,7 @@ from particle_push cimport drift2 as drift
 from deposit cimport deposit_particle
 from particle_boundary cimport periodic_x_cdef as periodic_x
 from particle_boundary cimport calculate_ihole_cdef as calculate_ihole
+from libc.math cimport fabs
 
 def move(particle_t[:] particles, real2_t[:, :] E, real2_t[:, :] B,
          real_t qtmh, real_t dt, grid_t grid, int[:] ihole,
@@ -40,6 +41,11 @@ def move(particle_t[:] particles, real2_t[:, :] E, real2_t[:, :] B,
 
         # First half of particle drift
         drift(&particle, 0.5*dt)
+
+        # Make sure that particle has not moved more than a half grid cell
+        if (fabs(particle.x - particles[ip].x) > 0.5) or \
+           (fabs(particle.y - particles[ip].y) > 0.5):
+            ihole[0] = -1
 
         # Deposit the particle
         deposit_particle(particle, density, J, grid, S)
