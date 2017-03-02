@@ -57,7 +57,7 @@ theta = arctan(iky/ikx) if ikx != 0 else pi/2
 (Bx, By, Bz) = (B0*cos(theta), B0*sin(theta), 0)
 
 # Simulation time
-tend = 10
+tend = 8
 
 # Uniform distribution of particle positions (quiet start)
 sqrt_npc = int(numpy.sqrt(npc))
@@ -67,34 +67,43 @@ x_cell, y_cell = numpy.meshgrid(a, a)
 x_cell = x_cell.flatten()
 y_cell = y_cell.flatten()
 
-R = (numpy.arange(npc) + 0.5)/npc
-vx_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtx
-vy_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vty
-vz_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtz
-numpy.random.shuffle(vx_cell)
-numpy.random.shuffle(vy_cell)
-numpy.random.shuffle(vz_cell)
-for i in range(nx):
-    for j in range(ny):
-        if i == 0 and j == 0:
-            x = x_cell + i
-            y = y_cell + j
-            vx = vx_cell
-            vy = vy_cell
-            vz = vz_cell
-        else:
-            x = numpy.concatenate((x, x_cell + i))
-            y = numpy.concatenate((y, y_cell + j))
-            vx = numpy.concatenate((vx, vx_cell))
-            vy = numpy.concatenate((vy, vy_cell))
-            vz = numpy.concatenate((vz, vz_cell))
+if comm.rank == 0:
+    R = (numpy.arange(npc) + 0.5)/npc
+    vx_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtx
+    vy_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vty
+    vz_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtz
+    numpy.random.shuffle(vx_cell)
+    numpy.random.shuffle(vy_cell)
+    numpy.random.shuffle(vz_cell)
+    for i in range(nx):
+        for j in range(ny):
+            if i == 0 and j == 0:
+                x = x_cell + i
+                y = y_cell + j
+                vx = vx_cell
+                vy = vy_cell
+                vz = vz_cell
+            else:
+                x = numpy.concatenate((x, x_cell + i))
+                y = numpy.concatenate((y, y_cell + j))
+                vx = numpy.concatenate((vx, vx_cell))
+                vy = numpy.concatenate((vy, vy_cell))
+                vz = numpy.concatenate((vz, vz_cell))
+else:
+    x, y, vx, vy, vz = None, None, None, None, None
+
+x = comm.bcast(x, root=0)
+y = comm.bcast(y, root=0)
+vx = comm.bcast(vx, root=0)
+vy = comm.bcast(vy, root=0)
+vz = comm.bcast(vz, root=0)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm, nlbx=1, nubx=1, nlby=1, nuby=1)
+manifold = Manifold(nx, ny, comm, nlbx=2, nubx=2, nlby=2, nuby=2)
 
 # Time step
-dt = 1e-2
+dt = 1e-3
 
 # Number of time steps
 nt = int(tend/dt)
