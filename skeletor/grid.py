@@ -77,17 +77,17 @@ class Grid(grid_t):
     def x(self):
         "One-dimensional x-coordinate array"
         from numpy import arange
-        return arange(self.nx) + 0.5
+        return (arange(self.nx) + 0.5)*self.dx
 
     @property
     def y(self):
         "One-dimensional y-coordinate array"
         from numpy import arange
-        return arange(self.noff, self.noff + self.nyp) + 0.5
+        return (arange(self.noff, self.noff + self.nyp) + 0.5)*self.dy
 
     @property
     def yg(self):
         "One-dimensional y-coordinate array including ghost"
         from numpy import arange
-        return arange(self.noff - self.lby,
-                      self.noff + self.nyp + self.nuby) + 0.5
+        return (arange(self.noff - self.lby, self.noff + self.nyp + self.nuby)
+                + 0.5)*self.dy
