@@ -22,7 +22,7 @@ cdef inline void deposit_particle(particle_t particle, real_t[:,:] density,
         cdef real_t x, y
 
         x = particle.x + grid.lbx - 0.5
-        y = particle.y + grid.lby - 0.5
+        y = particle.y + grid.lby - 0.5 - grid.noff
 
         ix = <int> x
         iy = <int> y
@@ -32,8 +32,6 @@ cdef inline void deposit_particle(particle_t particle, real_t[:,:] density,
 
         tx = 1.0 - dx
         ty = 1.0 - dy
-
-        iy = iy - grid.noff
 
         density[iy  , ix  ] += ty*tx
         density[iy  , ix+1] += ty*dx
