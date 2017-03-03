@@ -17,7 +17,7 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E,
         gather_cic(particles[ip], B, &b, grid, qtmh)
 
         kick(&particles[ip], e, b)
-        drift2(&particles[ip], dt)
+        drift2(&particles[ip], dt, grid)
 
 def modified_boris_push(particle_t[:] particles, real2_t[:, :] E,
                         real2_t[:, :] B, real_t qtmh, real_t dt, grid_t grid,
@@ -40,7 +40,7 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E,
         e.y = e.y - S*particles[ip].y*b.z
 
         kick(&particles[ip], e, b)
-        drift2(&particles[ip], dt)
+        drift2(&particles[ip], dt, grid)
 
 
 cdef inline void gather_cic(particle_t particle, real2_t[:,:] F, real2_t *f,
@@ -91,10 +91,10 @@ cdef inline void kick(particle_t *particle, real2_t e, real2_t b) nogil:
     particle.vy = vmy + fac*(vpz*b.x - vpx*b.z) + e.y
     particle.vz = vmz + fac*(vpx*b.y - vpy*b.x) + e.z
 
-cdef inline void drift2(particle_t *particle, real_t dt) nogil:
+cdef inline void drift2(particle_t *particle, real_t dt, grid_t grid) nogil:
 
-    particle.x = particle.x + particle.vx*dt
-    particle.y = particle.y + particle.vy*dt
+    particle.x = particle.x + particle.vx*dt/grid.dx
+    particle.y = particle.y + particle.vy*dt/grid.dy
 
 
 def drift(particle_t[:] particles, real_t dt):
