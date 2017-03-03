@@ -78,6 +78,7 @@ def test_shearing_epicycle(plot=False):
     # Particle velocity at t = 0
     vx = vx_an(t=0)
     vy = vy_an(t=0)
+    vz = numpy.zeros_like(vx)
 
     # Drift forward by dt/2
     x += vx*dt/2
@@ -98,7 +99,7 @@ def test_shearing_epicycle(plot=False):
     ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy)
+    ions.initialize(x, y, vx, vy, vz)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
@@ -106,9 +107,13 @@ def test_shearing_epicycle(plot=False):
 
     # Electric field in x-direction
     E_star = Field(manifold, dtype=Float2)
-    E_star.fill((0.0, 0.0))
+    E_star.fill((0.0, 0.0, 0.0))
     E_star['x'][:-1, :-2] = -2*S*(xg-nx/2)*mass/charge*Omega
     E_star.copy_guards()
+
+    B = Field(manifold, dtype=Float2)
+    B.fill((0.0, 0.0, 2*mass*Omega/charge))
+    B.copy_guards()
 
     # Make initial figure
     if plot:
@@ -137,7 +142,7 @@ def test_shearing_epicycle(plot=False):
     for it in range(nt):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        ions.push(E_star, dt)
+        ions.push(E_star, B, dt)
 
         assert comm.allreduce(ions.np, op=MPI.SUM) == np
 

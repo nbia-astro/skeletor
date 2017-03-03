@@ -18,7 +18,7 @@ mass = 1.0
 manifold = Manifold(nx, ny, comm)
 
 # # Initialize sources
-sources = Sources(manifold)
+sources = Sources(manifold, npc)
 
 # Total number of particles
 np = npc*nx*ny
@@ -37,9 +37,10 @@ y = ny*numpy.random.uniform(size=np).astype(Float)
 # Normal distribution of particle velocities
 vx = numpy.empty(np, Float)
 vy = numpy.empty(np, Float)
+vz = numpy.empty(np, Float)
 
 # Assign particles to subdomains
-particles.initialize(x, y, vx, vy)
+particles.initialize(x, y, vx, vy, vz)
 
 
 # def test_initialize():
@@ -57,7 +58,7 @@ def test_deposit():
     the number of particles in each subdomain times the particle charge.
     """
     sources.deposit(particles)
-    assert numpy.isclose(sources.rho.sum(), charge*particles.np)
+    assert numpy.isclose(sources.rho.sum(), charge*particles.np/npc)
 
 
 def test_add_guards():
@@ -69,4 +70,4 @@ def test_add_guards():
     """
     sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=SUM), np*charge)
+        sources.rho.trim().sum(), op=SUM), np*charge/npc)

@@ -25,10 +25,10 @@ def test_skeletor():
     charge = -1.0
     mass = 1.0
 
-    # Thermal velocity of electrons in x- and y-direction
-    vtx, vty = 1.0, 1.0
-    # Drift velocity of electrons in x- and y-direction
-    vdx, vdy = 0.0, 0.0
+    # Thermal velocity of electrons in x, y and z-direction
+    vtx, vty, vtz = 1.0, 1.0, 1.0
+    # Drift velocity of electrons in x, y and z-direction
+    vdx, vdy, vdz = 0.0, 0.0, 0.0
 
     # Timestep
     dt = 0.1
@@ -47,6 +47,7 @@ def test_skeletor():
     # Normal distribution of particle velocities
     vx = vdx + vtx*numpy.random.normal(size=np).astype(Float)
     vy = vdy + vty*numpy.random.normal(size=np).astype(Float)
+    vz = vdz + vtz*numpy.random.normal(size=np).astype(Float)
 
     global_electrons = []
     global_rho = []
@@ -67,7 +68,7 @@ def test_skeletor():
         electrons = Particles(manifold, npmax, charge=charge, mass=mass)
 
         # Assign particles to subdomains
-        electrons.initialize(x, y, vx, vy)
+        electrons.initialize(x, y, vx, vy, vz)
 
         # Make sure the numbers of particles in each subdomain add up to the
         # total number of particles
@@ -78,15 +79,18 @@ def test_skeletor():
         #######################
 
         # Set the force to zero (this will of course change in the future).
-        fxy = Field(manifold, dtype=Float2)
-        fxy.fill((0.0, 0.0))
+        E = Field(manifold, dtype=Float2)
+        E.fill((0.0, 0.0, 0.0))
+
+        B = Field(manifold, dtype=Float2)
+        B.fill((0.0, 0.0, 0.0))
 
         for it in range(nt):
 
             # Push particles on each processor. This call also sends and
             # receives particles to and from other processors/subdomains. The
             # latter is the only non-trivial step in the entire code so far.
-            electrons.push(fxy, dt)
+            electrons.push(E, B, dt)
 
         # Combine particles from all processes into a single array
         global_electrons.append(
@@ -96,13 +100,13 @@ def test_skeletor():
         # Test charge deposition #
         ##########################
 
-        sources = Sources(manifold)
+        sources = Sources(manifold, npc)
 
         sources.deposit(electrons)
 
         # Make sure the charge deposited into *all* cells (active plus guard)
         # equals the number of particles times the particle charge
-        assert numpy.isclose(sources.rho.sum(), electrons.np*charge)
+        assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
 
         # Add charge from guard cells to corresponding active cells.
         # Afterwards erases charge in guard cells.
@@ -111,7 +115,7 @@ def test_skeletor():
         # Make sure the charge deposited into *active* cells (no guard cells)
         # equals the number of particles times the particle charge
         assert numpy.isclose(comm.allreduce(
-            sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+            sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
         # Combine charge density from all processes into a single array
         global_rho += [numpy.concatenate(comm.allgather(sources.rho.trim()))]
@@ -121,13 +125,13 @@ def test_skeletor():
         ##########################
 
         # Initialize Poisson solver
-        poisson = Poisson(manifold, np)
+        poisson = Poisson(manifold)
 
         # Solve Gauss's law
-        poisson(sources.rho, fxy)
+        poisson(sources.rho, E)
 
         # Copy data to guard cells from corresponding active cells
-        fxy.copy_guards()
+        E.copy_guards()
 
         # TODO: Previously the solution of Gauss' law obtained above was
         # compared to the solution obtained by PPIC2, assuming that the latter

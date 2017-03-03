@@ -1,6 +1,6 @@
 from skeletor import Float, Float2, Field, Particles, Sources
 from skeletor import Ohm, InitialCondition
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.second_order import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -57,7 +57,7 @@ def test_ionacoustic(plot=False):
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return npc*charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+        return charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
@@ -95,10 +95,15 @@ def test_ionacoustic(plot=False):
 
     # Set the electric field to zero
     E = Field(manifold, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
+    E.copy_guards()
+    B = Field(manifold, dtype=Float2)
+    B.fill((0.0, 0.0, 0.0))
+    B.copy_guards()
+
 
     # Initialize sources
-    sources = Sources(manifold)
+    sources = Sources(manifold, npc)
 
     # Initialize Ohm's law solver
     ohm = Ohm(manifold, temperature=Te, charge=charge)
@@ -107,14 +112,14 @@ def test_ionacoustic(plot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
     sources.rho.add_guards()
     sources.rho.copy_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
     # Calculate electric field (Solve Ohm's law)
-    ohm(sources.rho, E)
+    ohm(sources, B, E)
     # Set boundary condition
     E.copy_guards()
 
@@ -137,7 +142,7 @@ def test_ionacoustic(plot=False):
             plt.figure(1)
             plt.clf()
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
-            vmin, vmax = npc*charge*(1 - A), npc*charge*(1 + A)
+            vmin, vmax = charge*(1 - A), charge*(1 + A)
             im1 = ax1.imshow(global_rho, vmin=vmin, vmax=vmax)
             im2 = ax2.imshow(global_rho_an, vmin=vmin, vmax=vmax)
             im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
@@ -154,7 +159,7 @@ def test_ionacoustic(plot=False):
     for it in range(nt):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        ions.push(E, dt)
+        ions.push(E, B, dt)
 
         # Update time
         t += dt
@@ -167,7 +172,7 @@ def test_ionacoustic(plot=False):
         sources.rho.copy_guards()
 
         # Calculate forces (Solve Ohm's law)
-        ohm(sources.rho, E)
+        ohm(sources, B, E)
         # Set boundary condition
         E.copy_guards()
 
@@ -192,7 +197,7 @@ def test_ionacoustic(plot=False):
                         plt.pause(1e-7)
 
     # Check if test has passed
-    assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge*npc
+    assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge
 
 if __name__ == "__main__":
     import argparse
