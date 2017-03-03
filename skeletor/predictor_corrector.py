@@ -95,7 +95,7 @@ class Experiment:
         # Push particle positions to n+1 (n+2) and kick velocities to n+1/2
         # (n+3/2). Deposit charge and current at n+1/2 (n+3/2) and only update
         # particle positions if update=True
-        self.ions.move(self.E2, self.B3, dt, self.sources, update)
+        self.ions.push_and_deposit(self.E2, self.B3, dt, self.sources, update)
 
         # Evolve magnetic field by a half step to n+1/2 (n+3/2)
         self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)

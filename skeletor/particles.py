@@ -80,7 +80,7 @@ class Particles(numpy.ndarray):
         self["vy"][:self.np] = vy[ind]
         self["vz"][:self.np] = vz[ind]
 
-    def cppmove2(self):
+    def move(self):
         """Uses ppic2's cppmove2 routine for moving particles
            between processors."""
 
@@ -116,7 +116,7 @@ class Particles(numpy.ndarray):
 
         calculate_ihole(self[:self.np], self.ihole, self.manifold)
 
-        self.cppmove2()
+        self.move()
 
     def shear_periodic_y(self):
         """Shearing periodic boundaries along y.
@@ -157,14 +157,14 @@ class Particles(numpy.ndarray):
         # Apply periodicity in x
         self.periodic_x()
 
-    def move(self, E, B, dt, sources, update=True):
+    def push_and_deposit(self, E, B, dt, sources, update=True):
         """
         This function updates the particle position and velocities and
         depositis the charge and currents. If update=False only the new
         sources are stored (a predictor step).
         It currently does not work with shear.
         """
-        from .cython.move import move
+        from .cython.push_and_deposit import push_and_deposit
 
         # Update time
         self.time += dt
@@ -178,8 +178,8 @@ class Particles(numpy.ndarray):
         sources.rho.fill(0.0)
         sources.J.fill((0.0, 0.0, 0.0))
 
-        move(self[:self.np], E, B, qtmh, dt, self.manifold, self.ihole,
-             sources.rho, sources.J, S, update)
+        push_and_deposit(self[:self.np], E, B, qtmh, dt, self.manifold,
+                         self.ihole, sources.rho, sources.J, S, update)
 
         # Set boundary flags to False
         sources.rho.boundaries_set = False
@@ -192,7 +192,7 @@ class Particles(numpy.ndarray):
 
         # Move particles across MPI domains
         if update:
-            self.cppmove2()
+            self.move()
 
     def push_modified(self, E, B, dt):
         from .cython.particle_push import modified_boris_push as push

@@ -6,7 +6,8 @@ from particle_boundary cimport periodic_x_cdef as periodic_x
 from particle_boundary cimport calculate_ihole_cdef as calculate_ihole
 from libc.math cimport fabs
 
-def move(particle_t[:] particles, real2_t[:, :] E, real2_t[:, :] B,
+def push_and_deposit(
+         particle_t[:] particles, real2_t[:, :] E, real2_t[:, :] B,
          real_t qtmh, real_t dt, grid_t grid, int[:] ihole,
          real_t[:, :] density, real2_t[:,:] J, real_t S, const bint update):
 
@@ -67,5 +68,3 @@ def move(particle_t[:] particles, real2_t[:, :] E, real2_t[:, :] B,
         # set end of file flag if it has not failed inside the main loop
         if ihole[0] >= 0:
             ihole[0] = ih
-
-
