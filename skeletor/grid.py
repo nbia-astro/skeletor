@@ -103,4 +103,5 @@ class Grid(grid_t):
     def yg(self):
         "One-dimensional y-coordinate array including ghost"
         from numpy import arange
-        return arange(self.noff - self.lby, self.noff + self.nyp + self.nuby)
+        return arange(self.noff - self.lby,
+                      self.noff + self.nyp + self.nuby) + 0.5
