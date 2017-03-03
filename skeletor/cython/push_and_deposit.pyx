@@ -41,7 +41,7 @@ def push_and_deposit(
         kick(&particle, e, b)
 
         # First half of particle drift
-        drift(&particle, 0.5*dt)
+        drift(&particle, 0.5*dt, grid)
 
         # Make sure that particle has not moved more than a half grid cell
         if (fabs(particle.x - particles[ip].x) > 0.5) or \
@@ -53,7 +53,7 @@ def push_and_deposit(
 
         if update:
             # Second half of particle drift
-            drift(&particle, 0.5*dt)
+            drift(&particle, 0.5*dt, grid)
 
             # Boundary conditions
             periodic_x(&particle, Lx)
