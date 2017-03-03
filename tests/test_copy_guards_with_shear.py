@@ -47,7 +47,7 @@ def test_copy_guards_with_shear(plot=False):
     g.copy_guards()
 
     # Grid including first ghost zone
-    xg = numpy.arange(-grid.lbx, grid.ubx + grid.nlbx)
+    xg = numpy.arange(-grid.lbx, grid.ubx + grid.nlbx) + 0.5
     xxg, yyg = numpy.meshgrid(xg, grid.yg)
 
     # Analytic field including first ghost-zone
