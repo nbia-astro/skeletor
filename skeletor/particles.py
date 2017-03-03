@@ -157,6 +157,43 @@ class Particles(numpy.ndarray):
         # Apply periodicity in x
         self.periodic_x()
 
+    def push_and_deposit(self, E, B, dt, sources, update=True):
+        """
+        This function updates the particle position and velocities and
+        depositis the charge and currents. If update=False only the new
+        sources are stored (a predictor step).
+        It currently does not work with shear.
+        """
+        from .cython.push_and_deposit import push_and_deposit
+
+        # Update time
+        self.time += dt
+
+        qtmh = self.charge/self.mass*dt/2
+
+        # Shear set to zero for the time being
+        S = 0.0
+
+        # Zero out the sources
+        sources.rho.fill(0.0)
+        sources.J.fill((0.0, 0.0, 0.0))
+
+        push_and_deposit(self[:self.np], E, B, qtmh, dt, self.manifold,
+                         self.ihole, sources.rho, sources.J, S, update)
+
+        # Set boundary flags to False
+        sources.rho.boundaries_set = False
+        sources.J.boundaries_set = False
+
+        # Normalize sources with particle charge
+        sources.normalize(self.charge)
+        # Add and copy boundary layers
+        sources.set_boundaries()
+
+        # Move particles across MPI domains
+        if update:
+            self.move()
+
     def push_modified(self, E, B, dt):
         from .cython.particle_push import modified_boris_push as push
 

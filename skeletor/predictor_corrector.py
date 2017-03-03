@@ -31,19 +31,12 @@ class Experiment:
         self.B = B
 
         # Crate extra arrays (Get rid of some of them later)
-        self.ions2 = Particles(manifold, ions.shape[0],
-                               charge=ions.charge, mass=ions.mass)
-        self.sources2 = Sources(manifold, npc)
         self.E2 = Field(manifold, comm, dtype=Float2)
         self.E3 = Field(manifold, comm, dtype=Float2)
         self.B2 = Field(manifold, comm, dtype=Float2)
         self.B3 = Field(manifold, comm, dtype=Float2)
         self.E2.copy_guards()
-
-        # Initialize some of the
         self.B2[:] = B
-        self.ions2[:] = ions
-        self.ions2.np = ions.np
 
         # Initial time
         self.t = 0.0
@@ -86,40 +79,33 @@ class Experiment:
 
         raise RuntimeError ("Exceeded maxiter={} iterations!".format (maxiter))
 
-
     def step(self, dt, update):
 
         # Copy magnetic and electric field and ions from previous step
         self.B2[:] = self.B
         self.E2[:] = self.E
-        self.ions2[:] = self.ions
 
         # Evolve magnetic field by a half step to n (n+1)
         self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
 
-        # Push particle positions to n+1 (n+2) and velocities to n+1/2 (n+3/2)
         # Interpolate magnetic field onto cell centers
         # (particle interpolation is thus the same for E and B-fields)
         self.manifold.unstagger(self.B2, self.B3, set_boundaries=True)
-        self.ions2.push(self.E2, self.B3, dt)
 
-        # Deposit sources at n+1/2 (n+3/2) (this could be improved)
-        self.ions2.drift(-dt/2)
-        self.sources2.deposit(self.ions2, set_boundaries=True)
-        self.ions2.drift(+dt/2)
+        # Push particle positions to n+1 (n+2) and kick velocities to n+1/2
+        # (n+3/2). Deposit charge and current at n+1/2 (n+3/2) and only update
+        # particle positions if update=True
+        self.ions.push_and_deposit(self.E2, self.B3, dt, self.sources, update)
 
         # Evolve magnetic field by a half step to n+1/2 (n+3/2)
         self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
 
         # Electric field at n+1/2 (n+3/2)
-        self.ohm(self.sources2, self.B2, self.E2, set_boundaries=True)
+        self.ohm(self.sources, self.B2, self.E2, set_boundaries=True)
 
         if update:
             self.B[:] = self.B2
             self.E[:] = self.E2
-            self.ions[:] = self.ions2
-            self.sources.rho[:] = self.sources2.rho
-            self.sources.J[:] = self.sources2.J
             self.t += dt
 
     def iterate(self, dt):

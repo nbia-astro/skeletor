@@ -5,7 +5,8 @@ from distutils.extension import Extension
 from numpy import get_include
 
 Options.annotate = False
-compiler_directives = {"boundscheck": False, "cdivision": True}
+compiler_directives = {"boundscheck": False, "cdivision": True,
+                       "wraparound": False}
 cflags = ["-Wno-unused-function", "-Wno-#warnings", "-fopenmp"]
 
 extensions = [Extension(
