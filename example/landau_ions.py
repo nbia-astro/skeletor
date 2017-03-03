@@ -1,6 +1,6 @@
 from skeletor import cppinit, Float, Float2, Field, Particles, Sources
 from skeletor import Ohm
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.second_order import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -84,6 +84,7 @@ def landau_ions(plot=False, fitplot=False):
     # Perturbation to particle velocities
     vx = ux_an(x, y, t=0)
     vy = uy_an(x, y, t=0)
+    vz = numpy.zeros_like(vx)
 
     # Add thermal velocity
     vx += vtx*numpy.random.normal(size=np).astype(Float)
@@ -112,7 +113,7 @@ def landau_ions(plot=False, fitplot=False):
     ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy)
+    ions.initialize(x, y, vx, vy, vz)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
@@ -120,10 +121,15 @@ def landau_ions(plot=False, fitplot=False):
 
     # Set the electric field to zero
     E = Field(manifold, comm, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
+    E.copy_guards()
+
+    B = Field(manifold, comm, dtype=Float2)
+    B.fill((0.0, 0.0, 0.0))
+    B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold)
+    sources = Sources(manifold, npc)
 
     # Initialize Ohm's law solver
     ohm = Ohm(manifold, temperature=Te, charge=charge)
@@ -132,15 +138,16 @@ def landau_ions(plot=False, fitplot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-    sources.rho.add_guards_ppic2()
+    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+    sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+    sources.rho.copy_guards()
 
     # Calculate electric field (Solve Ohm's law)
-    ohm(sources.rho, E)
+    ohm(sources, B, E)
     # Set boundary condition
-    E.copy_guards_ppic2()
+    E.copy_guards()
 
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
@@ -182,22 +189,23 @@ def landau_ions(plot=False, fitplot=False):
     for it in range(nt):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        ions.push(E, dt)
+        ions.push(E, B, dt)
 
         # Update time
         t += dt
         time += [t]
 
         # Deposit sources
-        sources.deposit_ppic2(ions)
+        sources.deposit(ions)
 
         # Boundary calls
-        sources.rho.add_guards_ppic2()
+        sources.rho.add_guards()
+        sources.rho.copy_guards()
 
         # Calculate forces (Solve Ohm's law)
-        ohm(sources.rho, E)
+        ohm(sources, B, E)
         # Set boundary condition
-        E.copy_guards_ppic2()
+        E.copy_guards()
 
         # Compute square of Fourier amplitude by projecting the local density
         # onto the local Fourier basis

@@ -120,7 +120,7 @@ class Field(ndarray):
         uby = self.grid.uby
 
         # Add data from guard cells to corresponding active cells
-        dims = ('x', 'y')
+        dims = ('x', 'y', 'z')
         for dim in dims:
             self[:, lbx:lbx+nubx][dim] += self[:, ubx:][dim]
             self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
@@ -175,7 +175,7 @@ class ShearField(Field):
             self[iy, self.grid.lbx:self.grid.ubx] = \
                 irfft(exp(phase)*rfft(self[iy, self.grid.lbx:self.grid.ubx]))
         elif self.dtype == dtype(Float2):
-            for dim in ('x', 'y'):
+            for dim in ('x', 'y', 'z'):
                 self[iy, self.grid.lbx:self.grid.ubx][dim] = \
                     irfft(exp(phase) *
                           rfft(self[iy, self.grid.lbx:self.grid.ubx][dim]))
@@ -233,7 +233,7 @@ class ShearField(Field):
         ubx = self.grid.ubx
         uby = self.grid.uby
 
-        for dim in ('x', 'y'):
+        for dim in ('x', 'y', 'z'):
             # Add data from guard cells to corresponding active cells
             self[:, lbx:lbx+nubx][dim] += self[:, ubx:][dim]
             self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
@@ -248,7 +248,7 @@ class ShearField(Field):
             for iy in range(0, lby):
                 self._translate_boundary(trans, iy)
 
-        for dim in ('x', 'y'):
+        for dim in ('x', 'y', 'z'):
             # Add data from guard cells to corresponding active cells in y
             self[lby:lby+nuby, :][dim] += self.send_up(self[uby:, :][dim])
             self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
@@ -314,7 +314,7 @@ class ShearField(Field):
         from numpy.fft import rfft, irfft
         from numpy import exp
 
-        for dim in ('x', 'y'):
+        for dim in ('x', 'y', 'z'):
             # Fourier transform along x
             fx_hat = rfft(self.trim()[dim], axis=1)
 

@@ -1,5 +1,5 @@
 from skeletor import Float2, Field, Particles
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.mpifft4py import Manifold
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -68,6 +68,7 @@ def test_EcrossBdrift(plot=False):
     # Particle velocity at t = 0
     vx = vx_an(t=0)
     vy = vy_an(t=0)
+    vz = numpy.zeros_like(vx)
 
     # Drift forward by dt/2
     x += vx*dt/2
@@ -85,10 +86,10 @@ def test_EcrossBdrift(plot=False):
     npmax = np
 
     # Create particle array
-    ions = Particles(manifold, npmax, charge=charge, mass=mass, bz=bz)
+    ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy)
+    ions.initialize(x, y, vx, vy, vz)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
@@ -96,9 +97,13 @@ def test_EcrossBdrift(plot=False):
 
     # Set the electric field to zero
     E = Field(manifold, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
     E['y'] = Ey
     E.copy_guards()
+
+    B = Field(manifold, dtype=Float2)
+    B.fill((0.0, 0.0, bz))
+    B.copy_guards()
 
     # Make initial figure
     if plot:
@@ -121,7 +126,7 @@ def test_EcrossBdrift(plot=False):
     for it in range(nt):
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        ions.push(E, dt)
+        ions.push(E, B, dt)
 
         assert comm.allreduce(ions.np, op=MPI.SUM) == np
 

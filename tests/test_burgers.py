@@ -28,7 +28,7 @@ from mpi4py.MPI import COMM_WORLD as comm
 def test_burgers(plot=False):
 
     # Number of particles per cell
-    npc = 1024
+    npc = 64
     # Number of grid points
     nx, ny = 256, 4
 
@@ -96,7 +96,7 @@ def test_burgers(plot=False):
     manifold = Manifold(nx, ny, comm)
 
     # Initialize sources
-    sources = Sources(manifold)
+    sources = Sources(manifold, npc)
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
@@ -139,9 +139,10 @@ def test_burgers(plot=False):
     y = ay
     vx = velocity(ax)
     vy = np.zeros_like(vx)
+    vz = np.zeros_like(vx)
 
     # Assign particles to subdomains
-    ions.initialize(x, y, vx, vy)
+    ions.initialize(x, y, vx, vy, vz)
 
     def deposit_and_compare(t):
         """
@@ -155,7 +156,7 @@ def test_burgers(plot=False):
         sources.rho.add_guards()
 
         # Deposited charge density in the active cells averaged over y
-        rho1 = sources.rho.active.mean(axis=0)/npc
+        rho1 = sources.rho.active.mean(axis=0)
 
         # Exact charge density
         rho2 = 1/euler_prime(lagrange(manifold.x, t), t)
@@ -180,7 +181,7 @@ def test_burgers(plot=False):
         if plot:
             plt.pause(1e-7)
 
-    assert err < 1e-3
+    assert err < 1e-2
 
 
 if __name__ == "__main__":

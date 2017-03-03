@@ -33,6 +33,56 @@ class Manifold(Grid):
 
         grad.boundaries_set = False
 
+    def curl(self, f, curl, down=True):
+        """Calculate the curl of f"""
+
+        msg = 'Boundaries need to be set on f for second order differences'
+        assert f.boundaries_set, msg
+
+        if down:
+            from ..cython.finite_difference import curl_down as cython_curl
+        else:
+            from ..cython.finite_difference import curl_up as cython_curl
+
+        cython_curl(f['x'], f['y'], f['z'], curl, self)
+
+        curl.boundaries_set = False
+
+    def unstagger(self, f, g, set_boundaries=False):
+        """Interpolate the staggered field f to cell centers"""
+
+        msg = 'Boundaries need to be set on f for interpolation'
+        assert f.boundaries_set, msg
+        from ..cython.finite_difference import unstagger as cython_unstagger
+
+        cython_unstagger(f['x'], f['y'], f['z'], g, self)
+
+        g.boundaries_set = False
+
+        if set_boundaries:
+            g.copy_guards()
+
+    def stagger(self, f, g, set_boundaries=False):
+        """Interpolate the cell-centered field f to cell corners"""
+
+        msg = 'Boundaries need to be set on f for interpolation'
+        assert f.boundaries_set, msg
+        from ..cython.finite_difference import stagger as cython_stagger
+
+        cython_stagger(f['x'], f['y'], f['z'], g, self)
+
+        g.boundaries_set = False
+
+        if set_boundaries:
+            g.copy_guards()
+
+    def divergence(self, f, g):
+        """Calculate the divergence of the vector field f"""
+
+        from ..cython.finite_difference import divergence
+
+        divergence(f['x'], f['y'], g, self)
+
     def log(self, f):
         from numpy import log as numpy_log
 

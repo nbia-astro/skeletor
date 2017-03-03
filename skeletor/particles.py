@@ -6,7 +6,7 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, manifold, npmax, time=0.0, charge=1.0, mass=1.0, bz=0):
+    def __new__(cls, manifold, npmax, time=0.0, charge=1.0, mass=1.0):
 
         from .cython.types import Int, Particle
 
@@ -21,9 +21,6 @@ class Particles(numpy.ndarray):
         # Particle charge and mass
         obj.charge = charge
         obj.mass = mass
-
-        # Constant magnetic field
-        obj.bz = bz
 
         obj.manifold = manifold
 
@@ -59,7 +56,7 @@ class Particles(numpy.ndarray):
         self.info = getattr(obj, "info", None)
         self.time = getattr(obj, "time", None)
 
-    def initialize(self, x, y, vx, vy):
+    def initialize(self, x, y, vx, vy, vz):
 
         from numpy import logical_and, sum
         from warnings import warn
@@ -81,6 +78,7 @@ class Particles(numpy.ndarray):
         self["y"][:self.np] = y[ind]
         self["vx"][:self.np] = vx[ind]
         self["vy"][:self.np] = vy[ind]
+        self["vz"][:self.np] = vz[ind]
 
     def move(self):
         """Uses ppic2's cppmove2 routine for moving particles
@@ -134,12 +132,12 @@ class Particles(numpy.ndarray):
 
         self.periodic_y()
 
-    def push(self, fxy, dt):
+    def push(self, E, B, dt):
         """
         A standard Boris push which updates positions and velocities.
 
         fxy is the electric field and dt is the time step.
-        If shear is turned on, fxy needs to be E_star
+        If shear is turned on, E needs to be E_star and B needs to be B_star
         """
         from .cython.particle_push import boris_push as push
 
@@ -148,11 +146,7 @@ class Particles(numpy.ndarray):
 
         qtmh = self.charge/self.mass*dt/2
 
-        bz = self.bz
-        if self.manifold.rotation:
-            bz += 2.0*self.mass/self.charge*self.manifold.Omega
-
-        push(self[:self.np], fxy, bz, qtmh, dt, self.manifold)
+        push(self[:self.np], E, B, qtmh, dt, self.manifold)
 
         # Shearing periodicity
         if self.manifold.shear:
@@ -163,16 +157,16 @@ class Particles(numpy.ndarray):
         # Apply periodicity in x
         self.periodic_x()
 
-    def push_modified(self, fxy, dt):
+    def push_modified(self, E, B, dt):
         from .cython.particle_push import modified_boris_push as push
 
         # Update time
         self.time += dt
 
-        grid = fxy.grid
+        grid = E.grid
         qtmh = self.charge/self.mass*dt/2
 
-        push(self[:self.np], fxy, self.bz, qtmh, dt, grid,
+        push(self[:self.np], E, B, qtmh, dt, grid,
              self.manifold.Omega, self.manifold.S)
 
         # Shearing periodicity
@@ -187,3 +181,7 @@ class Particles(numpy.ndarray):
     def drift(self, dt):
         from .cython.particle_push import drift as cython_drift
         cython_drift(self[:self.np], dt)
+
+        # Apply periodicity in x and y
+        self.periodic_x()
+        self.periodic_y()

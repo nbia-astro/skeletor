@@ -17,7 +17,7 @@ mass = 1.0
 manifold = Manifold(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
 
 # # Initialize sources
-sources = Sources(manifold)
+sources = Sources(manifold, npc)
 
 # Total number of particles
 np = npc*nx*ny
@@ -36,19 +36,21 @@ y = ny*numpy.random.uniform(size=np).astype(Float)
 # Normal distribution of particle velocities
 vx = numpy.empty(np, Float)
 vy = numpy.empty(np, Float)
+vz = numpy.empty(np, Float)
 
 # Assign particles to subdomains
-particles.initialize(x, y, vx, vy)
+particles.initialize(x, y, vx, vy, vz)
 
-# deposit particles
-sources.deposit(particles)
-assert(numpy.isclose(sources.rho.sum(), charge*particles.np))
-sources.rho.add_guards()
-assert numpy.isclose(comm.allreduce(
-    sources.rho.sum(), op=SUM), np*charge)
-sources.rho.copy_guards()
-assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=SUM), np*charge)
+def test_extended_grid():
+    # deposit particles
+    sources.deposit(particles)
+    assert(numpy.isclose(sources.rho.sum(), charge*particles.np/npc))
+    sources.rho.add_guards()
+    assert numpy.isclose(comm.allreduce(
+        sources.rho.sum(), op=SUM), np*charge/npc)
+    sources.rho.copy_guards()
+    assert numpy.isclose(comm.allreduce(
+        sources.rho.trim().sum(), op=SUM), np*charge/npc)
 
 # import matplotlib.pyplot as plt
 # plt.figure(1)

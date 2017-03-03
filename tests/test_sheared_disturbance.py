@@ -159,7 +159,7 @@ def test_sheared_disturbance(plot=False):
     ions = Particles(manifold, npmax, time=dt/2, charge=charge, mass=mass)
 
     # Assign particles to subdomains
-    ions.initialize(a, b, a*0, b*0)
+    ions.initialize(a, b, a*0, b*0, b*0)
 
     # Set initial condition for particles
     # Position and velocities for this subdomain only
@@ -184,17 +184,17 @@ def test_sheared_disturbance(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Initialize sources
-    sources = Sources(manifold)
+    sources = Sources(manifold, npc)
     sources.rho = ShearField(manifold, time=t, dtype=Float)
     rho_periodic = ShearField(manifold, time=0, dtype=Float)
     J_periodic = ShearField(manifold, time=0, dtype=Float2)
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
     sources.rho.add_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
     sources.rho.copy_guards()
 
     # Copy density into a shear field
@@ -207,7 +207,12 @@ def test_sheared_disturbance(plot=False):
 
     # Electric field
     E = ShearField(manifold, dtype=Float2)
-    E.fill((0.0, 0.0))
+    E.fill((0.0, 0.0, 0.0))
+    E.copy_guards()
+
+    B = ShearField(manifold, dtype=Float2)
+    B.fill((0.0, 0.0, 0.0))
+    B.copy_guards()
 
     def concatenate(arr):
         """Concatenate local arrays to obtain global arrays
@@ -242,9 +247,9 @@ def test_sheared_disturbance(plot=False):
             plt.figure(2)
             plt.clf()
             fig2, (ax1, ax2, ax3) = plt.subplots(num=2, nrows=3)
-            im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+            im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0)),
                            'b',
-                           manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+                           manifold.x, (global_rho_periodic.mean(axis=0)),
                            'r--')
             im5 = ax2.plot(manifold.x, (global_J_periodic['x']
                            / global_rho_periodic).mean(axis=0), 'b',
@@ -278,7 +283,7 @@ def test_sheared_disturbance(plot=False):
 
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
-        ions.push_modified(E, dt)
+        ions.push_modified(E, B, dt)
 
         # Update time
         t += dt
@@ -298,7 +303,7 @@ def test_sheared_disturbance(plot=False):
         if (it % 60 == 0):
             # Calculate rms of numerical solution wrt to analytical solution
             a_2d = find_a(xx, yy, t)
-            err = rms(sources.rho.trim()/npc - rho_an(a_2d, t))
+            err = rms(sources.rho.trim() - rho_an(a_2d, t))
             # Check if test is passed
             # assert err < 1e-2, err
             if plot:
@@ -320,7 +325,7 @@ def test_sheared_disturbance(plot=False):
                     im2b.autoscale()
                     im1c.autoscale()
                     im2c.autoscale()
-                    im4[0].set_ydata(global_rho_periodic.mean(axis=0)/npc)
+                    im4[0].set_ydata(global_rho_periodic.mean(axis=0))
                     im5[0].set_ydata((global_J_periodic['x']
                                      / global_rho_periodic).mean(axis=0))
                     im6[0].set_ydata((global_J_periodic['y']
