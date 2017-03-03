@@ -5,7 +5,7 @@ class Manifold(Grid):
 
     def __init__(
             self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1):
+            ax=0.0, ay=0.0, nlbx=1, nubx=1, nlby=1, nuby=1):
 
         from math import log2
         from numpy import zeros, sum, where, zeros_like, array, exp
