@@ -27,9 +27,6 @@ def test_plasmafrequency(plot=False):
     # Number of periods to run for
     nperiods = 1
 
-    # x- and y-grid
-    xg, yg = numpy.meshgrid(numpy.arange(nx), numpy.arange(ny))
-
     # Total number of particles in simulation
     np = npc*nx*ny
 
@@ -68,6 +65,9 @@ def test_plasmafrequency(plot=False):
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     manifold = Manifold(nx, ny, comm)
+
+        # x- and y-grid
+    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/comm.size)
@@ -177,11 +177,12 @@ def test_plasmafrequency(plot=False):
         if plot:
             if (it % 1 == 0):
                 global_rho = concatenate(sources.rho.trim())
+                global_rho_an = concatenate(rho_an(xg, yg, t))
                 if comm.rank == 0:
                     im1.set_data(global_rho)
-                    im2.set_data(rho_an(xg, yg, t))
+                    im2.set_data(global_rho_an)
                     im3[0].set_ydata(global_rho[0, :])
-                    im3[1].set_ydata(rho_an(xg, yg, t)[0, :])
+                    im3[1].set_ydata(global_rho_an[0, :])
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
@@ -189,9 +190,10 @@ def test_plasmafrequency(plot=False):
 
     # Check if test has passed
     global_rho = concatenate(sources.rho.trim())
+    global_rho_an = concatenate(sources.rho.trim())
     if comm.rank == 0:
         tol = 1e-4
-        err = numpy.max(numpy.abs(rho_an(xg, yg, t) - global_rho))
+        err = numpy.max(numpy.abs(global_rho_an - global_rho))
         assert (err < tol)
 
 
