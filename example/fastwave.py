@@ -12,8 +12,8 @@ quiet = True
 # Number of grid points in x- and y-direction
 nx, ny = 32, 32
 # Grid size in x- and y-direction (square cells!)
-Lx = nx
-Ly = Lx*ny/nx
+Lx = 8
+Ly = ny
 # Average number of particles per cell
 npc = 64
 # Particle charge and mass
@@ -25,7 +25,7 @@ Te = 0.0
 A = 1e-5
 # Wavenumbers
 ikx = 1
-iky = 1
+iky = 0
 # Thermal velocity of electrons in x- and y-direction
 vtx, vty = 0.0, 0.0
 # CFL number
@@ -78,7 +78,7 @@ def uz_an(x, y, t):
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm, nlbx=1, nubx=1, nlby=1, nuby=1)
+manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
 
 # Time step
 dt = cfl*manifold.dx/vph
@@ -105,6 +105,9 @@ init(manifold, ions)
 ions['vx'] = ux_an(ions['x'], ions['y'], t=0)
 ions['vy'] = uy_an(ions['x'], ions['y'], t=0)
 ions['vz'] = uz_an(ions['x'], ions['y'], t=0)
+
+# Convert positions to be measured in grid spacings
+ions.from_units()
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
