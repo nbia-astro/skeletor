@@ -8,8 +8,8 @@ def gradient(real_t[:,:] f, real2_t[:,:] grad, grid_t grid):
 
     for iy in range(grid.lby, grid.uby):
         for ix in range(grid.lbx, grid.ubx):
-            grad[iy, ix].x = 0.5*(f[iy, ix+1] - f[iy, ix-1])
-            grad[iy, ix].y = 0.5*(f[iy+1, ix] - f[iy-1, ix])
+            grad[iy, ix].x = 0.5/grid.dx*(f[iy, ix+1] - f[iy, ix-1])
+            grad[iy, ix].y = 0.5/grid.dy*(f[iy+1, ix] - f[iy-1, ix])
             grad[iy, ix].z = 0.0
 
 def curl_up(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real2_t[:,:] curl,
@@ -19,9 +19,9 @@ def curl_up(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real2_t[:,:] curl,
 
     for iy in range(grid.lby, grid.uby):
         for ix in range(grid.lbx, grid.ubx):
-            curl[iy, ix].x =   ddyup(fz, ix, iy)
-            curl[iy, ix].y = - ddxup(fz, ix, iy)
-            curl[iy, ix].z = ddxup(fy, ix, iy) - ddyup(fx, ix, iy)
+            curl[iy, ix].x =   ddyup(fz, ix, iy, grid)
+            curl[iy, ix].y = - ddxup(fz, ix, iy, grid)
+            curl[iy, ix].z = ddxup(fy, ix, iy, grid) - ddyup(fx, ix, iy, grid)
 
 def curl_down(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz,
               real2_t[:,:] curl, grid_t grid):
@@ -30,9 +30,9 @@ def curl_down(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz,
 
     for iy in range(grid.lby, grid.uby):
         for ix in range(grid.lbx, grid.ubx):
-            curl[iy, ix].x =   ddydn(fz, ix, iy)
-            curl[iy, ix].y = - ddxdn(fz, ix, iy)
-            curl[iy, ix].z = ddxdn(fy, ix, iy) - ddydn(fx, ix, iy)
+            curl[iy, ix].x =   ddydn(fz, ix, iy, grid)
+            curl[iy, ix].y = - ddxdn(fz, ix, iy, grid)
+            curl[iy, ix].z = ddxdn(fy, ix, iy, grid) - ddydn(fx, ix, iy, grid)
 
 def divergence(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] div, grid_t
                      grid):
@@ -42,19 +42,19 @@ def divergence(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] div, grid_t
 
     for iy in range(grid.lby, grid.uby):
         for ix in range(grid.lbx, grid.ubx):
-            div[iy, ix] = ddxdn(fx, ix, iy) + ddydn(fy, ix, iy)
+            div[iy, ix] = ddxdn(fx, ix, iy, grid) + ddydn(fy, ix, iy, grid)
 
-cdef inline real_t ddyup(real_t[:, :] f, int ix, int iy):
-    return 0.5*(f[iy+1,ix+1] + f[iy+1,ix] - f[iy,ix+1] - f[iy,ix])
+cdef inline real_t ddyup(real_t[:, :] f, int ix, int iy, grid_t grid):
+    return 0.5/grid.dy*(f[iy+1,ix+1] + f[iy+1,ix] - f[iy,ix+1] - f[iy,ix])
 
-cdef inline real_t ddxup(real_t[:, :] f, int ix, int iy):
-    return 0.5*(f[iy+1,ix+1] + f[iy,ix+1] - f[iy+1,ix] - f[iy,ix])
+cdef inline real_t ddxup(real_t[:, :] f, int ix, int iy, grid_t grid):
+    return 0.5/grid.dx*(f[iy+1,ix+1] + f[iy,ix+1] - f[iy+1,ix] - f[iy,ix])
 
-cdef inline real_t ddydn(real_t[:, :] f, int ix, int iy):
-    return 0.5*(f[iy,ix] + f[iy,ix-1] - f[iy-1,ix] - f[iy-1,ix-1])
+cdef inline real_t ddydn(real_t[:, :] f, int ix, int iy, grid_t grid):
+    return 0.5/grid.dy*(f[iy,ix] + f[iy,ix-1] - f[iy-1,ix] - f[iy-1,ix-1])
 
-cdef inline real_t ddxdn(real_t[:, :] f, int ix, int iy):
-    return 0.5*(f[iy,ix] + f[iy-1,ix] - f[iy,ix-1] - f[iy-1,ix-1])
+cdef inline real_t ddxdn(real_t[:, :] f, int ix, int iy, grid_t grid):
+    return 0.5/grid.dx*(f[iy,ix] + f[iy-1,ix] - f[iy,ix-1] - f[iy-1,ix-1])
 
 def unstagger(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real2_t[:,:] g,
               grid_t grid):
