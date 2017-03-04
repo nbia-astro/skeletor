@@ -1,8 +1,8 @@
 class IonacousticDispersion:
     """Class for solving the ionacoustic dispersion relation"""
 
-    def __init__ (self, Ti, Te, b=1, p=2, dx=1, tol=1e-8,
-                  maxterms=1000, N=100, numerical=True):
+    def __init__(self, Ti, Te, b=1, p=2, dx=1, tol=1e-8,
+                 maxterms=1000, N=100, numerical=True):
         from numpy import sqrt
         # Grid spacing
         self.dx = dx
@@ -29,7 +29,7 @@ class IonacousticDispersion:
         """Plasma response function"""
         from scipy.special import wofz
         from numpy import pi, sqrt
-        return (1. + 1j*sqrt (0.5*pi)*z*wofz (sqrt (0.5)*z))
+        return (1. + 1j*sqrt(0.5*pi)*z*wofz(sqrt(0.5)*z))
 
     def Wk(self, kx):
         """Shape factor for particles"""
@@ -39,16 +39,15 @@ class IonacousticDispersion:
     def miD(self, kx):
         """Derivative factor -i\hat{D}"""
         from numpy import sin
-        if self.b == 0: y = sin(kx*self.dx)/(self.dx)
-        if self.b == 1: y = kx
+        if self.b == 0:
+            y = sin(kx*self.dx)/(self.dx)
+        if self.b == 1:
+            y = kx
         return y
 
     def det(self, vph, kx, alpha):
         """Returns the dispersion relation (that needs to be zero)"""
-        from numpy import arange, sin, pi
-        p = self.p
-        b = self.b
-        kdx = kx*self.dx
+        from numpy import pi
         dx = self.dx
 
         if self.numerical:
@@ -59,13 +58,13 @@ class IonacousticDispersion:
                 B = 0
                 for n in (j, -j):
                     kn = kx - 2*pi*n/dx
-                    B += self.miD(kn)*self.Wk(kn)/kn*\
-                         self.W(kx*vph/(alpha*abs(kn)))
+                    B += self.miD(kn)*self.Wk(kn)/kn * \
+                        self.W(kx*vph/(alpha*abs(kn)))
                 A += B
                 if abs((B/A)) < self.tol:
                     return alpha**2 + A
-            raise RuntimeError ("Exceeded maxterms={} aliasing terms!".\
-                format (self.maxterms))
+            raise RuntimeError("Exceeded maxterms={} aliasing terms!".
+                               format(self.maxterms))
         else:
             # Ignore all numerical effects from particle shape and grid
             return alpha**2 + self.W(vph/alpha)
@@ -76,15 +75,15 @@ class IonacousticDispersion:
         from numpy import sin, cos, sqrt
         p = self.p
         b = self.b
-        dx= self.dx
+        dx = self.dx
         if b == 1:
             if p == 1 or p == 2:
                 omega = sqrt((2-2*cos(kx*dx))/dx**2)
             if p == 3:
                 omega = sqrt(4*(2 + cos(kx*dx))*sin(kx*dx/2)**2/(3*dx**2))
             if p == 4:
-                omega = sqrt((33 + 26*cos(kx*dx) + cos(2*kx*dx))\
-                    *sin(kx*dx/2)**2/(15*dx**2))
+                omega = sqrt((33 + 26*cos(kx*dx) + cos(2*kx*dx))
+                             * sin(kx*dx/2)**2/(15*dx**2))
         if b == 0:
             if p == 1 or p == 2:
                 omega = sin(kx*dx)/dx
@@ -92,7 +91,7 @@ class IonacousticDispersion:
                 omega = sqrt((5 + cos(kx*dx))*sin(kx*dx)**2/(6*dx**2))
             if p == 4:
                 omega = sqrt((123+56*cos(kx*dx)+cos(2*kx*dx))*sin(kx*dx)**2
-                    /(180*dx**2))
+                             / (180*dx**2))
         return omega/kx
 
     def omega_vs_alpha(self, kx):
@@ -111,22 +110,21 @@ class IonacousticDispersion:
         alpha = logspace(-4, log10(self.alpha), self.N)
 
         # Array for the complex phase-velocity
-        vph = empty (len (alpha), dtype = complex128)
+        vph = empty(len(alpha), dtype=complex128)
 
         # Initial guess from cold numerical dispersion relation
         vph[0] = self.cold(kx)
 
         for i in range(1, self.N):
-            vph[i] = newton (det, vph[i-1], args = (kx, alpha[i],))
-            assert(abs(det(vph[i], kx, alpha[i])) < self.tol), \
-            'Guess is not within the tolerance!'
+            vph[i] = newton(det, vph[i-1], args=(kx, alpha[i],))
+            msg = 'Guess is not within the tolerance!'
+            assert(abs(det(vph[i], kx, alpha[i])) < self.tol), msg
 
         # Store alpha_vec (useful for plotting)
         self.alpha_vec = alpha
         return vph
 
-
-    def __call__ (self, kx):
+    def __call__(self, kx):
         """Solve warm dispersion relation using Newton's method.
         Input: vector of kx values.
         Output: The complex phase-velocity vph(kx). Note that omega = kx*vph.
@@ -136,23 +134,22 @@ class IonacousticDispersion:
         from scipy.optimize import newton
         from numpy import empty, complex128
 
-        dx    = self.dx
         alpha = self.alpha
-        det   = self.det
+        det = self.det
 
         # Array for the complex phase-velocity
-        vph = empty (len (kx), dtype = complex128)
+        vph = empty(len(kx), dtype=complex128)
 
         # Guess from cold numerical and then iterated up to correct
         # temperature ratio
         vph[0] = self.omega_vs_alpha(kx[0])[-1]
 
         # Loop over kx
-        for i in range (1, len (kx)):
-            vph[i] = newton (det, vph[i-1], args = (kx[i], alpha,))
+        for i in range(1, len(kx)):
+            vph[i] = newton(det, vph[i-1], args=(kx[i], alpha,))
             # Check numerical solution is correct
-            assert(abs(det(vph[i], kx[i], alpha)) < self.tol), \
-            'Solution is not within the tolerance!'
+            msg = 'Solution is not within the tolerance!'
+            assert(abs(det(vph[i], kx[i], alpha)) < self.tol), msg
 
         return vph
 
@@ -191,5 +188,3 @@ if __name__ == "__main__":
     vph = solve2.omega_vs_alpha(2*np.pi/Lx)
     plt.plot(solve.alpha_vec**2, vph.imag, 'r--')
     plt.show()
-
-
