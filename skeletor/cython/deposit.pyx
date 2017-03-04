@@ -38,10 +38,11 @@ cdef inline void deposit_particle(particle_t particle, real_t[:,:] density,
         density[iy+1, ix  ] += dy*tx
         density[iy+1, ix+1] += dy*dx
 
-        J[iy  , ix  ].x += ty*tx*(particle.vx + S*particle.y)
-        J[iy  , ix+1].x += ty*dx*(particle.vx + S*particle.y)
-        J[iy+1, ix  ].x += dy*tx*(particle.vx + S*particle.y)
-        J[iy+1, ix+1].x += dy*dx*(particle.vx + S*particle.y)
+        # TODO: We need to get this working/Make this more general
+        J[iy  , ix  ].x += ty*tx*(particle.vx + S*particle.y*grid.dy)
+        J[iy  , ix+1].x += ty*dx*(particle.vx + S*particle.y*grid.dy)
+        J[iy+1, ix  ].x += dy*tx*(particle.vx + S*particle.y*grid.dy)
+        J[iy+1, ix+1].x += dy*dx*(particle.vx + S*particle.y*grid.dy)
 
         J[iy  , ix  ].y += ty*tx*particle.vy
         J[iy  , ix+1].y += ty*dx*particle.vy

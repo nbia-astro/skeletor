@@ -37,7 +37,8 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E,
 
         # Modify fields due to rotation and shear
         b.z = b.z + Omega*dt
-        e.y = e.y - S*particles[ip].y*b.z
+        # TODO: We need to get this working/Make this more general
+        e.y = e.y - S*particles[ip].y*grid.dy*b.z
 
         kick(&particles[ip], e, b)
         drift2(&particles[ip], dt, grid)
