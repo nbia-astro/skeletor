@@ -1,5 +1,5 @@
-from skeletor import Float, Float2, Field, Particles, Sources
-from skeletor import Ohm, Faraday, InitialCondition
+from skeletor import Float, Float2, Field, Particles
+from skeletor import Ohm, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 from skeletor.predictor_corrector import Experiment
 import numpy
@@ -8,280 +8,273 @@ from mpi4py.MPI import COMM_WORLD as comm
 from dispersion_solvers import HallDispersion
 from numpy import cos, sin, pi, arctan
 
-plot = True
-# Quiet start
-quiet = True
-# Number of grid points in x- and y-direction
-nx, ny = 32, 1
-# Grid size in x- and y-direction (square cells!)
-Lx = nx
-Ly = Lx*ny/nx
-# Average number of particles per cell
-npc = 1
-# Particle charge and mass
-charge = 0.001
-mass = 1.0
-# Electron temperature
-Te = 0.0
-# Dimensionless amplitude of perturbation
-A = 0.005
-# Wavenumbers
-ikx = 1
-iky = 0
-# Thermal velocity of electrons in x- and y-direction
-vtx, vty = 0.0, 0.0
-# CFL number
-cfl = 0.1
-# Number of periods to run for
-nperiods = 4.0
 
-# Sound speed
-cs = numpy.sqrt(Te/mass)
+def test_circular(plot=False):
 
-# Total number of particles in simulation
-np = npc*nx*ny
+    # Quiet start
+    quiet = True
+    # Number of grid points in x- and y-direction
+    nx, ny = 32, 8
+    # Grid size in x- and y-direction (square cells!)
+    Lx = 16
+    Ly = 1
+    dx = Lx/nx
+    # Average number of particles per cell
+    npc = 1
+    # Particle charge and mass
+    charge = 0.001
+    mass = 1.0
+    # Electron temperature
+    Te = 0.0
+    # Dimensionless amplitude of perturbation
+    A = 0.005
+    # Wavenumbers
+    ikx = 1
+    iky = 0
+    # Number of periods to run for
+    nperiods = 1.0
 
-# Wave vector and its modulus
-kx = 2*numpy.pi*ikx/Lx
-ky = 2*numpy.pi*iky/Ly
-k = numpy.sqrt(kx*kx + ky*ky)
+    # Sound speed
+    cs = numpy.sqrt(Te/mass)
 
-# Angle of k-vector with respect to x-axis
-theta = arctan(iky/ikx) if ikx != 0 else pi/2
+    # Total number of particles in simulation
+    np = npc*nx*ny
 
-# Magnetic field strength
-B0 = 1
+    # Wave vector and its modulus
+    kx = 2*numpy.pi*ikx/Lx
+    ky = 2*numpy.pi*iky/Ly
+    k = numpy.sqrt(kx*kx + ky*ky)
 
-(Bx, By, Bz) = (B0*cos(theta), B0*sin(theta), 0)
-B2 = Bx**2 + By**2 + Bz**2
+    # Angle of k-vector with respect to x-axis
+    theta = arctan(iky/ikx) if ikx != 0 else pi/2
 
-rho0 = 1.0
+    # Magnetic field strength
+    B0 = 1
 
-va = B0
+    (Bx, By, Bz) = (B0*cos(theta), B0*sin(theta), 0)
 
-# Ohmic resistivity
-eta = 0
+    rho0 = 1.0
 
-# Cyclotron frequency
-oc = charge*B0/mass
+    va = B0
 
-# Hall parameter
-etaH = va**2/oc
+    # Ohmic resistivity
+    eta = 0
 
-di = HallDispersion(kperp=0, kpar=k, va=va, cs=cs, etaH=etaH, eta=eta,
-                    along_x=True, theta=theta)
+    # Cyclotron frequency
+    oc = charge*B0/mass
 
-# Mode number
-m = 0
+    # Hall parameter
+    etaH = va**2/oc
 
-omega = di.omega[m].real
+    di = HallDispersion(kperp=0, kpar=k, va=va, cs=cs, etaH=etaH, eta=eta,
+                        along_x=True, theta=theta)
 
-def frequency (kzva):
-    hel = 1
-    from numpy import sqrt
-    return kzva*(sqrt (1.0 + (0.5*kzva/oc)**2) + 0.5*kzva/(hel*oc))
+    # Mode number
+    m = 0
 
-def get_dt(kzva):
-    from numpy import pi, floor, log2
-    dt = 1/frequency (kzva)
-    dt = 2.0**(floor (log2 (dt)))
-    return dt
+    omega = di.omega[m].real
 
-kmax = numpy.pi
+    def frequency(kzva):
+        hel = 1
+        from numpy import sqrt
+        return kzva*(sqrt(1.0 + (0.5*kzva/oc)**2) + 0.5*kzva/(hel*oc))
 
-vph = omega/kmax
+    def get_dt(kzva):
+        from numpy import floor, log2
+        dt = 1/frequency(kzva)
+        dt = 2.0**(floor(log2(dt)))
+        return dt
 
-# Simulation time
-tend = 2*numpy.pi*nperiods/omega
+    kmax = numpy.pi/dx
 
-# Phase factor
-phase = lambda x, y, t: A*numpy.exp(1j*(di.omega[m]*t - kx*x - ky*y))
+    # Simulation time
+    tend = 2*numpy.pi*nperiods/omega
 
-# Linear solutions in real space
-rho_an = lambda x, y, t: rho0 + rho0*(di.vec[m]['drho']*phase(x, y, t)).real
-Bx_an = lambda x, y, t: Bx + B0*(di.vec[m]['bx']*phase(x, y, t)).real
-By_an = lambda x, y, t: By + B0*(di.vec[m]['by']*phase(x, y, t)).real
-Bz_an = lambda x, y, t: Bz + B0*(di.vec[m]['bz']*phase(x, y, t)).real
-Ux_an = lambda x, y, t:         (di.vec[m]['vx']*phase(x, y, t)).real
-Uy_an = lambda x, y, t:         (di.vec[m]['vy']*phase(x, y, t)).real
-Uz_an = lambda x, y, t:         (di.vec[m]['vz']*phase(x, y, t)).real
+    # Phase factor
+    def phase(x, y, t):
+        return A*numpy.exp(1j*(di.omega[m]*t - kx*x - ky*y))
 
-# Create numerical grid. This contains information about the extent of
-# the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm, nlbx=1, nubx=1, nlby=1, nuby=1)
+    # Linear solutions in real space
+    def rho_an(x, y, t):
+        return rho0 + rho0*(di.vec[m]['drho']*phase(x, y, t)).real
 
-# Time step
-# dt = cfl*manifold.dx/vph
-dt = get_dt(kmax*va)
+    def Bx_an(x, y, t):
+        return Bx + B0*(di.vec[m]['bx']*phase(x, y, t)).real
 
-# Number of time steps
-nt = int(tend/dt)
+    def By_an(x, y, t):
+        return By + B0*(di.vec[m]['by']*phase(x, y, t)).real
 
-faraday = Faraday(manifold)
+    def Bz_an(x, y, t):
+        return Bz + B0*(di.vec[m]['bz']*phase(x, y, t)).real
 
-# x- and y-grid
-xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+    def Ux_an(x, y, t):
+        return (di.vec[m]['vx']*phase(x, y, t)).real
 
-# Maximum number of electrons in each partition
-npmax = int(1.5*np/comm.size)
+    def Uy_an(x, y, t):
+        return (di.vec[m]['vy']*phase(x, y, t)).real
 
-# Create particle array
-ions = Particles(manifold, npmax, charge=charge, mass=mass)
+    def Uz_an(x, y, t):
+        return (di.vec[m]['vz']*phase(x, y, t)).real
 
-# Create a uniform density field
-init = InitialCondition(npc, quiet=quiet)
-init(manifold, ions)
+    # Create numerical grid. This contains information about the extent of
+    # the subdomain assigned to each processor.
+    manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
 
-# Perturbation to particle velocities
-ions['vx'] = Ux_an(ions['x'], ions['y'], t=-dt/2)
-ions['vy'] = Uy_an(ions['x'], ions['y'], t=-dt/2)
-ions['vz'] = Uz_an(ions['x'], ions['y'], t=-dt/2)
+    # Time step
+    # dt = cfl*manifold.dx/vph
+    dt = get_dt(kmax*va)
 
-def B_an(t):
-    B_an = Field(manifold, dtype=Float2)
-    B_an['x'].active = Bx_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
-    B_an['y'].active = By_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
-    B_an['z'].active = Bz_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
-    return B_an
+    # Number of time steps
+    nt = int(tend/dt)
 
-# Create vector potential
-A_an = Field(manifold, dtype=Float2)
-A_an['x'].active = 0
-A_an['y'].active = -((Bz + B0*(di.vec[m]['bz']*phase(xg, yg, -dt/2)))/
-                    (1j*kx)).real
-A_an['z'].active =  ((By + B0*(di.vec[m]['by']*phase(xg, yg, -dt/2)))/
-                    (1j*kx)).real
-A_an.copy_guards()
+    # x- and y-grid
+    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
-# Set initial magnetic field perturbation using the vector potential
-B = Field(manifold, dtype=Float2)
-manifold.curl(A_an, B, down=False)
-# Add background magnetic field
-B['x'].active += Bx
-B['y'].active += By
-B['z'].active += Bz
-B.copy_guards()
+    # Maximum number of electrons in each partition
+    npmax = int(1.5*np/comm.size)
 
-div = Field(manifold, dtype=Float)
-div.fill(0)
-manifold.divergence(B, div)
+    # Create particle array
+    ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
+    # Create a uniform density field
+    init = InitialCondition(npc, quiet=quiet)
+    init(manifold, ions)
 
-# Initialize Ohm's law solver
-ohm = Ohm(manifold, temperature=Te, charge=charge, eta=eta)
+    # Perturbation to particle velocities
+    ions['vx'] = Ux_an(ions['x'], ions['y'], t=-dt/2)
+    ions['vy'] = Uy_an(ions['x'], ions['y'], t=-dt/2)
+    ions['vz'] = Uz_an(ions['x'], ions['y'], t=-dt/2)
 
-# Initialize experiment
-e = Experiment(manifold, ions, ohm, B, npc, io=None)
+    ions.from_units()
 
-# Deposit charges and calculate initial electric field
-e.prepare(dt)
+    def B_an(t):
+        B_an = Field(manifold, dtype=Float2)
+        B_an['x'].active = Bx_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
+        B_an['y'].active = By_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
+        B_an['z'].active = Bz_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
+        return B_an
 
-# Concatenate local arrays to obtain global arrays
-# The result is available on all processors.
-def concatenate(arr):
-    return numpy.concatenate(comm.allgather(arr))
+    # Create vector potential
+    A_an = Field(manifold, dtype=Float2)
+    A_an['x'].active = 0
+    A_an['y'].active = -((Bz + B0*(di.vec[m]['bz']*phase(xg, yg, -dt/2))) /
+                         (1j*kx)).real
+    A_an['z'].active = ((By + B0*(di.vec[m]['by']*phase(xg, yg, -dt/2))) /
+                        (1j*kx)).real
+    A_an.copy_guards()
 
-# Make initial figure
-if plot:
-    import matplotlib.pyplot as plt
-    from matplotlib.cbook import mplDeprecation
-    import warnings
+    # Set initial magnetic field perturbation using the vector potential
+    B = Field(manifold, dtype=Float2)
+    manifold.curl(A_an, B, down=False)
+    # Add background magnetic field
+    B['x'].active += Bx
+    B['y'].active += By
+    B['z'].active += Bz
+    B.copy_guards()
 
-    global_rho = concatenate(e.sources.rho.trim())
-    global_J = concatenate(e.sources.J.trim())
-    global_rho_an = concatenate(rho_an(xg, yg, 0))
-    global_B = concatenate(e.B.trim())
-    global_B_an = concatenate((B_an(t=0)).trim())
-    global_E   = concatenate(e.E.trim())
+    div = Field(manifold, dtype=Float)
+    div.fill(0)
+    manifold.divergence(B, div)
 
-    if comm.rank == 0:
-        plt.rc('image', origin='lower', interpolation='nearest')
-        plt.figure(1)
-        plt.clf()
-        fig, axes = plt.subplots(num=1, ncols=3, nrows=4)
-        vmin, vmax = charge*(1 - A), charge*(1 + A)
-        im1 = axes[0,0].imshow(global_rho, vmin=vmin, vmax=vmax)
-        im2 = axes[0,1].plot(xg[0, :], global_B['z'][0, :], 'b',
-                             xg[0, :], global_B_an['z'][0, :], 'k--')
-        im3 = axes[0,2].plot(xg[0, :], global_B['y'][0, :], 'b',
-                             xg[0, :], global_B_an['y'][0, :], 'k--')
-        im4 = axes[1,0].imshow(global_B['x'], vmin=vmin, vmax=vmax)
-        im5 = axes[1,1].imshow(global_B['y'], vmin=-A, vmax=A)
-        im6 = axes[1,2].imshow(global_B['z'], vmin=-A, vmax=A)
-        im7 = axes[2,0].imshow(global_E['x'], vmin=-A, vmax=A)
-        im8 = axes[2,1].imshow(global_E['y'], vmin=-A, vmax=A)
-        im9 = axes[2,2].imshow(global_E['z'], vmin=-A, vmax=A)
-        im10 = axes[3,0].imshow(global_J['x'], vmin=-A, vmax=A)
-        im11 = axes[3,1].imshow(global_J['y'], vmin=-A, vmax=A)
-        im12 = axes[3,2].imshow(global_J['z'], vmin=-A, vmax=A)
-        axes[0,0].set_title(r'$\nabla \cdot \mathbf{B}$')
-        axes[0,1].set_title(r'$B_z$')
-        axes[0,2].set_title(r'$B_y$')
-        axes[1,0].set_title(r'$B_x$')
-        axes[1,1].set_title(r'$B_y$')
-        axes[1,2].set_title(r'$B_z$')
-        axes[2,0].set_title(r'$E_x$')
-        axes[2,1].set_title(r'$E_y$')
-        axes[2,2].set_title(r'$E_z$')
-        axes[3,0].set_title(r'$J_x$')
-        axes[3,1].set_title(r'$J_y$')
-        axes[3,2].set_title(r'$J_z$')
-        axes[0,2].set_ylim(-A, A)
-        axes[0,1].set_ylim(-A, A)
-        axes[0,2].set_xlim(0, Lx)
+    # Initialize Ohm's law solver
+    ohm = Ohm(manifold, temperature=Te, charge=charge, eta=eta)
 
-diff2 = 0
-##########################################################################
-# Main loop over time                                                    #
-##########################################################################
-for it in range(nt):
+    # Initialize experiment
+    e = Experiment(manifold, ions, ohm, B, npc, io=None)
 
-    # The update is handled by the experiment class
-    e.iterate(dt)
-    manifold.divergence(e.B, div)
-    divBmean = numpy.sqrt((div.trim()**2).mean())
-    comm.allreduce(divBmean, op=MPI.SUM)
+    # Deposit charges and calculate initial electric field
+    e.prepare(dt)
 
-    # Difference between numerical and analytic solution
-    local_rho = e.sources.rho.trim()
-    local_rho_an = rho_an(xg, yg, e.t)
-    diff2 += ((local_rho_an - local_rho)**2).mean()
+    # Concatenate local arrays to obtain global arrays
+    # The result is available on all processors.
+    def concatenate(arr):
+        return numpy.concatenate(comm.allgather(arr))
 
-    # Make figures
+    # Make initial figure
     if plot:
-        if (it % 100 == 0):
-            global_rho = concatenate(local_rho)
-            global_J = concatenate(e.sources.J.trim())
-            global_rho_an = concatenate(local_rho_an)
-            global_B = concatenate(e.B.trim())
-            global_B_an = concatenate((B_an(e.t)).trim())
-            global_div = concatenate(div.trim())
-            global_E   = concatenate(e.E.trim())
-            if comm.rank == 0:
-                print("div B", divBmean)
-                im1.set_data(global_div)
-                im2[0].set_ydata(global_B['z'][0, :])
-                im2[1].set_ydata(global_B_an['z'][0, :])
-                im3[0].set_ydata(global_B['y'][0, :])
-                im3[1].set_ydata(global_B_an['y'][0, :])
-                im4.set_data(global_B['x'])
-                im5.set_data(global_B['y'])
-                im6.set_data(global_B['z'])
-                im7.set_data(global_E['x'])
-                im8.set_data(global_E['y'])
-                im9.set_data(global_E['z'])
-                im10.set_data(global_J['x'])
-                im11.set_data(global_J['y'])
-                im12.set_data(global_J['z'])
-                im1.autoscale()
+        import matplotlib.pyplot as plt
+        from matplotlib.cbook import mplDeprecation
+        import warnings
 
-                with warnings.catch_warnings():
-                    warnings.filterwarnings(
-                            "ignore", category=mplDeprecation)
-                    plt.pause(1e-7)
+        global_B = concatenate(e.B.trim())
+        global_B_an = concatenate((B_an(t=0)).trim())
+        global_div = concatenate(div.trim())
 
-val = numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt)
-tol = 6e-5*charge
+        if comm.rank == 0:
+            plt.rc('image', origin='lower', interpolation='nearest')
+            plt.figure(1)
+            plt.clf()
+            fig, axes = plt.subplots(num=1, ncols=3, nrows=2)
+            vmin, vmax = charge*(1 - A), charge*(1 + A)
+            im1 = axes[0, 0].imshow(global_div, vmin=vmin, vmax=vmax)
+            im2 = axes[0, 1].plot(xg[0, :], global_B['z'][0, :], 'b',
+                                  xg[0, :], global_B_an['z'][0, :], 'k--')
+            im3 = axes[0, 2].plot(xg[0, :], global_B['y'][0, :], 'b',
+                                  xg[0, :], global_B_an['y'][0, :], 'k--')
+            im4 = axes[1, 0].imshow(global_B['x'], vmin=vmin, vmax=vmax)
+            im5 = axes[1, 1].imshow(global_B['y'], vmin=-A, vmax=A)
+            im6 = axes[1, 2].imshow(global_B['z'], vmin=-A, vmax=A)
+            axes[0, 0].set_title(r'$\nabla \cdot \mathbf{B}$')
+            axes[0, 1].set_title(r'$B_z$')
+            axes[0, 2].set_title(r'$B_y$')
+            axes[1, 0].set_title(r'$B_x$')
+            axes[1, 1].set_title(r'$B_y$')
+            axes[1, 2].set_title(r'$B_z$')
+            axes[0, 2].set_ylim(-A, A)
+            axes[0, 1].set_ylim(-A, A)
+            axes[0, 2].set_xlim(0, Lx)
 
-# Check if test has passed
-assert (val < tol), (val, tol)
+    diff2 = 0
+    ##########################################################################
+    # Main loop over time                                                    #
+    ##########################################################################
+    for it in range(nt):
+
+        # The update is handled by the experiment class
+        e.iterate(dt)
+        manifold.divergence(e.B, div)
+        divBmean = numpy.sqrt((div.trim()**2).mean())
+        comm.allreduce(divBmean, op=MPI.SUM)
+
+        # Difference between numerical and analytic solution
+        local_B = e.B.trim()
+        local_B_an = B_an(e.t).trim()
+        for dim in ('x', 'y', 'z'):
+            diff2 += ((local_B_an['y'] - local_B['y'])**2).mean()
+
+        # Make figures
+        if plot:
+            if (it % 100 == 0):
+                global_B = concatenate(e.B.trim())
+                global_B_an = concatenate((B_an(e.t)).trim())
+                global_div = concatenate(div.trim())
+                if comm.rank == 0:
+                    print("div B", divBmean)
+                    im1.set_data(global_div)
+                    im2[0].set_ydata(global_B['z'][0, :])
+                    im2[1].set_ydata(global_B_an['z'][0, :])
+                    im3[0].set_ydata(global_B['y'][0, :])
+                    im3[1].set_ydata(global_B_an['y'][0, :])
+                    im4.set_data(global_B['x'])
+                    im5.set_data(global_B['y'])
+                    im6.set_data(global_B['z'])
+                    im1.autoscale()
+
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings(
+                                "ignore", category=mplDeprecation)
+                        plt.pause(1e-7)
+
+    val = numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt)
+    tol = 5e-4
+    # Check if test has passed
+    assert (val < tol), (val, tol)
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--plot', '-p', action='store_true')
+    args = parser.parse_args()
+
+    test_circular(plot=args.plot)
