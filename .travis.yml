@@ -33,7 +33,6 @@ before_install:
     - bcast -v skeletor.tar.gz
     # Give highest prority to executables in scratch dir
     - export PATH="/tmp/skeletor/bin:$PATH"
-    - export PYTHONPATH=$PYTHONPATH:/tmp/skeletor/skeletor/dispersion_solvers
 
 install:
     - CC=mpicc LDFLAGS="-L/tmp/skeletor/lib -Wl,-rpath,/tmp/skeletor/lib -lmpich -lopa -lmpl -lrt -lpthread" python setup.py install
