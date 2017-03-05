@@ -87,7 +87,6 @@ def test_ionacoustic(plot=False):
     # Perturbation to particle velocities
     ions['vx'] = ux_an(ions['x'], ions['y'], t=dt/2)
     ions['vy'] = uy_an(ions['x'], ions['y'], t=dt/2)
-    # Convert to grid units
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
