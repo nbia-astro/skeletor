@@ -44,6 +44,7 @@ class Experiment:
     def prepare(self, dt, tol=1.48e-8, maxiter=100):
 
         from numpy import sqrt
+        from mpi4py.MPI import COMM_WORLD as comm, LAND
 
         # Deposit sources
         self.sources.deposit(self.ions, set_boundaries=True)
@@ -68,14 +69,14 @@ class Experiment:
             diff = 0
             for dim in ('x', 'y', 'z'):
                 diff += sqrt(((self.E3[dim] - self.E[dim]).trim ()**2).mean())
-            if self.manifold.comm.rank == 0:
+            if comm.rank == 0:
                 print ("Difference to previous iteration: {}".format (diff))
 
             # Update electric field
             self.E[...] = self.E3
 
             # Return if difference is sufficiently small
-            if diff < tol: return
+            if comm.allreduce(diff < tol, op=LAND): return
 
         raise RuntimeError ("Exceeded maxiter={} iterations!".format (maxiter))
 
