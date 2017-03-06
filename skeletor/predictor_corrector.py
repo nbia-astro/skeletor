@@ -55,6 +55,8 @@ class Experiment:
         # Drift particle positions by a half time step
         self.ions.drift(dt/2)
 
+        converged = False
+
         # Iterate to find true electric field at time 0
         for it in range (maxiter):
 
@@ -76,10 +78,14 @@ class Experiment:
             # Update electric field
             self.E[...] = self.E3
 
-            # Return if difference is sufficiently small
-            if diff < tol: return
+            # Break out of loop if difference is sufficiently small
+            if diff < tol:
+                converged = True
+                break
 
-        raise RuntimeError ("Exceeded maxiter={} iterations!".format (maxiter))
+        if not converged:
+            msg = "Exceeded maxiter={} iterations!"
+            raise RuntimeError(msg.format(maxiter))
 
     def step(self, dt, update):
 
