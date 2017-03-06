@@ -44,7 +44,7 @@ class Experiment:
     def prepare(self, dt, tol=1.48e-8, maxiter=100):
 
         from numpy import sqrt
-        from mpi4py.MPI import COMM_WORLD as comm, LAND
+        from mpi4py.MPI import COMM_WORLD as comm, SUM
 
         # Deposit sources
         self.sources.deposit(self.ions, set_boundaries=True)
@@ -66,9 +66,10 @@ class Experiment:
                 self.E3[dim][...] = 0.5*(self.E[dim] + self.E2[dim])
 
             # Compute difference to previous iteration
-            diff = 0
+            diff2 = 0.0
             for dim in ('x', 'y', 'z'):
-                diff += sqrt(((self.E3[dim] - self.E[dim]).trim ()**2).mean())
+                diff2 += ((self.E3[dim] - self.E[dim]).trim ()**2).mean()
+            diff = sqrt(comm.allreduce(diff2, op=SUM)/comm.size)
             if comm.rank == 0:
                 print ("Difference to previous iteration: {}".format (diff))
 
@@ -76,7 +77,7 @@ class Experiment:
             self.E[...] = self.E3
 
             # Return if difference is sufficiently small
-            if comm.allreduce(diff < tol, op=LAND): return
+            if diff < tol: return
 
         raise RuntimeError ("Exceeded maxiter={} iterations!".format (maxiter))
 
