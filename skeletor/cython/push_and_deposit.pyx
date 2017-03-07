@@ -1,5 +1,5 @@
 from types cimport real_t, real2_t, particle_t, grid_t
-from particle_push cimport kick, gather_cic
+from particle_push cimport kick, gather_cic, rescale
 from particle_push cimport drift2 as drift
 from deposit cimport deposit_particle
 from particle_boundary cimport periodic_x_cdef as periodic_x
@@ -26,6 +26,13 @@ def push_and_deposit(
     # Variable needed by calculate_ihole
     cdef int ih = 0
 
+    # Offset in interpolation for E and B-fields
+    cdef real2_t offsetE, offsetB
+    offsetB.x = grid.lbx
+    offsetB.y = grid.lby - grid.noff
+    offsetE.x = offsetB.x - 0.5
+    offsetE.y = offsetB.y - 0.5
+
     # TODO: Define this in types.pxd
     cdef real_t Lx = <real_t> grid.nx
 
@@ -33,9 +40,13 @@ def push_and_deposit(
         # Copy particle data to temporary struct
         particle = particles[ip]
 
-        # Gather and electric & magnetic fields with qtmh = 0.5*dt*charge/mass
-        gather_cic(particle, E, &e, grid, qtmh)
-        gather_cic(particle, B, &b, grid, qtmh)
+        # Gather and electric & magnetic fields
+        gather_cic(particles[ip], E, &e, offsetE)
+        gather_cic(particles[ip], B, &b, offsetB)
+
+        # Rescale values with qtmh = 0.5*dt*charge/mass
+        rescale(&e, qtmh)
+        rescale(&b, qtmh)
 
         # Kick the particle velocities
         kick(&particle, e, b)
@@ -49,7 +60,7 @@ def push_and_deposit(
             ihole[0] = -1
 
         # Deposit the particle
-        deposit_particle(particle, density, J, grid, S)
+        deposit_particle(particle, density, J, grid, S, offsetE)
 
         if update:
             # Second half of particle drift

@@ -11,10 +11,21 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E,
     # It might be better to use `Py_ssize_t` instead of `int`
     cdef int ip
 
+    # Offset in interpolation for E and B-fields
+    cdef real2_t offsetE, offsetB
+    offsetB.x = grid.lbx
+    offsetB.y = grid.lby - grid.noff
+    offsetE.x = offsetB.x - 0.5
+    offsetE.y = offsetB.y - 0.5
+
     for ip in range(Np):
-        # Gather and electric & magnetic fields with qtmh = 0.5*dt*charge/mass
-        gather_cic(particles[ip], E, &e, grid, qtmh)
-        gather_cic(particles[ip], B, &b, grid, qtmh)
+        # Gather and electric & magnetic fields
+        gather_cic(particles[ip], E, &e, offsetE)
+        gather_cic(particles[ip], B, &b, offsetB)
+
+        # Rescale values with qtmh = 0.5*dt*charge/mass
+        rescale(&e, qtmh)
+        rescale(&b, qtmh)
 
         kick(&particles[ip], e, b)
         drift2(&particles[ip], dt, grid)
@@ -30,10 +41,21 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E,
     # It might be better to use `Py_ssize_t` instead of `int`
     cdef int ip
 
+    # Offset in interpolation for E and B-fields
+    cdef real2_t offsetE, offsetB
+    offsetB.x = grid.lbx
+    offsetB.y = grid.lby - grid.noff
+    offsetE.x = offsetB.x - 0.5
+    offsetE.y = offsetB.y - 0.5
+
     for ip in range(Np):
-        # Gather and electric & magnetic fields with qtmh = 0.5*dt*charge/mass
-        gather_cic(particles[ip], E, &e, grid, qtmh)
-        gather_cic(particles[ip], B, &b, grid, qtmh)
+        # Gather and electric & magnetic fields
+        gather_cic(particles[ip], E, &e, offsetE)
+        gather_cic(particles[ip], B, &b, offsetB)
+
+        # Rescale values with qtmh = 0.5*dt*charge/mass
+        rescale(&e, qtmh)
+        rescale(&b, qtmh)
 
         # Modify fields due to rotation and shear
         b.z = b.z + Omega*dt
@@ -43,16 +65,15 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E,
         kick(&particles[ip], e, b)
         drift2(&particles[ip], dt, grid)
 
-
 cdef inline void gather_cic(particle_t particle, real2_t[:,:] F, real2_t *f,
-                        grid_t grid, real_t qtmh) nogil:
+                        real2_t offset) nogil:
 
     cdef int ix, iy
     cdef real_t tx, ty, dx, dy
     cdef real_t x, y
 
-    x = particle.x + grid.lbx - 0.5
-    y = particle.y + grid.lby - 0.5 - grid.noff
+    x = particle.x + offset.x
+    y = particle.y + offset.y
 
     ix = <int> x
     iy = <int> y
@@ -69,6 +90,8 @@ cdef inline void gather_cic(particle_t particle, real2_t[:,:] F, real2_t *f,
          + ty*(dx*F[iy  , ix+1].y + tx*F[iy  , ix].y)
     f.z  = dy*(dx*F[iy+1, ix+1].z + tx*F[iy+1, ix].z)  \
          + ty*(dx*F[iy  , ix+1].z + tx*F[iy  , ix].z)
+
+cdef inline void rescale(real2_t *f, real_t qtmh) nogil:
 
     f.x = f.x*qtmh
     f.y = f.y*qtmh
