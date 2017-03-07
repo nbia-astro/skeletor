@@ -60,10 +60,10 @@ class Grid(grid_t):
         self.lby = nlby
         self.uby = self.nyp + self.nlby
 
-        # nypmx = size of particle partition, including guard cells, in y
-        # nxpmx = size of particle partition, including guard cells, in x
-        self.nypmx = self.nyp + self.nlby + self.nuby
-        self.nxpmx = self.nx + self.nlbx + self.nubx
+        # mx and myp are the total (active plus guard) number of grid points in
+        # x and y in each subdomain
+        self.myp = self.nyp + self.nlby + self.nuby
+        self.mx = self.nx + self.nlbx + self.nubx
 
         if comm.size > self.ny:
             msg = "Too many processors requested: ny={}, comm.size={}"

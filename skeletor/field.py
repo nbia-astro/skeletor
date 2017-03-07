@@ -7,7 +7,7 @@ class Field(ndarray):
     def __new__(cls, grid, time=0.0, **kwds):
 
         # Field size set accoring to number of guard layes
-        obj = super().__new__(cls, shape=(grid.nypmx, grid.nxpmx), **kwds)
+        obj = super().__new__(cls, shape=(grid.myp, grid.mx), **kwds)
 
         # Store grid
         obj.grid = grid
