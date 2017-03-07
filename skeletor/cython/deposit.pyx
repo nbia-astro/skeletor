@@ -10,19 +10,25 @@ def deposit(
     cdef int Np = particles.shape[0]
     cdef int ip
 
+    cdef real2_t offset
+
+    offset.x = grid.lbx - 0.5
+    offset.y = grid.lby - 0.5 - grid.noff
+
     # Density deposition
     for ip in range(Np):
-        deposit_particle(particles[ip], density, J, grid, S)
+        deposit_particle(particles[ip], density, J, grid, S, offset)
 
 cdef inline void deposit_particle(particle_t particle, real_t[:,:] density,
-                    real2_t[:,:] J, grid_t grid, real_t S) nogil:
+                                  real2_t[:,:] J, grid_t grid, real_t S,
+                                  real2_t offset) nogil:
 
         cdef int ix, iy
         cdef real_t tx, ty, dx, dy
         cdef real_t x, y
 
-        x = particle.x + grid.lbx - 0.5
-        y = particle.y + grid.lby - 0.5 - grid.noff
+        x = particle.x + offset.x
+        y = particle.y + offset.y
 
         ix = <int> x
         iy = <int> y

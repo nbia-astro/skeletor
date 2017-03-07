@@ -26,6 +26,13 @@ def push_and_deposit(
     # Variable needed by calculate_ihole
     cdef int ih = 0
 
+    # Offset in interpolation for E and B-fields
+    cdef real2_t offsetE, offsetB
+    offsetB.x = grid.lbx
+    offsetB.y = grid.lby - grid.noff
+    offsetE.x = offsetB.x - 0.5
+    offsetE.y = offsetB.y - 0.5
+
     # TODO: Define this in types.pxd
     cdef real_t Lx = <real_t> grid.nx
 
@@ -34,8 +41,8 @@ def push_and_deposit(
         particle = particles[ip]
 
         # Gather and electric & magnetic fields
-        gather_cic(particles[ip], E, &e, grid)
-        gather_cic(particles[ip], B, &b, grid)
+        gather_cic(particles[ip], E, &e, offsetE)
+        gather_cic(particles[ip], B, &b, offsetB)
 
         # Rescale values with qtmh = 0.5*dt*charge/mass
         rescale(&e, qtmh)
@@ -53,7 +60,7 @@ def push_and_deposit(
             ihole[0] = -1
 
         # Deposit the particle
-        deposit_particle(particle, density, J, grid, S)
+        deposit_particle(particle, density, J, grid, S, offsetE)
 
         if update:
             # Second half of particle drift
