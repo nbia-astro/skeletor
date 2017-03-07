@@ -1,5 +1,5 @@
 from types cimport real_t, real2_t, particle_t, grid_t
-from particle_push cimport kick, gather_cic
+from particle_push cimport kick, gather_cic, rescale
 from particle_push cimport drift2 as drift
 from deposit cimport deposit_particle
 from particle_boundary cimport periodic_x_cdef as periodic_x
@@ -33,9 +33,13 @@ def push_and_deposit(
         # Copy particle data to temporary struct
         particle = particles[ip]
 
-        # Gather and electric & magnetic fields with qtmh = 0.5*dt*charge/mass
-        gather_cic(particle, E, &e, grid, qtmh)
-        gather_cic(particle, B, &b, grid, qtmh)
+        # Gather and electric & magnetic fields
+        gather_cic(particles[ip], E, &e, grid)
+        gather_cic(particles[ip], B, &b, grid)
+
+        # Rescale values with qtmh = 0.5*dt*charge/mass
+        rescale(&e, qtmh)
+        rescale(&b, qtmh)
 
         # Kick the particle velocities
         kick(&particle, e, b)
