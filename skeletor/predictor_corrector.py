@@ -44,7 +44,7 @@ class Experiment:
     def prepare(self, dt, tol=1.48e-8, maxiter=100):
 
         from numpy import sqrt
-        from mpi4py.MPI import COMM_WORLD as comm, LAND
+        from mpi4py.MPI import COMM_WORLD as comm, SUM
 
         # Deposit sources
         self.sources.deposit(self.ions, set_boundaries=True)
@@ -54,6 +54,8 @@ class Experiment:
 
         # Drift particle positions by a half time step
         self.ions.drift(dt/2)
+
+        converged = False
 
         # Iterate to find true electric field at time 0
         for it in range (maxiter):
@@ -66,19 +68,24 @@ class Experiment:
                 self.E3[dim][...] = 0.5*(self.E[dim] + self.E2[dim])
 
             # Compute difference to previous iteration
-            diff = 0
+            diff2 = 0.0
             for dim in ('x', 'y', 'z'):
-                diff += sqrt(((self.E3[dim] - self.E[dim]).trim ()**2).mean())
+                diff2 += ((self.E3[dim] - self.E[dim]).trim ()**2).mean()
+            diff = sqrt(comm.allreduce(diff2, op=SUM)/comm.size)
             if comm.rank == 0:
                 print ("Difference to previous iteration: {}".format (diff))
 
             # Update electric field
             self.E[...] = self.E3
 
-            # Return if difference is sufficiently small
-            if comm.allreduce(diff < tol, op=LAND): return
+            # Break out of loop if difference is sufficiently small
+            if diff < tol:
+                converged = True
+                break
 
-        raise RuntimeError ("Exceeded maxiter={} iterations!".format (maxiter))
+        if not converged:
+            msg = "Exceeded maxiter={} iterations!"
+            raise RuntimeError(msg.format(maxiter))
 
     def step(self, dt, update):
 

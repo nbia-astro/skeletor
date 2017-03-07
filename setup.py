@@ -18,7 +18,7 @@ extensions = [Extension(
 setup(
     name='skeletor',
     version='0.0.1',
-    packages=['skeletor', 'skeletor.manifolds'],
+    packages=['skeletor', 'skeletor.manifolds', 'dispersion_solvers'],
     ext_modules=cythonize(
         extensions,
         compiler_directives=compiler_directives))
