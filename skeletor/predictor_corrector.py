@@ -34,7 +34,6 @@ class Experiment:
         self.E2 = Field(manifold, comm, dtype=Float2)
         self.E3 = Field(manifold, comm, dtype=Float2)
         self.B2 = Field(manifold, comm, dtype=Float2)
-        self.B3 = Field(manifold, comm, dtype=Float2)
         self.E2.copy_guards()
         self.B2[:] = B
 
@@ -90,14 +89,10 @@ class Experiment:
         # Evolve magnetic field by a half step to n (n+1)
         self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
 
-        # Interpolate magnetic field onto cell centers
-        # (particle interpolation is thus the same for E and B-fields)
-        self.manifold.unstagger(self.B2, self.B3, set_boundaries=True)
-
         # Push particle positions to n+1 (n+2) and kick velocities to n+1/2
         # (n+3/2). Deposit charge and current at n+1/2 (n+3/2) and only update
         # particle positions if update=True
-        self.ions.push_and_deposit(self.E2, self.B3, dt, self.sources, update)
+        self.ions.push_and_deposit(self.E2, self.B2, dt, self.sources, update)
 
         # Evolve magnetic field by a half step to n+1/2 (n+3/2)
         self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
