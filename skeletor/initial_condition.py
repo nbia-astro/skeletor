@@ -44,6 +44,7 @@ class InitialCondition():
         # with zero mean and width 'vt'
         ions['vx'][:np] = self.vt*normal (size=np)
         ions['vy'][:np] = self.vt*normal (size=np)
+        ions['vz'][:np] = self.vt*normal (size=np)
 
         ions.np = np
 
@@ -120,6 +121,7 @@ class DensityPertubation(InitialCondition):
         # with zero mean and width 'vt'
         ions['vx'][:np] = self.vt*normal (size=np)
         ions['vy'][:np] = self.vt*normal (size=np)
+        ions['vz'][:np] = self.vt*normal (size=np)
 
         ions.np = np
 
