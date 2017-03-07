@@ -30,6 +30,8 @@ class Grid(grid_t):
         # returned variables `idproc` and `nvp` are simply the MPI rank (i.e.
         # processor id) and size (i.e. total number of processes),
         # respectively.
+        # TODO: Move this somewhere else. The constructor of the grid class is
+        # not exactly the obvious place for initializing MPI at C-level.
         idproc, nvp = cppinit(comm)
 
         # nyp = number of primary (complete) gridpoints in particle partition
