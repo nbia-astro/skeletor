@@ -60,15 +60,9 @@ class Grid(grid_t):
         self.lby = nlby
         self.uby = self.nyp + self.nlby
 
-        # Parameters needed by PPIC2
-        self.kstrt = comm.rank + 1
-        self.nvp = comm.size
-
         # nypmx = size of particle partition, including guard cells, in y
         # nxpmx = size of particle partition, including guard cells, in x
-        # nypmn = value of nyp
         self.nypmx = self.nyp + self.nlby + self.nuby
-        self.nypmn = self.nyp
         self.nxpmx = self.nx + self.nlbx + self.nubx
 
         if comm.size > self.ny:
