@@ -62,70 +62,82 @@ class Field(ndarray):
              self.grid.lbx:self.grid.ubx] = rhs
 
     def copy_guards(self):
+        "Copy data to guard cells from corresponding active cells."
 
-        msg = 'Boundaries are already set!'
-        assert(not self.boundaries_set), msg
+        # Make sure boundaries aren't already set
+        # TODO: turn this into a warning. Other than communication overhead,
+        # calling this multiple times doesn't really cause any harm.
+        assert not self.boundaries_set, 'Boundaries are already set!'
+
         lbx = self.grid.lbx
         lby = self.grid.lby
-        nubx = self.grid.nubx
-        nuby = self.grid.nuby
         ubx = self.grid.ubx
         uby = self.grid.uby
 
-        # lower active cells to upper guard layers
-        self[uby:, lbx:ubx] = self.send_down(self[lby:lby+nuby, lbx:ubx])
-        # upper active cells to lower guard layers
+        # x-boundaries
+        self[uby:, lbx:ubx] = self.send_down(self[lby:lby+lby, lbx:ubx])
         self[:lby, lbx:ubx] = self.send_up(self[uby-lby:uby, lbx:ubx])
-        # lower active cells to upper guard layers
-        self[:, ubx:] = self[:, lbx:lbx+nubx]
-        # upper active cells to lower guard layers
-        self[:, :lbx] = self[:, ubx-lbx:ubx]
 
-        # PPIC2 setup
-        if nubx == 2 and nuby == 1 and lbx == 0 and lby == 0:
-            # Set the extra guard layer in x to zero
-            # TODO: Get rid of this extra guard layer in PPIC2
-            # That is, make PPIC2's FFT work with the extended grid
-            self[:, -1] = 0.0
+        # y-boundaries
+        self[:, ubx:] = self[:, lbx:lbx+lbx]
+        self[:, :lbx] = self[:, ubx-lbx:ubx]
 
         self.boundaries_set = True
 
     def add_guards(self):
+        "Add data from guard cells to corresponding active cells."
+
+        # TODO: We might wanna do some kind of check analogous to the one being
+        # done in `copy_guards()`. And here we should probably throw an error
+        # if it fails because calling this method multiple times actually does
+        # cause harm.
+
         lbx = self.grid.lbx
         lby = self.grid.lby
-        nubx = self.grid.nubx
-        nuby = self.grid.nuby
         ubx = self.grid.ubx
         uby = self.grid.uby
 
-        # Add data from guard cells to corresponding active cells
-        self[:, lbx:lbx+nubx] += self[:, ubx:]
+        # x-boundaries
+        self[:, lbx:lbx+lbx] += self[:, ubx:]
         self[:, ubx-lbx:ubx] += self[:, :lbx]
 
-        self[lby:lby+nuby, :] += self.send_up(self[uby:, :])
+        # y-boundaries
+        self[lby:lby+lby, :] += self.send_up(self[uby:, :])
         self[uby-lby:uby, :] += self.send_down(self[:lby, :])
 
         # Erase guard cells
+        # TODO: I suggest we get rid of this. The guard layes will be
+        # overwritten anyway by `copy_guards()`.
         self[:lby, :] = 0.0
         self[uby:, :] = 0.0
         self[:, ubx:] = 0.0
         self[:, :lbx] = 0.0
 
     def add_guards_vector(self):
+        "Add *vector* data from guard cells to corresponding active cells."
+        # TODO: We need to find a way of only having one `add_guards()` method
+        # that can deal with both scalar and vector data.
+        #
+        # This can be achieved as follows:
+        #
+        #   if self.dtype.names is None:
+        #     self[:, lbx:lbx+lbx] += self[:, ubx:]
+        #     ...
+        #   else:
+        #     for name in self.dtype.names:
+        #       self[:, lbx:lbx+lbx][name] += self[:, ubx:][name]
+
         lbx = self.grid.lbx
         lby = self.grid.lby
-        nubx = self.grid.nubx
-        nuby = self.grid.nuby
         ubx = self.grid.ubx
         uby = self.grid.uby
 
         # Add data from guard cells to corresponding active cells
-        dims = ('x', 'y', 'z')
-        for dim in dims:
-            self[:, lbx:lbx+nubx][dim] += self[:, ubx:][dim]
+        for dim in 'x', 'y', 'z':
+            self[:, lbx:lbx+lbx][dim] += self[:, ubx:][dim]
             self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
 
-            self[lby:lby+nuby, :][dim] += self.send_up(self[uby:, :][dim])
+            self[lby:lby+lby, :][dim] += self.send_up(self[uby:, :][dim])
             self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
 
         # Erase guard cells
