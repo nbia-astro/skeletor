@@ -3,9 +3,7 @@ from ..grid import Grid
 
 class Manifold(Grid):
 
-    def __init__(
-            self, nx, ny, comm, ax=0.0, ay=0.0, nlbx=1, nubx=1, nlby=1,
-            nuby=1, Lx=None, Ly=None):
+    def __init__(self, nx, ny, comm, ax=0.0, ay=0.0, **grid_kwds):
 
         from math import log2
         from numpy import zeros, sum, where, zeros_like, array, exp
@@ -13,9 +11,7 @@ class Manifold(Grid):
         from mpi4py import MPI
         from skeletor import Float, Complex
 
-        super().__init__(
-                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby,
-                Lx=Lx, Ly=Ly)
+        super().__init__(nx, ny, comm, **grid_kwds)
 
         self.indx = int(log2(nx))
         self.indy = int(log2(ny))
@@ -100,18 +96,13 @@ class Manifold(Grid):
 
 class ShearingManifold(Manifold):
 
-    def __init__(
-            self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=0, nubx=2, nlby=0, nuby=1, S=0, Omega=0,
-            Lx=None, Ly=None):
+    def __init__(self, nx, ny, comm, S=0, Omega=0, **manifold_kwds):
 
         from numpy.fft import rfftfreq
         from numpy import outer, pi, zeros
         from skeletor import Complex
 
-        super().__init__(
-                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby,
-                Lx=Lx, Ly=Ly)
+        super().__init__(nx, ny, comm, **manifold_kwds)
 
         shape = self.ny//self.comm.size, self.nx//2+1
         self.temp = zeros(shape, dtype=Complex)

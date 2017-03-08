@@ -108,7 +108,9 @@ def test_shearing_epicycle(plot=False):
     # Electric field in x-direction
     E_star = Field(manifold, dtype=Float2)
     E_star.fill((0.0, 0.0, 0.0))
-    E_star['x'][:-1, :-2] = -2*S*(xg-nx/2)*mass/charge*Omega
+    E_star['x'].active = -2*S*(xg-nx/2)*mass/charge*Omega
+    # Note: this does not set the correct boundary condition in x. And that's
+    # fine as long as the particle doesn't cross the x-boundaries.
     E_star.copy_guards()
 
     B = Field(manifold, dtype=Float2)
