@@ -159,15 +159,11 @@ class ShearField(Field):
 
         obj = super().__new__(cls, grid, time=time, **kwds)
 
-        # Grid spacing
-        # TODO: this should be a property of the Grid class
-        dx = obj.grid.Lx/obj.grid.nx
-
         # Wave numbers for real-to-complex transforms
-        obj.kx = 2*pi*rfftfreq(obj.grid.nx)/dx
+        obj.kx = 2*pi*rfftfreq(grid.nx)/grid.dx
 
         # Outer product of y and kx
-        obj.y_kx = outer(obj.grid.y, obj.kx)
+        obj.y_kx = outer(grid.y, obj.kx)
 
         return obj
 
@@ -178,7 +174,6 @@ class ShearField(Field):
         from numpy import exp
 
         lbx = self.grid.lbx
-        nubx = self.grid.nubx
         ubx = self.grid.ubx
 
         # Translate in real space by phase shifting in spectral space
@@ -194,9 +189,8 @@ class ShearField(Field):
         else:
             raise RuntimeError("Input should be Float or Float2")
 
-        # lower active cells to upper guard layers
-        self[iy, ubx:] = self[iy, lbx:lbx+nubx]
-        # upper active cells to lower guard layers
+        # Update x-boundaries
+        self[iy, ubx:] = self[iy, lbx:lbx+lbx]
         self[iy, :lbx] = self[iy, ubx-lbx:ubx]
 
     def add_guards(self):
@@ -205,19 +199,17 @@ class ShearField(Field):
 
         lbx = self.grid.lbx
         lby = self.grid.lby
-        nubx = self.grid.nubx
-        nuby = self.grid.nuby
         ubx = self.grid.ubx
         uby = self.grid.uby
 
         # Add data from guard cells to corresponding active cells
-        self[:, lbx:lbx+nubx] += self[:, ubx:]
+        self[:, lbx:lbx+lbx] += self[:, ubx:]
         self[:, ubx-lbx:ubx] += self[:, :lbx]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = self.grid.Ly*self.grid.S*self.time
-            for iy in range(uby, uby + nuby):
+            for iy in range(uby, uby + lby):
                 self._translate_boundary(trans, iy)
         if self.grid.comm.rank == 0:
             trans = -self.grid.Ly*self.grid.S*self.time
@@ -225,7 +217,7 @@ class ShearField(Field):
                 self._translate_boundary(trans, iy)
 
         # Add data from guard cells to corresponding active cells in y
-        self[lby:lby+nuby, :] += self.send_up(self[uby:, :])
+        self[lby:lby+lby, :] += self.send_up(self[uby:, :])
         self[uby-lby:uby, :] += self.send_down(self[:lby, :])
 
         # Erase guard cells
@@ -240,20 +232,18 @@ class ShearField(Field):
 
         lbx = self.grid.lbx
         lby = self.grid.lby
-        nubx = self.grid.nubx
-        nuby = self.grid.nuby
         ubx = self.grid.ubx
         uby = self.grid.uby
 
         for dim in ('x', 'y', 'z'):
             # Add data from guard cells to corresponding active cells
-            self[:, lbx:lbx+nubx][dim] += self[:, ubx:][dim]
+            self[:, lbx:lbx+lbx][dim] += self[:, ubx:][dim]
             self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = self.grid.Ly*self.grid.S*self.time
-            for iy in range(uby, uby + nuby):
+            for iy in range(uby, uby + lby):
                 self._translate_boundary(trans, iy)
         if self.grid.comm.rank == 0:
             trans = -self.grid.Ly*self.grid.S*self.time
@@ -262,7 +252,7 @@ class ShearField(Field):
 
         for dim in ('x', 'y', 'z'):
             # Add data from guard cells to corresponding active cells in y
-            self[lby:lby+nuby, :][dim] += self.send_up(self[uby:, :][dim])
+            self[lby:lby+lby, :][dim] += self.send_up(self[uby:, :][dim])
             self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
 
         # Erase guard cells
@@ -278,24 +268,22 @@ class ShearField(Field):
 
         lbx = self.grid.lbx
         lby = self.grid.lby
-        nubx = self.grid.nubx
-        nuby = self.grid.nuby
         ubx = self.grid.ubx
         uby = self.grid.uby
 
         # lower active cells to upper guard layers
-        self[uby:, lbx:ubx] = self.send_down(self[lby:lby+nuby, lbx:ubx])
+        self[uby:, lbx:ubx] = self.send_down(self[lby:lby+lby, lbx:ubx])
         # upper active cells to lower guard layers
         self[:lby, lbx:ubx] = self.send_up(self[uby-lby:uby, lbx:ubx])
         # lower active cells to upper guard layers
-        self[:, ubx:] = self[:, lbx:lbx+nubx]
+        self[:, ubx:] = self[:, lbx:lbx+lbx]
         # upper active cells to lower guard layers
         self[:, :lbx] = self[:, ubx-lbx:ubx]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = -self.grid.Ly*self.grid.S*self.time
-            for iy in range(uby, uby + nuby):
+            for iy in range(uby, uby + lby):
                 self._translate_boundary(trans, iy)
         if self.grid.comm.rank == 0:
             trans = +self.grid.Ly*self.grid.S*self.time

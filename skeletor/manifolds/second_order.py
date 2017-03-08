@@ -95,14 +95,9 @@ class ShearingManifold(Manifold):
 
     """Finite difference operators in the shearing sheet"""
 
-    def __init__(
-            self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=1, nubx=1, nlby=1, nuby=1, S=0, Omega=0,
-            Lx=None, Ly=None):
+    def __init__(self, nx, ny, comm, S=0, Omega=0, **manifold_kwds):
 
-        super().__init__(
-                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby,
-                Lx=Lx, Ly=Ly)
+        super().__init__(nx, ny, comm, **manifold_kwds)
 
         # Shear parameter
         self.S = S
