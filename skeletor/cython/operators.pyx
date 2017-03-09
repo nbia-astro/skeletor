@@ -1,4 +1,4 @@
-from types cimport complex_t, complex2_t, real_t, real2_t
+from types cimport complex_t, complex2_t, real_t, real3_t
 from libc.math cimport M_PI
 cimport cython
 

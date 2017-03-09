@@ -1,4 +1,4 @@
-from types cimport real_t, real2_t, particle_t, grid_t
+from types cimport real_t, real3_t, particle_t, grid_t
 from particle_push cimport kick, gather_cic, rescale
 from particle_push cimport drift2 as drift
 from deposit cimport deposit_particle
@@ -7,15 +7,15 @@ from particle_boundary cimport calculate_ihole_cdef as calculate_ihole
 from libc.math cimport fabs
 
 def push_and_deposit(
-         particle_t[:] particles, real2_t[:, :] E, real2_t[:, :] B,
+         particle_t[:] particles, real3_t[:, :] E, real3_t[:, :] B,
          real_t qtmh, real_t dt, grid_t grid, int[:] ihole,
-         real_t[:, :] density, real2_t[:,:] J, real_t S, const bint update):
+         real_t[:, :] density, real3_t[:,:] J, real_t S, const bint update):
 
     # Number of particles
     cdef int Np = particles.shape[0]
 
     # Electric and magnetic fields at particle location
-    cdef real2_t e, b
+    cdef real3_t e, b
 
     # A single particle struct
     cdef particle_t particle
@@ -27,7 +27,7 @@ def push_and_deposit(
     cdef int ih = 0
 
     # Offset in interpolation for E and B-fields
-    cdef real2_t offsetE, offsetB
+    cdef real3_t offsetE, offsetB
     offsetB.x = grid.lbx
     offsetB.y = grid.lby - grid.noff
     offsetE.x = offsetB.x - 0.5
