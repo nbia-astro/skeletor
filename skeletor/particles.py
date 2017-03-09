@@ -207,10 +207,9 @@ class Particles(numpy.ndarray):
         # Update time
         self.time += dt
 
-        grid = E.grid
         qtmh = self.charge/self.mass*dt/2
 
-        push(self[:self.np], E, B, qtmh, dt, grid,
+        push(self[:self.np], E, B, qtmh, dt, self.manifold,
              self.manifold.Omega, self.manifold.S)
 
         # Shearing periodicity
@@ -224,7 +223,7 @@ class Particles(numpy.ndarray):
 
     def drift(self, dt):
         from .cython.particle_push import drift as cython_drift
-        cython_drift(self[:self.np], dt)
+        cython_drift(self[:self.np], dt, self.manifold)
 
         # Apply periodicity in x and y
         self.periodic_x()
