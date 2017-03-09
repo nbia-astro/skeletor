@@ -60,6 +60,7 @@ else:
 # Particle velocity at t = 0
 vx = ampl*numpy.sin(kx*a)
 vy = numpy.zeros_like(a)
+vz = numpy.zeros_like(a)
 
 # Start the positions at time = t
 x = numpy.mod(a + vx*t, nx)
@@ -84,7 +85,7 @@ npmax = int(1.25*np/nvp)
 ions = Particles(manifold, npmax, time=t, charge=charge, mass=mass)
 
 # Assign particles to subdomains
-ions.initialize(x, y, vx, vy)
+ions.initialize(x, y, vx, vy, vz)
 
 # Make sure particles actually reside in the local subdomain
 assert all(ions["y"][:ions.np] >= manifold.edges[0])
@@ -95,14 +96,14 @@ assert all(ions["y"][:ions.np] < manifold.edges[1])
 assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
 # Initialize sources
-sources = Sources(manifold)
+sources = Sources(manifold, npc)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
 sources.rho.add_guards()
 assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+    sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
 
 def ux(a):
@@ -121,7 +122,10 @@ a = manifold.x
 
 # Electric field
 E = Field(manifold, dtype=Float2)
-E.fill((0.0, 0.0))
+E.fill((0.0, 0.0, 0.0))
+
+B = Field(manifold, dtype=Float2)
+B.fill((0.0, 0.0, 0.0))
 
 
 def concatenate(arr):
@@ -162,18 +166,18 @@ for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
 
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
     sources.rho.add_guards()
     sources.J.add_guards_vector()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
     sources.rho.copy_guards()
     sources.J.copy_guards()
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
-    ions.push(E, dt)
+    ions.push(E, B, dt)
 
     # Update time
     t += dt
@@ -190,7 +194,7 @@ for it in range(nt):
                 im2.set_data(global_J['x'])
                 im1.autoscale()
                 im2.autoscale()
-                im3[0].set_ydata(global_rho.mean(axis=0)/npc)
+                im3[0].set_ydata(global_rho.mean(axis=0))
                 im3[1].set_data(xp(a, t), rho(a, t))
                 im4[0].set_ydata(((global_J['x']/global_rho)).mean(axis=0))
                 im4[1].set_data(xp(a, t), ux(a))
