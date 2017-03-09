@@ -1,4 +1,4 @@
-from types cimport real_t, real3_t, particle_t, grid_t
+from types cimport real_t, real2_t, real3_t, particle_t, grid_t
 from particle_push cimport gather_cic, rescale
 from particle_push cimport drift_particle as drift
 from particle_push cimport kick_particle as kick
@@ -28,7 +28,7 @@ def push_and_deposit(
     cdef int ih = 0
 
     # Offset in interpolation for E and B-fields
-    cdef real3_t offsetE, offsetB
+    cdef real2_t offsetE, offsetB
     offsetB.x = grid.lbx
     offsetB.y = grid.lby - grid.noff
     offsetE.x = offsetB.x - 0.5

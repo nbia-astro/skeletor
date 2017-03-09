@@ -1,4 +1,4 @@
-from types cimport real_t, real3_t, particle_t, grid_t
+from types cimport real_t, real2_t, real3_t, particle_t, grid_t
 from cython.parallel import prange
 
 def boris_push(particle_t[:] particles, real3_t[:, :] E,
@@ -12,7 +12,7 @@ def boris_push(particle_t[:] particles, real3_t[:, :] E,
     cdef int ip
 
     # Offset in interpolation for E and B-fields
-    cdef real3_t offsetE, offsetB
+    cdef real2_t offsetE, offsetB
     offsetB.x = grid.lbx
     offsetB.y = grid.lby - grid.noff
     offsetE.x = offsetB.x - 0.5
@@ -48,7 +48,7 @@ def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
     cdef int ip
 
     # Offset in interpolation for E and B-fields
-    cdef real3_t offsetE, offsetB
+    cdef real2_t offsetE, offsetB
     offsetB.x = grid.lbx
     offsetB.y = grid.lby - grid.noff
     offsetE.x = offsetB.x - 0.5
@@ -78,7 +78,7 @@ def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
         drift_particle(&particles[ip], dtdx, dtdy)
 
 cdef inline void gather_cic(particle_t particle, real3_t[:,:] F, real3_t *f,
-                        real3_t offset) nogil:
+                        real2_t offset) nogil:
 
     cdef int ix, iy
     cdef real_t tx, ty, dx, dy

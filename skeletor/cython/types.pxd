@@ -10,6 +10,9 @@ ctypedef double complex complex_t
 cdef struct particle_t:
     real_t x, y, vx, vy, vz
 
+cdef struct real2_t:
+    real_t x, y
+
 cdef struct real3_t:
     real_t x, y, z
 
