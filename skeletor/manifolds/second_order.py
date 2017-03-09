@@ -5,18 +5,14 @@ class Manifold(Grid):
 
     """Finite difference operators"""
 
-    def __init__(
-            self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=1, nubx=1, nlby=1, nuby=1, Lx=None, Ly=None):
+    def __init__(self, nx, ny, comm, ax=0.0, ay=0.0, **grid_kwds):
 
-        super().__init__(
-                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby,
-                Lx=Lx, Ly=Ly)
+        super().__init__(nx, ny, comm, **grid_kwds)
 
-        err = 'Not enough boundary layers for second order finite difference.'
-        assert (nlbx >= 1 and nlby >= 1 and nubx >= 1 and nuby >= 1), err
+        err = 'Not enough guard layers for second order finite difference.'
+        assert self.lbx >= 1 and self.lby >= 1, err
 
-        msg = 'Finie particle size not implemented in this manifold'
+        msg = 'Finite particle size not implemented in this manifold'
         assert ax == 0.0 and ay == 0.0, msg
 
         # Rotation and shear is always false for this manifold
@@ -99,14 +95,9 @@ class ShearingManifold(Manifold):
 
     """Finite difference operators in the shearing sheet"""
 
-    def __init__(
-            self, nx, ny, comm,
-            ax=0.0, ay=0.0, nlbx=1, nubx=1, nlby=1, nuby=1, S=0, Omega=0,
-            Lx=None, Ly=None):
+    def __init__(self, nx, ny, comm, S=0, Omega=0, **manifold_kwds):
 
-        super().__init__(
-                nx, ny, comm, nlbx=nlbx, nubx=nubx, nlby=nlby, nuby=nuby,
-                Lx=Lx, Ly=Ly)
+        super().__init__(nx, ny, comm, **manifold_kwds)
 
         # Shear parameter
         self.S = S

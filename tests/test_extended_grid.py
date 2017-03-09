@@ -14,7 +14,7 @@ charge = 1.0
 mass = 1.0
 
 # Create numerical grid with weird setup of ghost layers
-manifold = Manifold(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
+manifold = Manifold(nx, ny, comm, lbx=1, lby=2)
 
 # # Initialize sources
 sources = Sources(manifold, npc)

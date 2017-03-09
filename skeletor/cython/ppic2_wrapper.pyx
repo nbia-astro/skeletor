@@ -144,7 +144,8 @@ def cppdsortp2yl(
         int[:] npic, int npp, grid_t grid):
 
     cdef int npmax = particles.shape[0]
+    cdef int nypmx = grid.ny + 1
 
     ppush2.cppdsortp2yl(
             &particles[0].x, &particles2[0].x, &npic[0],
-            npp, grid.noff, grid.nyp, idimp, npmax, grid.nypmx)
+            npp, grid.noff, grid.nyp, idimp, npmax, nypmx)

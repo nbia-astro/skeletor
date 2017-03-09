@@ -18,10 +18,9 @@ def test_copy_guards_with_shear(plot=False):
     t = 0.2
 
     # Create numerical grid
-    manifold = ShearingManifold(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4,
-                                S=S, Omega=0)
+    manifold = ShearingManifold(nx, ny, comm, lbx=1, lby=2, S=S, Omega=0)
 
-    grid = Grid(nx, ny, comm, nlbx=1, nubx=2, nlby=3, nuby=4)
+    grid = Grid(nx, ny, comm, lbx=1, lby=2)
 
     # Coordinate arrays
     xx, yy = numpy.meshgrid(grid.x, grid.y)
@@ -47,7 +46,7 @@ def test_copy_guards_with_shear(plot=False):
     g.copy_guards()
 
     # Grid including first ghost zone
-    xg = numpy.arange(-grid.lbx, grid.ubx + grid.nlbx) + 0.5
+    xg = numpy.arange(-grid.lbx, grid.nx + grid.lbx) + 0.5
     xxg, yyg = numpy.meshgrid(xg, grid.yg)
 
     # Analytic field including first ghost-zone

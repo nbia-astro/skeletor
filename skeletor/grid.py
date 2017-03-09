@@ -3,8 +3,7 @@ from .cython.types import grid_t
 
 class Grid(grid_t):
 
-    def __init__(self, nx, ny, comm, nlbx=0, nubx=2, nlby=0, nuby=1,
-                 Lx=None, Ly=None):
+    def __init__(self, nx, ny, comm, lbx=1, lby=1, Lx=None, Ly=None):
 
         from .cython.ppic2_wrapper import cppinit
 
@@ -13,6 +12,7 @@ class Grid(grid_t):
         self.ny = ny
 
         # Grid size in x- and y-direction
+        # TODO: Let's set Lx=Ly=1 by default
         self.Lx = Lx if Lx is not None else nx
         self.Ly = Ly if Ly is not None else ny
 
@@ -30,6 +30,8 @@ class Grid(grid_t):
         # returned variables `idproc` and `nvp` are simply the MPI rank (i.e.
         # processor id) and size (i.e. total number of processes),
         # respectively.
+        # TODO: Move this somewhere else. The constructor of the grid class is
+        # not exactly the obvious place for initializing MPI at C-level.
         idproc, nvp = cppinit(comm)
 
         # nyp = number of primary (complete) gridpoints in particle partition
@@ -43,31 +45,17 @@ class Grid(grid_t):
         # the Cython extension type "grid_t" that this class inherits from.
         self.edges = [self.noff, self.noff + self.nyp]
 
-        # Ghost zone setup
-        # nlbx, nlby = number of ghost zones at lower boundary in x, y
-        # nubx, nuby = number of ghost zones at upper boundary in x, y
-        self.nlbx = nlbx
-        self.nlby = nlby
-        self.nubx = nubx
-        self.nuby = nuby
-
         # lbx, lby = first active index in x, y
         # ubx, uby = index of first ghost upper zone in x, y
-        self.lbx = nlbx
-        self.ubx = self.nx + self.nlbx
-        self.lby = nlby
-        self.uby = self.nyp + self.nlby
+        self.lbx = lbx
+        self.ubx = lbx + self.nx
+        self.lby = lby
+        self.uby = lby + self.nyp
 
-        # Parameters needed by PPIC2
-        self.kstrt = comm.rank + 1
-        self.nvp = comm.size
-
-        # nypmx = size of particle partition, including guard cells, in y
-        # nxpmx = size of particle partition, including guard cells, in x
-        # nypmn = value of nyp
-        self.nypmx = self.nyp + self.nlby + self.nuby
-        self.nypmn = self.nyp
-        self.nxpmx = self.nx + self.nlbx + self.nubx
+        # mx and myp are the total (active plus guard) number of grid points in
+        # x and y in each subdomain
+        self.mx = self.nx + 2*self.lbx
+        self.myp = self.nyp + 2*self.lby
 
         if comm.size > self.ny:
             msg = "Too many processors requested: ny={}, comm.size={}"
@@ -89,5 +77,5 @@ class Grid(grid_t):
     def yg(self):
         "One-dimensional y-coordinate array including ghost"
         from numpy import arange
-        return (arange(self.noff - self.lby, self.noff + self.nyp + self.nuby)
+        return (arange(self.noff - self.lby, self.noff + self.nyp + self.lby)
                 + 0.5)*self.dy
