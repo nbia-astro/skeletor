@@ -224,7 +224,7 @@ class Particles(numpy.ndarray):
 
     def drift(self, dt):
         from .cython.particle_push import drift as cython_drift
-        cython_drift(self[:self.np], dt)
+        cython_drift(self[:self.np], dt, self.manifold)
 
         # Apply periodicity in x and y
         self.periodic_x()
