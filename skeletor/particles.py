@@ -207,10 +207,9 @@ class Particles(numpy.ndarray):
         # Update time
         self.time += dt
 
-        grid = E.grid
         qtmh = self.charge/self.mass*dt/2
 
-        push(self[:self.np], E, B, qtmh, dt, grid,
+        push(self[:self.np], E, B, qtmh, dt, self.manifold,
              self.manifold.Omega, self.manifold.S)
 
         # Shearing periodicity
