@@ -3,7 +3,7 @@ from .cython.types import grid_t
 
 class Grid(grid_t):
 
-    def __init__(self, nx, ny, comm, lbx=1, lby=1, Lx=None, Ly=None):
+    def __init__(self, nx, ny, comm, lbx=1, lby=1, Lx=1.0, Ly=1.0):
 
         from .cython.ppic2_wrapper import cppinit
 
@@ -12,9 +12,8 @@ class Grid(grid_t):
         self.ny = ny
 
         # Grid size in x- and y-direction
-        # TODO: Let's set Lx=Ly=1 by default
-        self.Lx = Lx if Lx is not None else nx
-        self.Ly = Ly if Ly is not None else ny
+        self.Lx = Lx
+        self.Ly = Ly
 
         # Grid cell size
         self.dx = self.Lx/self.nx

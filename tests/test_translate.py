@@ -18,7 +18,8 @@ def test_translate(plot=False):
     t = 0.2
 
     # Create numerical grid
-    manifold = ShearingManifold(nx, ny, comm, lbx=1, lby=2, S=S, Omega=0)
+    manifold = ShearingManifold(nx, ny, comm, Lx=nx, Ly=ny, lbx=1, lby=2,
+                                S=S, Omega=0)
 
     # Coordinate arrays
     xx, yy = numpy.meshgrid(manifold.x, manifold.y)

@@ -146,7 +146,7 @@ def test_sheared_disturbance(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
+    manifold = ShearingManifold(nx, ny, comm, Lx=nx, Ly=ny, S=S, Omega=Omega)
 
     # x- and y-grid
     xx, yy = numpy.meshgrid(manifold.x, manifold.y)

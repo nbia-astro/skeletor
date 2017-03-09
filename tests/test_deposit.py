@@ -15,7 +15,7 @@ charge = -1.0
 mass = 1.0
 
 # Create numerical grid
-manifold = Manifold(nx, ny, comm)
+manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny)
 
 # # Initialize sources
 sources = Sources(manifold, npc)

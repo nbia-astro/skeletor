@@ -18,9 +18,10 @@ def test_copy_guards_with_shear(plot=False):
     t = 0.2
 
     # Create numerical grid
-    manifold = ShearingManifold(nx, ny, comm, lbx=1, lby=2, S=S, Omega=0)
+    manifold = ShearingManifold(nx, ny, comm, lbx=1, lby=2, Lx=nx, Ly=ny,
+                                S=S, Omega=0)
 
-    grid = Grid(nx, ny, comm, lbx=1, lby=2)
+    grid = Grid(nx, ny, comm, lbx=1, lby=2, Lx=nx, Ly=ny)
 
     # Coordinate arrays
     xx, yy = numpy.meshgrid(grid.x, grid.y)

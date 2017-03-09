@@ -86,7 +86,7 @@ def test_shearing_epicycle(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = ShearingManifold(nx, ny, comm, Omega=Omega, S=S)
+    manifold = ShearingManifold(nx, ny, comm, Lx=nx, Ly=ny, Omega=Omega, S=S)
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)
