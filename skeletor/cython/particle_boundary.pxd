@@ -1,4 +1,4 @@
-from types cimport real_t, real2_t, particle_t, grid_t
+from types cimport real_t, particle_t, grid_t
 
 cdef inline void periodic_x_cdef(particle_t *particle, real_t Lx) nogil
 

@@ -1,8 +1,8 @@
-from types cimport real_t, real2_t, grid_t
+from types cimport real_t, real3_t, grid_t
 cimport cython
 from libc.math cimport fabs
 
-def gradient(real_t[:,:] f, real2_t[:,:] grad, grid_t grid):
+def gradient(real_t[:,:] f, real3_t[:,:] grad, grid_t grid):
 
     cdef int ix, iy
 
@@ -12,7 +12,7 @@ def gradient(real_t[:,:] f, real2_t[:,:] grad, grid_t grid):
             grad[iy, ix].y = 0.5/grid.dy*(f[iy+1, ix] - f[iy-1, ix])
             grad[iy, ix].z = 0.0
 
-def curl_up(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real2_t[:,:] curl,
+def curl_up(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real3_t[:,:] curl,
             grid_t grid):
 
     cdef int ix, iy
@@ -24,7 +24,7 @@ def curl_up(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real2_t[:,:] curl,
             curl[iy, ix].z = ddxup(fy, ix, iy, grid) - ddyup(fx, ix, iy, grid)
 
 def curl_down(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz,
-              real2_t[:,:] curl, grid_t grid):
+              real3_t[:,:] curl, grid_t grid):
 
     cdef int ix, iy
 
@@ -56,7 +56,7 @@ cdef inline real_t ddydn(real_t[:, :] f, int ix, int iy, grid_t grid):
 cdef inline real_t ddxdn(real_t[:, :] f, int ix, int iy, grid_t grid):
     return 0.5/grid.dx*(f[iy,ix] + f[iy-1,ix] - f[iy,ix-1] - f[iy-1,ix-1])
 
-def unstagger(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real2_t[:,:] g,
+def unstagger(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real3_t[:,:] g,
               grid_t grid):
 
     cdef int ix, iy
@@ -67,7 +67,7 @@ def unstagger(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real2_t[:,:] g,
             g[iy, ix].y = inter_dn(fy, ix, iy)
             g[iy, ix].z = inter_dn(fz, ix, iy)
 
-def stagger(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real2_t[:,:] g,
+def stagger(real_t[:,:] fx, real_t[:,:] fy, real_t[:,:] fz, real3_t[:,:] g,
               grid_t grid):
 
     cdef int ix, iy

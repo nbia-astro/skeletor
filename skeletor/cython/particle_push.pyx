@@ -1,18 +1,18 @@
-from types cimport real_t, real2_t, particle_t, grid_t
+from types cimport real_t, real3_t, particle_t, grid_t
 from cython.parallel import prange
 
-def boris_push(particle_t[:] particles, real2_t[:, :] E,
-                      real2_t[:, :] B, real_t qtmh, real_t dt, grid_t grid):
+def boris_push(particle_t[:] particles, real3_t[:, :] E,
+                      real3_t[:, :] B, real_t qtmh, real_t dt, grid_t grid):
 
     cdef int Np = particles.shape[0]
     # Electric and magnetic fields at particle location
-    cdef real2_t e, b
+    cdef real3_t e, b
 
     # It might be better to use `Py_ssize_t` instead of `int`
     cdef int ip
 
     # Offset in interpolation for E and B-fields
-    cdef real2_t offsetE, offsetB
+    cdef real3_t offsetE, offsetB
     offsetB.x = grid.lbx
     offsetB.y = grid.lby - grid.noff
     offsetE.x = offsetB.x - 0.5
@@ -30,19 +30,19 @@ def boris_push(particle_t[:] particles, real2_t[:, :] E,
         kick(&particles[ip], e, b)
         drift2(&particles[ip], dt, grid)
 
-def modified_boris_push(particle_t[:] particles, real2_t[:, :] E,
-                        real2_t[:, :] B, real_t qtmh, real_t dt, grid_t grid,
+def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
+                        real3_t[:, :] B, real_t qtmh, real_t dt, grid_t grid,
                         real_t Omega, real_t S):
 
     cdef int Np = particles.shape[0]
     # Electric and magnetic fields at particle location
-    cdef real2_t e, b
+    cdef real3_t e, b
 
     # It might be better to use `Py_ssize_t` instead of `int`
     cdef int ip
 
     # Offset in interpolation for E and B-fields
-    cdef real2_t offsetE, offsetB
+    cdef real3_t offsetE, offsetB
     offsetB.x = grid.lbx
     offsetB.y = grid.lby - grid.noff
     offsetE.x = offsetB.x - 0.5
@@ -65,8 +65,8 @@ def modified_boris_push(particle_t[:] particles, real2_t[:, :] E,
         kick(&particles[ip], e, b)
         drift2(&particles[ip], dt, grid)
 
-cdef inline void gather_cic(particle_t particle, real2_t[:,:] F, real2_t *f,
-                        real2_t offset) nogil:
+cdef inline void gather_cic(particle_t particle, real3_t[:,:] F, real3_t *f,
+                        real3_t offset) nogil:
 
     cdef int ix, iy
     cdef real_t tx, ty, dx, dy
@@ -91,13 +91,13 @@ cdef inline void gather_cic(particle_t particle, real2_t[:,:] F, real2_t *f,
     f.z  = dy*(dx*F[iy+1, ix+1].z + tx*F[iy+1, ix].z)  \
          + ty*(dx*F[iy  , ix+1].z + tx*F[iy  , ix].z)
 
-cdef inline void rescale(real2_t *f, real_t qtmh) nogil:
+cdef inline void rescale(real3_t *f, real_t qtmh) nogil:
 
     f.x = f.x*qtmh
     f.y = f.y*qtmh
     f.z = f.z*qtmh
 
-cdef inline void kick(particle_t *particle, real2_t e, real2_t b) nogil:
+cdef inline void kick(particle_t *particle, real3_t e, real3_t b) nogil:
 
     cdef real_t fac, vpx, vpy, vpz, vmx, vmy, vmz
 
