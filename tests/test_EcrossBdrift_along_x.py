@@ -1,4 +1,4 @@
-from skeletor import Float2, Field, Particles
+from skeletor import Float3, Field, Particles
 from skeletor.manifolds.mpifft4py import Manifold
 import numpy
 from mpi4py import MPI
@@ -96,12 +96,12 @@ def test_EcrossBdrift(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(manifold, dtype=Float2)
+    E = Field(manifold, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
     E['y'] = Ey
     E.copy_guards()
 
-    B = Field(manifold, dtype=Float2)
+    B = Field(manifold, dtype=Float3)
     B.fill((0.0, 0.0, bz))
     B.copy_guards()
 

@@ -1,4 +1,4 @@
-from skeletor import Float, Float2
+from skeletor import Float, Float3
 from skeletor import Field, Particles, Ohm, Sources
 from skeletor.manifolds.second_order import Manifold
 import numpy
@@ -76,11 +76,11 @@ def test_skeletor():
         #######################
 
         # Set the force to zero (this will of course change in the future).
-        E = Field(manifold, dtype=Float2)
+        E = Field(manifold, dtype=Float3)
         E.fill((0.0, 0.0, 0.0))
         E.copy_guards()
 
-        B = Field(manifold, dtype=Float2)
+        B = Field(manifold, dtype=Float3)
         B.fill((0.0, 0.0, 0.0))
         B.copy_guards()
 

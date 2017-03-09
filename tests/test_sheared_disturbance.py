@@ -1,4 +1,4 @@
-from skeletor import Float, Float2, Particles, Sources
+from skeletor import Float, Float3, Particles, Sources
 from skeletor import ShearField
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy
@@ -187,7 +187,7 @@ def test_sheared_disturbance(plot=False):
     sources = Sources(manifold, npc)
     sources.rho = ShearField(manifold, time=t, dtype=Float)
     rho_periodic = ShearField(manifold, time=0, dtype=Float)
-    J_periodic = ShearField(manifold, time=0, dtype=Float2)
+    J_periodic = ShearField(manifold, time=0, dtype=Float3)
 
     # Deposit sources
     sources.deposit(ions)
@@ -206,11 +206,11 @@ def test_sheared_disturbance(plot=False):
     ag = manifold.x
 
     # Electric field
-    E = ShearField(manifold, dtype=Float2)
+    E = ShearField(manifold, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
     E.copy_guards()
 
-    B = ShearField(manifold, dtype=Float2)
+    B = ShearField(manifold, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
     B.copy_guards()
 

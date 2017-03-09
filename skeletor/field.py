@@ -1,5 +1,5 @@
 from numpy import ndarray, asarray, zeros, dtype
-from .cython.types import Float, Float2
+from .cython.types import Float, Float3
 
 
 class Field(ndarray):
@@ -181,13 +181,13 @@ class ShearField(Field):
         if self.dtype == dtype(Float):
             self[iy, self.grid.lbx:self.grid.ubx] = \
                 irfft(exp(phase)*rfft(self[iy, self.grid.lbx:self.grid.ubx]))
-        elif self.dtype == dtype(Float2):
+        elif self.dtype == dtype(Float3):
             for dim in ('x', 'y', 'z'):
                 self[iy, self.grid.lbx:self.grid.ubx][dim] = \
                     irfft(exp(phase) *
                           rfft(self[iy, self.grid.lbx:self.grid.ubx][dim]))
         else:
-            raise RuntimeError("Input should be Float or Float2")
+            raise RuntimeError("Input should be Float or Float3")
 
         # Update x-boundaries
         self[iy, ubx:] = self[iy, lbx:lbx+lbx]
@@ -228,7 +228,7 @@ class ShearField(Field):
 
     def add_guards_vector(self):
 
-        assert self.dtype == dtype(Float2)
+        assert self.dtype == dtype(Float3)
 
         lbx = self.grid.lbx
         lby = self.grid.lby

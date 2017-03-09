@@ -2,7 +2,7 @@ class Experiment:
 
     def __init__ (self, manifold, ions, ohm, B, npc, io=None):
 
-        from skeletor import Float2, Field, Sources, Faraday, Particles
+        from skeletor import Float3, Field, Sources, Faraday, Particles
         from mpi4py.MPI import COMM_WORLD as comm
 
         # Numerical grid with differential operators
@@ -24,16 +24,16 @@ class Experiment:
         self.sources = Sources(manifold, npc)
 
         # Set the electric field to zero
-        self.E = Field(manifold, comm, dtype=Float2)
+        self.E = Field(manifold, comm, dtype=Float3)
         self.E.fill((0.0, 0.0, 0.0))
         self.E.copy_guards()
 
         self.B = B
 
         # Crate extra arrays (Get rid of some of them later)
-        self.E2 = Field(manifold, comm, dtype=Float2)
-        self.E3 = Field(manifold, comm, dtype=Float2)
-        self.B2 = Field(manifold, comm, dtype=Float2)
+        self.E2 = Field(manifold, comm, dtype=Float3)
+        self.E3 = Field(manifold, comm, dtype=Float3)
+        self.B2 = Field(manifold, comm, dtype=Float3)
         self.E2.copy_guards()
         self.B2[:] = B
 

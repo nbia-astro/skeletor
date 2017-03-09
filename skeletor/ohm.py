@@ -1,4 +1,4 @@
-from .cython.types import Float2
+from .cython.types import Float3
 
 class Ohm:
 
@@ -21,8 +21,8 @@ class Ohm:
         self.eta = eta
 
         # Pre-allocate array for electron current and interpolated B-field
-        self.Je = Field(manifold, dtype=Float2)
-        self.B = Field(manifold, dtype=Float2)
+        self.Je = Field(manifold, dtype=Float3)
+        self.B = Field(manifold, dtype=Float3)
         self.Je.fill((0,0,0))
         self.B.fill((0,0,0))
 

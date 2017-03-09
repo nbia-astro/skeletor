@@ -1,4 +1,4 @@
-from .cython.types import Float2
+from .cython.types import Float3
 
 class Faraday:
 
@@ -10,7 +10,7 @@ class Faraday:
         self.curl = manifold.curl
 
         # Pre-allocate array for dB
-        self.dB = Field(manifold, dtype=Float2)
+        self.dB = Field(manifold, dtype=Float3)
 
     def __call__(self, E, B, dt, set_boundaries=False):
 

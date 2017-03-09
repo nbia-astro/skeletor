@@ -1,4 +1,4 @@
-from skeletor import Float2, Field, Particles
+from skeletor import Float3, Field, Particles
 from skeletor import Ohm, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 from skeletor.predictor_corrector import Experiment
@@ -111,7 +111,7 @@ def test_fastwave(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Set the magnetic field to zero
-    B = Field(manifold, dtype=Float2)
+    B = Field(manifold, dtype=Float3)
     B.fill((Bx, By, Bz))
     B.copy_guards()
 

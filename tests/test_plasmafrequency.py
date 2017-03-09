@@ -1,4 +1,4 @@
-from skeletor import Float, Float2, Field, Particles, Sources
+from skeletor import Float, Float3, Field, Particles, Sources
 from skeletor.manifolds.mpifft4py import Manifold
 from skeletor import Poisson, InitialCondition
 import numpy
@@ -88,10 +88,10 @@ def test_plasmafrequency(plot=False):
     assert comm.allreduce(electrons.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(manifold, dtype=Float2)
+    E = Field(manifold, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
 
-    B = Field(manifold, dtype=Float2)
+    B = Field(manifold, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
     B.copy_guards()
 

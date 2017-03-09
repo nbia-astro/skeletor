@@ -1,4 +1,4 @@
-from skeletor import Float2, Field, Particles
+from skeletor import Float3, Field, Particles
 from skeletor.manifolds.mpifft4py import ShearingManifold
 import numpy
 from mpi4py import MPI
@@ -106,14 +106,14 @@ def test_shearing_epicycle(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Electric field in x-direction
-    E_star = Field(manifold, dtype=Float2)
+    E_star = Field(manifold, dtype=Float3)
     E_star.fill((0.0, 0.0, 0.0))
     E_star['x'].active = -2*S*(xg-nx/2)*mass/charge*Omega
     # Note: this does not set the correct boundary condition in x. And that's
     # fine as long as the particle doesn't cross the x-boundaries.
     E_star.copy_guards()
 
-    B = Field(manifold, dtype=Float2)
+    B = Field(manifold, dtype=Float3)
     B.fill((0.0, 0.0, 2*mass*Omega/charge))
     B.copy_guards()
 

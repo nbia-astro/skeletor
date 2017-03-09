@@ -1,5 +1,5 @@
 from .cython.deposit import deposit as cython_deposit
-from .cython.types import Float, Float2
+from .cython.types import Float, Float3
 
 
 class Sources:
@@ -15,7 +15,7 @@ class Sources:
             from .field import ShearField as Field
 
         self.rho = Field(manifold, dtype=Float, **kwds)
-        self.J = Field(manifold, dtype=Float2, **kwds)
+        self.J = Field(manifold, dtype=Float3, **kwds)
 
     def deposit(self, particles, erase=True, set_boundaries=False):
 
