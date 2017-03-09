@@ -33,7 +33,7 @@ def test_burgers(plot=False):
     nx, ny = 256, 4
 
     # Wave number and amplitude
-    kx = 2*np.pi/nx
+    ikx = 1
     ampl = 0.1
 
     def mean(f, axis=None):
@@ -63,7 +63,7 @@ def test_burgers(plot=False):
         solving ∂x(a, τ)/∂τ = u(a) for x(a, τ) subject to the initial condition
         x(a, 0) = a.
         """
-        return (a + velocity(a)*τ) % nx
+        return (a + velocity(a)*τ) % manifold.Lx
 
     def euler_prime(a, τ):
         """
@@ -93,7 +93,7 @@ def test_burgers(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny)
+    manifold = Manifold(nx, ny, comm)
 
     # Initialize sources
     sources = Sources(manifold, npc)
@@ -111,7 +111,6 @@ def test_burgers(plot=False):
         plt.figure(1)
         plt.clf()
         fig, axis = plt.subplots(num=1)
-        axis.set_xlim(-0.5, nx-0.5)
         axis.set_ylim(0, 4)
         axis.set_xlabel(r'$x$')
         axis.set_title(r'$\rho/\rho_0$')
@@ -120,9 +119,9 @@ def test_burgers(plot=False):
                           manifold.x, np.ones_like(manifold.x), 'r--')
 
     # Initial time
-    t = -300
+    t = -1.171875  # = 300/nx
     # Time step
-    dt = 4
+    dt = 0.015625  # = 4/nx
     # Number of time steps
     nt = 150
 
@@ -130,9 +129,12 @@ def test_burgers(plot=False):
     sqrt_npc = int(np.sqrt(npc))
     assert sqrt_npc**2 == npc, "'npc' must be a square of an integer."
     ax, ay = [ab.flatten().astype(Float) for ab in np.meshgrid(
-        (np.arange(nx*sqrt_npc) + 0.5)/sqrt_npc,
-        (np.arange(ny*sqrt_npc) + 0.5)/sqrt_npc
+        manifold.dx*(np.arange(nx*sqrt_npc) + 0.5)/sqrt_npc,
+        manifold.dy*(np.arange(ny*sqrt_npc) + 0.5)/sqrt_npc
         )]
+
+    # x-component of wave vector
+    kx = 2*np.pi*ikx/manifold.Lx
 
     # Particle position (i.e. Eulerian coordinate) and velocity
     x = euler(ax, t)
