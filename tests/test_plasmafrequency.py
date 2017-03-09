@@ -39,11 +39,6 @@ def test_plasmafrequency(plot=False):
     # Time step
     dt = 0.1
 
-    # Wave vector and its modulus
-    kx = 2*numpy.pi*ikx/nx
-    ky = 2*numpy.pi*iky/ny
-    k = numpy.sqrt(kx*kx + ky*ky)
-
     # Simulation time
     tend = 2*numpy.pi*nperiods/omega
 
@@ -64,7 +59,12 @@ def test_plasmafrequency(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny)
+    manifold = Manifold(nx, ny, comm)
+
+    # Wave vector and its modulus
+    kx = 2*numpy.pi*ikx/manifold.Lx
+    ky = 2*numpy.pi*iky/manifold.Ly
+    k = numpy.sqrt(kx*kx + ky*ky)
 
         # x- and y-grid
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)
@@ -82,6 +82,8 @@ def test_plasmafrequency(plot=False):
     # Perturbation to particle velocities
     electrons['vx'] = ux_an(electrons['x'], electrons['y'], t=0)
     electrons['vy'] = uy_an(electrons['x'], electrons['y'], t=0)
+
+    electrons.from_units()
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
