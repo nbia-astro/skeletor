@@ -135,11 +135,12 @@ cdef inline void drift_particle(particle_t *particle,
     particle.y = particle.y + particle.vy*dtdy
 
 
-def drift(particle_t[:] particles, real_t dt):
+def drift(particle_t[:] particles, real_t dt, grid_t grid):
 
     cdef int Np = particles.shape[0]
     cdef int ip
-    for ip in prange(Np, nogil=True, schedule='static'):
+    cdef real_t dtdx = dt/grid.dx
+    cdef real_t dtdy = dt/grid.dy
 
-        particles[ip].x = particles[ip].x + particles[ip].vx*dt
-        particles[ip].y = particles[ip].y + particles[ip].vy*dt
+    for ip in prange(Np, nogil=True, schedule='static'):
+        drift_particle(&particles[ip], dtdx, dtdy)
