@@ -1,6 +1,7 @@
 from types cimport real_t, real3_t, particle_t, grid_t
-from particle_push cimport kick, gather_cic, rescale
-from particle_push cimport drift2 as drift
+from particle_push cimport gather_cic, rescale
+from particle_push cimport drift_particle as drift
+from particle_push cimport kick_particle as kick
 from deposit cimport deposit_particle
 from particle_boundary cimport periodic_x_cdef as periodic_x
 from particle_boundary cimport calculate_ihole_cdef as calculate_ihole
@@ -33,6 +34,12 @@ def push_and_deposit(
     offsetE.x = offsetB.x - 0.5
     offsetE.y = offsetB.y - 0.5
 
+    # Because the particle position is stored in units of the grid spacing,
+    # the drift velocity needs to be scaled by the grid spacing. This is
+    # achieved easily by rescaling the time step.
+    cdef real_t dtdx2 = 0.5*dt/grid.dx
+    cdef real_t dtdy2 = 0.5*dt/grid.dy
+
     # TODO: Define this in types.pxd
     cdef real_t Lx = <real_t> grid.nx
 
@@ -52,7 +59,7 @@ def push_and_deposit(
         kick(&particle, e, b)
 
         # First half of particle drift
-        drift(&particle, 0.5*dt, grid)
+        drift(&particle, dtdx2, dtdy2)
 
         # Make sure that particle has not moved more than a half grid cell
         if (fabs(particle.x - particles[ip].x) > 0.5) or \
@@ -64,7 +71,7 @@ def push_and_deposit(
 
         if update:
             # Second half of particle drift
-            drift(&particle, 0.5*dt, grid)
+            drift(&particle, dtdx2, dtdy2)
 
             # Boundary conditions
             periodic_x(&particle, Lx)
