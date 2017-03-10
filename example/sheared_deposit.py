@@ -102,9 +102,11 @@ sources = Sources(manifold, npc)
 sources.deposit(ions)
 assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
 sources.rho.add_guards()
+sources.J.add_guards_vector()
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 sources.rho.copy_guards()
+sources.J.copy_guards()
 
 
 def concatenate(arr):
@@ -119,7 +121,7 @@ global_J = concatenate(sources.J.trim())
 plt.rc('image', origin='lower', interpolation='nearest', cmap='coolwarm')
 plt.figure(1)
 plt.clf()
-plt.plot(manifold.x, (global_J['x']/global_rho).mean(axis=0))
+plt.plot(manifold.x, (global_J['x']/global_rho)[:, 5])
 plt.figure(2)
 plt.clf()
 plt.imshow(global_J['x']/global_rho)
