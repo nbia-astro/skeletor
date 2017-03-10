@@ -1,4 +1,4 @@
-from types cimport real_t, real3_t, particle_t, grid_t
+from types cimport real_t, real2_t, real3_t, particle_t, grid_t
 from cython.parallel import prange, parallel
 from libc.stdlib cimport abort, malloc, free
 
@@ -10,7 +10,7 @@ def deposit(
     cdef int Np = particles.shape[0]
     cdef int ip
 
-    cdef real3_t offset
+    cdef real2_t offset
 
     offset.x = grid.lbx - 0.5
     offset.y = grid.lby - 0.5 - grid.noff
@@ -21,7 +21,7 @@ def deposit(
 
 cdef inline void deposit_particle(particle_t particle, real_t[:,:] density,
                                   real3_t[:,:] J, grid_t grid, real_t S,
-                                  real3_t offset) nogil:
+                                  real2_t offset) nogil:
 
         cdef int ix, iy
         cdef real_t tx, ty, dx, dy

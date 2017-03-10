@@ -1,4 +1,4 @@
-from types cimport real_t, real3_t, particle_t, grid_t
+from types cimport real_t, real2_t, real3_t, particle_t, grid_t
 from cython.parallel import prange
 
 def boris_push(particle_t[:] particles, real3_t[:, :] E,
@@ -12,7 +12,7 @@ def boris_push(particle_t[:] particles, real3_t[:, :] E,
     cdef int ip
 
     # Offset in interpolation for E and B-fields
-    cdef real3_t offsetE, offsetB
+    cdef real2_t offsetE, offsetB
     offsetB.x = grid.lbx
     offsetB.y = grid.lby - grid.noff
     offsetE.x = offsetB.x - 0.5
@@ -21,8 +21,9 @@ def boris_push(particle_t[:] particles, real3_t[:, :] E,
     # Because the particle position is stored in units of the grid spacing,
     # the drift velocity needs to be scaled by the grid spacing. This is
     # achieved easily by rescaling the time step.
-    cdef real_t dtdx = dt/grid.dx
-    cdef real_t dtdy = dt/grid.dy
+    cdef real2_t dtds
+    dtds.x = dt/grid.dx
+    dtds.y = dt/grid.dy
 
     for ip in range(Np):
         # Gather and electric & magnetic fields
@@ -34,7 +35,7 @@ def boris_push(particle_t[:] particles, real3_t[:, :] E,
         rescale(&b, qtmh)
 
         kick_particle(&particles[ip], e, b)
-        drift_particle(&particles[ip], dtdx, dtdy)
+        drift_particle(&particles[ip], dtds)
 
 def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
                         real3_t[:, :] B, real_t qtmh, real_t dt, grid_t grid,
@@ -48,7 +49,7 @@ def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
     cdef int ip
 
     # Offset in interpolation for E and B-fields
-    cdef real3_t offsetE, offsetB
+    cdef real2_t offsetE, offsetB
     offsetB.x = grid.lbx
     offsetB.y = grid.lby - grid.noff
     offsetE.x = offsetB.x - 0.5
@@ -57,8 +58,9 @@ def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
     # Because the particle position is stored in units of the grid spacing,
     # the drift velocity needs to be scaled by the grid spacing. This is
     # achieved easily by rescaling the time step.
-    cdef real_t dtdx = dt/grid.dx
-    cdef real_t dtdy = dt/grid.dy
+    cdef real2_t dtds
+    dtds.x = dt/grid.dx
+    dtds.y = dt/grid.dy
 
     for ip in range(Np):
         # Gather and electric & magnetic fields
@@ -75,10 +77,10 @@ def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
         e.y = e.y - S*particles[ip].y*grid.dy*b.z
 
         kick_particle(&particles[ip], e, b)
-        drift_particle(&particles[ip], dtdx, dtdy)
+        drift_particle(&particles[ip], dtds)
 
 cdef inline void gather_cic(particle_t particle, real3_t[:,:] F, real3_t *f,
-                        real3_t offset) nogil:
+                        real2_t offset) nogil:
 
     cdef int ix, iy
     cdef real_t tx, ty, dx, dy
@@ -128,19 +130,20 @@ cdef inline void kick_particle(particle_t *particle,
     particle.vy = vmy + fac*(vpz*b.x - vpx*b.z) + e.y
     particle.vz = vmz + fac*(vpx*b.y - vpy*b.x) + e.z
 
-cdef inline void drift_particle(particle_t *particle,
-                                real_t dtdx, real_t dtdy) nogil:
+cdef inline void drift_particle(particle_t *particle, real2_t dtds) nogil:
 
-    particle.x = particle.x + particle.vx*dtdx
-    particle.y = particle.y + particle.vy*dtdy
+    particle.x = particle.x + particle.vx*dtds.x
+    particle.y = particle.y + particle.vy*dtds.y
 
 
 def drift(particle_t[:] particles, real_t dt, grid_t grid):
 
     cdef int Np = particles.shape[0]
     cdef int ip
-    cdef real_t dtdx = dt/grid.dx
-    cdef real_t dtdy = dt/grid.dy
+    cdef real2_t dtds
+
+    dtds.x = dt/grid.dx
+    dtds.y = dt/grid.dy
 
     for ip in prange(Np, nogil=True, schedule='static'):
-        drift_particle(&particles[ip], dtdx, dtdy)
+        drift_particle(&particles[ip], dtds)
