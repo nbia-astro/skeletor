@@ -97,6 +97,8 @@ assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
 # Initialize sources
 sources = Sources(manifold, npc)
+sources.rho.time = t
+sources.J.time = t
 
 # Deposit sources
 sources.deposit(ions)
