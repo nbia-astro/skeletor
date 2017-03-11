@@ -20,21 +20,21 @@ cdef inline void deposit_particle(particle_t particle, real4_t[:,:] current,
         ty = 1.0 - dy
 
         current[iy  , ix  ].t += ty*tx
-        current[iy  , ix+1].t += ty*dx
-        current[iy+1, ix  ].t += dy*tx
-        current[iy+1, ix+1].t += dy*dx
-
         current[iy  , ix  ].x += ty*tx*(particle.vx + S*particle.y*grid.dy)
-        current[iy  , ix+1].x += ty*dx*(particle.vx + S*particle.y*grid.dy)
-        current[iy+1, ix  ].x += dy*tx*(particle.vx + S*particle.y*grid.dy)
-        current[iy+1, ix+1].x += dy*dx*(particle.vx + S*particle.y*grid.dy)
-
         current[iy  , ix  ].y += ty*tx*particle.vy
-        current[iy  , ix+1].y += ty*dx*particle.vy
-        current[iy+1, ix  ].y += dy*tx*particle.vy
-        current[iy+1, ix+1].y += dy*dx*particle.vy
-
         current[iy  , ix  ].z += ty*tx*particle.vz
+
+        current[iy  , ix+1].t += ty*dx
+        current[iy  , ix+1].x += ty*dx*(particle.vx + S*particle.y*grid.dy)
+        current[iy  , ix+1].y += ty*dx*particle.vy
         current[iy  , ix+1].z += ty*dx*particle.vz
+
+        current[iy+1, ix  ].t += dy*tx
+        current[iy+1, ix  ].x += dy*tx*(particle.vx + S*particle.y*grid.dy)
+        current[iy+1, ix  ].y += dy*tx*particle.vy
         current[iy+1, ix  ].z += dy*tx*particle.vz
+
+        current[iy+1, ix+1].t += dy*dx
+        current[iy+1, ix+1].x += dy*dx*(particle.vx + S*particle.y*grid.dy)
+        current[iy+1, ix+1].y += dy*dx*particle.vy
         current[iy+1, ix+1].z += dy*dx*particle.vz
