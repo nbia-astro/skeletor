@@ -160,7 +160,7 @@ def update(t):
 
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
     sources.rho.add_guards()
-    sources.J.add_guards_vector()
+    sources.J.add_guards()
 
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
@@ -178,7 +178,7 @@ def update(t):
     rho_periodic.translate(-t)
     rho_periodic.copy_guards()
 
-    J_periodic.translate_vector(-t)
+    J_periodic.translate(-t)
     J_periodic.copy_guards()
 
     global_rho = concatenate(sources.rho.trim())

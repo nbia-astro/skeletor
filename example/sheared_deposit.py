@@ -104,7 +104,7 @@ sources.J.time = t
 sources.deposit(ions)
 assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
 sources.rho.add_guards()
-sources.J.add_guards_vector()
+sources.J.add_guards()
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 sources.rho.copy_guards()
