@@ -185,23 +185,22 @@ def test_sheared_disturbance(plot=False):
 
     # Initialize sources
     sources = Sources(manifold, npc)
-    sources.rho = ShearField(manifold, time=t, dtype=Float)
     rho_periodic = ShearField(manifold, time=0, dtype=Float)
-    J_periodic = ShearField(manifold, time=0, dtype=Float3)
+    Jx_periodic = ShearField(manifold, time=0, dtype=Float)
+    Jy_periodic = ShearField(manifold, time=0, dtype=Float)
 
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
-    sources.rho.add_guards()
+    sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
-    sources.rho.copy_guards()
+    sources.current.copy_guards()
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
-
-    sources.J.add_guards()
-    sources.J.copy_guards()
+    Jx_periodic.active = sources.Jx.trim()
+    Jy_periodic.active = sources.Jy.trim()
 
     ag = manifold.x
 
@@ -227,8 +226,10 @@ def test_sheared_disturbance(plot=False):
 
         global_rho = concatenate(sources.rho.trim())
         global_rho_periodic = concatenate(rho_periodic.trim())
-        global_J = concatenate(sources.J.trim())
-        global_J_periodic = concatenate(J_periodic.trim())
+        global_Jx = concatenate(sources.Jx.trim())
+        global_Jx_periodic = concatenate(Jx_periodic.trim())
+        global_Jy = concatenate(sources.Jy.trim())
+        global_Jy_periodic = concatenate(Jy_periodic.trim())
 
         if comm.rank == 0:
             plt.rc('image', origin='upper', interpolation='nearest',
@@ -238,12 +239,10 @@ def test_sheared_disturbance(plot=False):
             fig, axes = plt.subplots(num=1, ncols=2, nrows=3)
             im1a = axes[0, 0].imshow(global_rho)
             im2a = axes[0, 1].imshow(global_rho_periodic)
-            im1b = axes[1, 0].imshow(global_J['x']/global_rho)
-            im2b = axes[1, 1].imshow(global_J_periodic['x']
-                                     / global_rho_periodic)
-            im1c = axes[2, 0].imshow(global_J['y']/global_rho)
-            im2c = axes[2, 1].imshow(global_J_periodic['y']
-                                     / global_rho_periodic)
+            im1b = axes[1, 0].imshow(global_Jx/global_rho)
+            im2b = axes[1, 1].imshow(global_Jx_periodic/global_rho_periodic)
+            im1c = axes[2, 0].imshow(global_Jy/global_rho)
+            im2c = axes[2, 1].imshow(global_Jy_periodic/global_rho_periodic)
             plt.figure(2)
             plt.clf()
             fig2, (ax1, ax2, ax3) = plt.subplots(num=2, nrows=3)
@@ -251,15 +250,12 @@ def test_sheared_disturbance(plot=False):
                            'b',
                            manifold.x, (global_rho_periodic.mean(axis=0)),
                            'r--')
-            im5 = ax2.plot(manifold.x, (global_J_periodic['x']
-                           / global_rho_periodic).mean(axis=0), 'b',
-                           manifold.x, (global_J_periodic['x']
-                           / global_rho_periodic).mean(axis=0), 'r--')
-            im6 = ax3.plot(manifold.x, (global_J_periodic['y']
-                           / global_rho_periodic).mean(axis=0), 'b',
-                           manifold.x, (global_J_periodic['y']
-                           / global_rho_periodic)
-                           .mean(axis=0), 'r--')
+            vx = global_Jx_periodic/global_rho_periodic
+            im5 = ax2.plot(manifold.x, vx.mean(axis=0), 'b',
+                           manifold.x, vx.mean(axis=0), 'r--')
+            vy = global_Jy_periodic/global_rho_periodic
+            im6 = ax3.plot(manifold.x, vy.mean(axis=0), 'b',
+                           manifold.x, vy.mean(axis=0), 'r--')
             ax1.set_ylim(0.5, 1.8)
             ax2.set_ylim(-1*ampl, 1*ampl)
             ax3.set_ylim(-2*ampl, 2*ampl)
@@ -273,13 +269,9 @@ def test_sheared_disturbance(plot=False):
     for it in range(nt):
         # Deposit sources
         sources.deposit(ions)
-        sources.rho.time = t
-        sources.J.time = t
-        sources.rho.add_guards()
-        sources.J.add_guards()
-
-        sources.rho.copy_guards()
-        sources.J.copy_guards()
+        sources.current.time = t
+        sources.current.add_guards()
+        sources.current.copy_guards()
 
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.
@@ -290,14 +282,18 @@ def test_sheared_disturbance(plot=False):
 
         # Copy density into a shear field
         rho_periodic.active = sources.rho.trim()
-        J_periodic.active = sources.J.trim()
+        Jx_periodic.active = sources.Jx.trim()
+        Jy_periodic.active = sources.Jy.trim()
 
         # Translate the density to be periodic in y
         rho_periodic.translate(-t)
         rho_periodic.copy_guards()
 
-        J_periodic.translate(-t)
-        J_periodic.copy_guards()
+        Jx_periodic.translate(-t)
+        Jx_periodic.copy_guards()
+
+        Jy_periodic.translate(-t)
+        Jy_periodic.copy_guards()
 
         # Make figures
         if (it % 60 == 0):
@@ -309,16 +305,18 @@ def test_sheared_disturbance(plot=False):
             if plot:
                 global_rho = concatenate(sources.rho.trim())
                 global_rho_periodic = concatenate(rho_periodic.trim())
-                global_J = concatenate(sources.J.trim())
-                global_J_periodic = concatenate(J_periodic.trim())
+                global_Jx = concatenate(sources.Jx.trim())
+                global_Jx_periodic = concatenate(Jx_periodic.trim())
+                global_Jy = concatenate(sources.Jy.trim())
+                global_Jy_periodic = concatenate(Jy_periodic.trim())
 
                 if comm.rank == 0:
                     im1a.set_data(global_rho)
                     im2a.set_data(global_rho_periodic)
-                    im1b.set_data(global_J['x']/global_rho)
-                    im2b.set_data(global_J_periodic['x']/global_rho_periodic)
-                    im1c.set_data(global_J['y']/global_rho)
-                    im2c.set_data(global_J_periodic['y']/global_rho_periodic)
+                    im1b.set_data(global_Jx/global_rho)
+                    im2b.set_data(global_Jx_periodic/global_rho_periodic)
+                    im1c.set_data(global_Jy/global_rho)
+                    im2c.set_data(global_Jy_periodic/global_rho_periodic)
                     im1a.autoscale()
                     im2a.autoscale()
                     im1b.autoscale()
@@ -326,10 +324,10 @@ def test_sheared_disturbance(plot=False):
                     im1c.autoscale()
                     im2c.autoscale()
                     im4[0].set_ydata(global_rho_periodic.mean(axis=0))
-                    im5[0].set_ydata((global_J_periodic['x']
-                                     / global_rho_periodic).mean(axis=0))
-                    im6[0].set_ydata((global_J_periodic['y']
-                                     / global_rho_periodic).mean(axis=0))
+                    vx = global_Jx_periodic/global_rho_periodic
+                    im5[0].set_ydata(vx.mean(axis=0))
+                    vy = global_Jy_periodic/global_rho_periodic
+                    im6[0].set_ydata(vy.mean(axis=0))
                     xp_par = euler(ag, 0, t)
                     xp_par %= nx
                     ind = numpy.argsort(xp_par)

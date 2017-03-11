@@ -1,5 +1,5 @@
 from .cython.deposit import deposit as cython_deposit
-from .cython.types import Float, Float3
+from .cython.types import Float4
 
 
 class Sources:
@@ -14,46 +14,59 @@ class Sources:
         else:
             from .field import ShearField as Field
 
-        self.rho = Field(manifold, dtype=Float, **kwds)
-        self.J = Field(manifold, dtype=Float3, **kwds)
+        # Electric four-current density (rho, Jx, Jy, Jz)
+        self.current = Field(manifold, dtype=Float4, **kwds)
+
+    @property
+    def rho(self):
+        return self.current['t']
+
+    @property
+    def Jx(self):
+        return self.current['x']
+
+    @property
+    def Jy(self):
+        return self.current['y']
+
+    @property
+    def Jz(self):
+        return self.current['z']
 
     def deposit(self, particles, erase=True, set_boundaries=False):
 
         if erase:
-            self.rho.fill(0.0)
-            self.J.fill((0.0, 0.0, 0.0))
+            self.current.fill((0.0, 0.0, 0.0, 0.0))
 
-        if not self.rho.grid.shear:
+        # TODO: Add the manifold as attribute to this class and use this here
+        # instead of self.current's grid. "S" and "shear" aren't actually
+        # attributes of the Grid class
+        if not self.current.grid.shear:
             S = 0.0
         else:
-            S = self.rho.grid.S
+            S = self.current.grid.S
 
-        cython_deposit(particles[:particles.np], self.rho, self.J,
-                       self.rho.grid, S)
+        cython_deposit(particles[:particles.np], self.current,
+                       self.current.grid, S)
 
-        self.rho.boundaries_set = False
-        self.J.boundaries_set = False
+        self.current.boundaries_set = False
 
         self.normalize(particles.charge)
 
         if set_boundaries:
             self.set_boundaries()
 
-
     def normalize(self, charge):
         """
         Normalize charge and current with number of particles per cell and
         the charge per particle
         """
-        self.rho *= charge/self.npc
-        for dim in ('x', 'y', 'z'):
-            self.J[dim] *= charge/self.npc
+        for dim in self.current.dtype.names:
+            self.current[dim] *= charge/self.npc
 
     def set_boundaries(self):
 
             # Add guards
-            self.rho.add_guards()
-            self.J.add_guards()
+            self.current.add_guards()
             # Copy guards
-            self.rho.copy_guards()
-            self.J.copy_guards()
+            self.current.copy_guards()

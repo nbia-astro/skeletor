@@ -45,20 +45,20 @@ def test_extended_grid():
     # deposit particles
     sources.deposit(particles)
     assert(numpy.isclose(sources.rho.sum(), charge*particles.np/npc))
-    sources.rho.add_guards()
+    sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.sum(), op=SUM), np*charge/npc)
-    sources.rho.copy_guards()
+    sources.current.copy_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=SUM), np*charge/npc)
 
 # import matplotlib.pyplot as plt
 # plt.figure(1)
 # plt.imshow(sources.rho, interpolation='nearest', origin='lower')
-# sources.rho.add_guards()
+# sources.current.add_guards()
 # plt.figure(2)
 # plt.imshow(sources.rho, interpolation='nearest', origin='lower')
-# sources.rho.copy_guards()
+# sources.current.copy_guards()
 # plt.figure(3)
 # plt.imshow(sources.rho, interpolation='nearest', origin='lower')
 # plt.show()

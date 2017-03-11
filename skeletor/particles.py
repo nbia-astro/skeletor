@@ -182,15 +182,13 @@ class Particles(numpy.ndarray):
         S = 0.0
 
         # Zero out the sources
-        sources.rho.fill(0.0)
-        sources.J.fill((0.0, 0.0, 0.0))
+        sources.current.fill((0.0, 0.0, 0.0, 0.0))
 
         push_and_deposit(self[:self.np], E, B, qtmh, dt, self.manifold,
-                         self.ihole, sources.rho, sources.J, S, update)
+                         self.ihole, sources.current, S, update)
 
         # Set boundary flags to False
-        sources.rho.boundaries_set = False
-        sources.J.boundaries_set = False
+        sources.current.boundaries_set = False
 
         # Normalize sources with particle charge
         sources.normalize(self.charge)

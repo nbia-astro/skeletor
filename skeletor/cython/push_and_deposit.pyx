@@ -1,4 +1,4 @@
-from types cimport real_t, real2_t, real3_t, particle_t, grid_t
+from types cimport real_t, real2_t, real3_t, real4_t, particle_t, grid_t
 from particle_push cimport gather_cic, rescale
 from particle_push cimport drift_particle as drift
 from particle_push cimport kick_particle as kick
@@ -10,7 +10,7 @@ from libc.math cimport fabs
 def push_and_deposit(
          particle_t[:] particles, real3_t[:, :] E, real3_t[:, :] B,
          real_t qtmh, real_t dt, grid_t grid, int[:] ihole,
-         real_t[:, :] density, real3_t[:,:] J, real_t S, const bint update):
+         real4_t[:,:] current, real_t S, const bint update):
 
     # Number of particles
     cdef int Np = particles.shape[0]
@@ -68,7 +68,7 @@ def push_and_deposit(
             ihole[0] = -1
 
         # Deposit the particle
-        deposit_particle(particle, density, J, grid, S, offsetE)
+        deposit_particle(particle, current, grid, S, offsetE)
 
         if update:
             # Second half of particle drift

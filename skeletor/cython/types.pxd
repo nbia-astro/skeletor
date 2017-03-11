@@ -16,6 +16,9 @@ cdef struct real2_t:
 cdef struct real3_t:
     real_t x, y, z
 
+cdef struct real4_t:
+    real_t t, x, y, z
+
 cdef struct complex2_t:
     complex_t x, y
 
