@@ -283,7 +283,7 @@ def test_sheared_burgers(plot=False):
         sources.J.time = t
 
         sources.rho.add_guards()
-        sources.J.add_guards_vector()
+        sources.J.add_guards()
 
         sources.rho.copy_guards()
         sources.J.copy_guards()
@@ -296,7 +296,7 @@ def test_sheared_burgers(plot=False):
         rho_periodic.translate(-t)
         rho_periodic.copy_guards()
 
-        J_periodic.translate_vector(-t)
+        J_periodic.translate(-t)
         J_periodic.copy_guards()
 
         # Calculate rms of numerical solution wrt to the analytical solution

@@ -53,7 +53,7 @@ class Sources:
 
             # Add guards
             self.rho.add_guards()
-            self.J.add_guards_vector()
+            self.J.add_guards()
             # Copy guards
             self.rho.copy_guards()
             self.J.copy_guards()

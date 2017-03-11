@@ -1,5 +1,5 @@
 from numpy import ndarray, asarray, zeros, dtype
-from .cython.types import Float, Float3
+from .cython.types import Float
 
 
 class Field(ndarray):
@@ -97,50 +97,28 @@ class Field(ndarray):
         ubx = self.grid.ubx
         uby = self.grid.uby
 
-        # x-boundaries
-        self[:, lbx:lbx+lbx] += self[:, ubx:]
-        self[:, ubx-lbx:ubx] += self[:, :lbx]
-
-        # y-boundaries
-        self[lby:lby+lby, :] += self.send_up(self[uby:, :])
-        self[uby-lby:uby, :] += self.send_down(self[:lby, :])
+        if self.dtype.names is None:
+            # x-boundaries
+            self[:, lbx:lbx+lbx] += self[:, ubx:]
+            self[:, ubx-lbx:ubx] += self[:, :lbx]
+            # y-boundaries
+            self[lby:lby+lby, :] += self.send_up(self[uby:, :])
+            self[uby-lby:uby, :] += self.send_down(self[:lby, :])
+        else:
+            for dim in self.dtype.names:
+                # x-boundaries
+                self[:, lbx:lbx+lbx][dim] += self[:, ubx:][dim]
+                self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
+                # y-boundaries
+                # TODO: reduce number of communications. Separate
+                # communications for each vector field component can't be good
+                # for performance.
+                self[lby:lby+lby, :][dim] += self.send_up(self[uby:, :][dim])
+                self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
 
         # Erase guard cells
         # TODO: I suggest we get rid of this. The guard layes will be
         # overwritten anyway by `copy_guards()`.
-        self[:lby, :] = 0.0
-        self[uby:, :] = 0.0
-        self[:, ubx:] = 0.0
-        self[:, :lbx] = 0.0
-
-    def add_guards_vector(self):
-        "Add *vector* data from guard cells to corresponding active cells."
-        # TODO: We need to find a way of only having one `add_guards()` method
-        # that can deal with both scalar and vector data.
-        #
-        # This can be achieved as follows:
-        #
-        #   if self.dtype.names is None:
-        #     self[:, lbx:lbx+lbx] += self[:, ubx:]
-        #     ...
-        #   else:
-        #     for name in self.dtype.names:
-        #       self[:, lbx:lbx+lbx][name] += self[:, ubx:][name]
-
-        lbx = self.grid.lbx
-        lby = self.grid.lby
-        ubx = self.grid.ubx
-        uby = self.grid.uby
-
-        # Add data from guard cells to corresponding active cells
-        for dim in 'x', 'y', 'z':
-            self[:, lbx:lbx+lbx][dim] += self[:, ubx:][dim]
-            self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
-
-            self[lby:lby+lby, :][dim] += self.send_up(self[uby:, :][dim])
-            self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
-
-        # Erase guard cells
         self[:lby, :] = 0.0
         self[uby:, :] = 0.0
         self[:, ubx:] = 0.0
@@ -178,16 +156,14 @@ class ShearField(Field):
 
         # Translate in real space by phase shifting in spectral space
         phase = -1j*self.kx*trans
-        if self.dtype == dtype(Float):
+        if self.dtype.names is None:
             self[iy, self.grid.lbx:self.grid.ubx] = \
                 irfft(exp(phase)*rfft(self[iy, self.grid.lbx:self.grid.ubx]))
-        elif self.dtype == dtype(Float3):
-            for dim in ('x', 'y', 'z'):
+        else:
+            for dim in self.dtype.names:
                 self[iy, self.grid.lbx:self.grid.ubx][dim] = \
                     irfft(exp(phase) *
                           rfft(self[iy, self.grid.lbx:self.grid.ubx][dim]))
-        else:
-            raise RuntimeError("Input should be Float or Float3")
 
         # Update x-boundaries
         self[iy, ubx:] = self[iy, lbx:lbx+lbx]
@@ -195,16 +171,19 @@ class ShearField(Field):
 
     def add_guards(self):
 
-        assert self.dtype == dtype(Float)
-
         lbx = self.grid.lbx
         lby = self.grid.lby
         ubx = self.grid.ubx
         uby = self.grid.uby
 
         # Add data from guard cells to corresponding active cells
-        self[:, lbx:lbx+lbx] += self[:, ubx:]
-        self[:, ubx-lbx:ubx] += self[:, :lbx]
+        if self.dtype.names is None:
+            self[:, lbx:lbx+lbx] += self[:, ubx:]
+            self[:, ubx-lbx:ubx] += self[:, :lbx]
+        else:
+            for dim in self.dtype.names:
+                self[:, lbx:lbx+lbx][dim] += self[:, ubx:][dim]
+                self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
@@ -217,43 +196,13 @@ class ShearField(Field):
                 self._translate_boundary(trans, iy)
 
         # Add data from guard cells to corresponding active cells in y
-        self[lby:lby+lby, :] += self.send_up(self[uby:, :])
-        self[uby-lby:uby, :] += self.send_down(self[:lby, :])
-
-        # Erase guard cells
-        self[:lby, :] = 0.0
-        self[uby:, :] = 0.0
-        self[:, ubx:] = 0.0
-        self[:, :lbx] = 0.0
-
-    def add_guards_vector(self):
-
-        assert self.dtype == dtype(Float3)
-
-        lbx = self.grid.lbx
-        lby = self.grid.lby
-        ubx = self.grid.ubx
-        uby = self.grid.uby
-
-        for dim in ('x', 'y', 'z'):
-            # Add data from guard cells to corresponding active cells
-            self[:, lbx:lbx+lbx][dim] += self[:, ubx:][dim]
-            self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
-
-        # Translate the y-ghostzones
-        if self.grid.comm.rank == self.grid.comm.size - 1:
-            trans = self.grid.Ly*self.grid.S*self.time
-            for iy in range(uby, uby + lby):
-                self._translate_boundary(trans, iy)
-        if self.grid.comm.rank == 0:
-            trans = -self.grid.Ly*self.grid.S*self.time
-            for iy in range(0, lby):
-                self._translate_boundary(trans, iy)
-
-        for dim in ('x', 'y', 'z'):
-            # Add data from guard cells to corresponding active cells in y
-            self[lby:lby+lby, :][dim] += self.send_up(self[uby:, :][dim])
-            self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
+        if self.dtype.names is None:
+            self[lby:lby+lby, :] += self.send_up(self[uby:, :])
+            self[uby-lby:uby, :] += self.send_down(self[:lby, :])
+        else:
+            for dim in self.dtype.names:
+                self[lby:lby+lby, :][dim] += self.send_up(self[uby:, :][dim])
+                self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
 
         # Erase guard cells
         self[:lby, :] = 0.0

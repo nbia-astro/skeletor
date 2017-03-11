@@ -110,7 +110,7 @@ def test_skeletor():
         # Add charge from guard cells to corresponding active cells.
         # Afterwards erases charge in guard cells.
         sources.rho.add_guards()
-        sources.J.add_guards_vector()
+        sources.J.add_guards()
 
         # Make sure the charge deposited into *active* cells (no guard cells)
         # equals the number of particles times the particle charge
