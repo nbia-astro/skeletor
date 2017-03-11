@@ -145,6 +145,16 @@ class ShearField(Field):
 
         return obj
 
+    def __array_finalize__(self, obj):
+
+        super().__array_finalize__(obj)
+
+        if obj is None:
+            return
+
+        self.kx = getattr(obj, "kx", None)
+        self.y_kx = getattr(obj, "y_kx", None)
+
     def _translate_boundary(self, trans, iy):
 
         "Translation using FFTs"
