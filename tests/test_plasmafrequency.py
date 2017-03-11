@@ -17,7 +17,10 @@ def test_plasmafrequency(plot=False):
     # Particle charge and mass
     charge = -1
     mass = 1.0
-    # Background ion density
+    # Mean electron number density
+    # TODO: Pass this to the sources class. Right now the normalization of
+    # charge and current density is such that the mean number density is always
+    # equal to 1
     n0 = 1.0
     # Dimensionless amplitude of perturbation
     A = 0.001
@@ -52,7 +55,7 @@ def test_plasmafrequency(plot=False):
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return charge*A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t)
+        return charge*(n0 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
@@ -109,7 +112,6 @@ def test_plasmafrequency(plot=False):
     # sources.rho /= npc
     # assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
     sources.rho.add_guards()
-    sources.rho += n0
     # assert numpy.isclose(comm.allreduce(
     # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
@@ -134,7 +136,7 @@ def test_plasmafrequency(plot=False):
             plt.rc('image', origin='lower', interpolation='nearest')
             plt.figure(1)
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
-            vmin, vmax = charge*A, -charge*A
+            vmin, vmax = charge*(n0 + A), charge*(n0 - A)
             im1 = ax1.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
             im2 = ax2.imshow(rho_an(xg, yg, 0), vmin=vmin, vmax=vmax)
             im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
@@ -162,7 +164,6 @@ def test_plasmafrequency(plot=False):
         # assert numpy.isclose(sources.rho.sum(),electrons.np*charge/npc)
         # Boundary calls
         sources.rho.add_guards()
-        sources.rho += n0
 
         # assert numpy.isclose(comm.allreduce(
         #     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
