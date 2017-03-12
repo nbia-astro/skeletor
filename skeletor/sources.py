@@ -57,7 +57,7 @@ class Sources:
 
     def normalize(self, particles):
         """Normalize the charge and current densities such that the mean charge
-        density is equal to 1."""
+        density is equal to particle.n0."""
         # TODO: The total number of particles used below does not change in
         # time and thus does not need to be calculated over and over again.
         from mpi4py.MPI import SUM
@@ -66,7 +66,7 @@ class Sources:
 
         N = grid.comm.allreduce(particles.np, op=SUM)
 
-        fac = particles.charge*grid.nx*grid.ny/N
+        fac = particles.charge*particles.n0*grid.nx*grid.ny/N
         for dim in self.current.dtype.names:
             self.current[dim] *= fac
 
