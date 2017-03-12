@@ -99,7 +99,7 @@ def test_plasmafrequency(plot=False):
     B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Initialize integro-differential operators
     poisson = Poisson(manifold)

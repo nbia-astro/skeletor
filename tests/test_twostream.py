@@ -98,7 +98,7 @@ def test_twostream(plot=False, fitplot=False):
     B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Initialize Poisson solver
     poisson = Poisson(manifold)

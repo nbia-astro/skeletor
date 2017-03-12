@@ -96,7 +96,7 @@ def test_burgers(plot=False):
     manifold = Manifold(nx, ny, comm)
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids

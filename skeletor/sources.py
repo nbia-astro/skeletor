@@ -4,10 +4,7 @@ from .cython.types import Float4
 
 class Sources:
 
-    def __init__(self, manifold, npc, **kwds):
-
-        # Particles per cell
-        self.npc = npc
+    def __init__(self, manifold, **kwds):
 
         if not manifold.shear:
             from .field import Field
@@ -38,31 +35,40 @@ class Sources:
         if erase:
             self.current.fill((0.0, 0.0, 0.0, 0.0))
 
+        # Short hand
+        grid = self.current.grid
+
         # TODO: Add the manifold as attribute to this class and use this here
         # instead of self.current's grid. "S" and "shear" aren't actually
         # attributes of the Grid class
-        if not self.current.grid.shear:
+        if not grid.shear:
             S = 0.0
         else:
-            S = self.current.grid.S
+            S = grid.S
 
-        cython_deposit(particles[:particles.np], self.current,
-                       self.current.grid, S)
+        cython_deposit(particles[:particles.np], self.current, grid, S)
 
         self.current.boundaries_set = False
 
-        self.normalize(particles.charge)
+        self.normalize(particles)
 
         if set_boundaries:
             self.set_boundaries()
 
-    def normalize(self, charge):
-        """
-        Normalize charge and current with number of particles per cell and
-        the charge per particle
-        """
+    def normalize(self, particles):
+        """Normalize the charge and current densities such that the mean charge
+        density is equal to 1."""
+        # TODO: The total number of particles used below does not change in
+        # time and thus does not need to be calculated over and over again.
+        from mpi4py.MPI import SUM
+
+        grid = self.current.grid
+
+        N = grid.comm.allreduce(particles.np, op=SUM)
+
+        fac = particles.charge*grid.nx*grid.ny/N
         for dim in self.current.dtype.names:
-            self.current[dim] *= charge/self.npc
+            self.current[dim] *= fac
 
     def set_boundaries(self):
 

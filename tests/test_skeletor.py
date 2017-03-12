@@ -99,7 +99,7 @@ def test_skeletor():
         # Test charge deposition #
         ##########################
 
-        sources = Sources(manifold, npc)
+        sources = Sources(manifold)
 
         sources.deposit(ions)
 

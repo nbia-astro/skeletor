@@ -18,7 +18,7 @@ mass = 1.0
 manifold = Manifold(nx, ny, comm)
 
 # # Initialize sources
-sources = Sources(manifold, npc)
+sources = Sources(manifold)
 
 # Total number of particles
 np = npc*nx*ny

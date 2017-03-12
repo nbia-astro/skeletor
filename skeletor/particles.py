@@ -191,7 +191,7 @@ class Particles(numpy.ndarray):
         sources.current.boundaries_set = False
 
         # Normalize sources with particle charge
-        sources.normalize(self.charge)
+        sources.normalize(self)
         # Add and copy boundary layers
         sources.set_boundaries()
 

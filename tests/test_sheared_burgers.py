@@ -184,7 +184,7 @@ def test_sheared_burgers(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
     rho_periodic = ShearField(manifold, time=0, dtype=Float)
     Jx_periodic = ShearField(manifold, time=0, dtype=Float)
 
