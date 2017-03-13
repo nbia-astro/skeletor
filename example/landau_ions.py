@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Field, Particles, Sources
+from skeletor import cppinit, Float, Float3, Field, Particles, Sources
 from skeletor import Ohm
 from skeletor.manifolds.second_order import Manifold
 import numpy
@@ -120,11 +120,11 @@ def landau_ions(plot=False, fitplot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(manifold, comm, dtype=Float2)
+    E = Field(manifold, comm, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
     E.copy_guards()
 
-    B = Field(manifold, comm, dtype=Float2)
+    B = Field(manifold, comm, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
     B.copy_guards()
 

@@ -1,4 +1,4 @@
-from skeletor import Float, Float2, Field, Particles, Sources
+from skeletor import Float, Float3, Field, Particles, Sources
 from skeletor import Ohm, Faraday, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 from skeletor.predictor_corrector import Experiment
@@ -182,14 +182,14 @@ ions['vy'] += Uy_an(ions['x'], ions['y'], t=-dt/2)
 ions['vz'] += Uz_an(ions['x'], ions['y'], t=-dt/2)
 
 def B_an(t):
-    B_an = Field(manifold, dtype=Float2)
+    B_an = Field(manifold, dtype=Float3)
     B_an['x'].active = Bx_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
     B_an['y'].active = By_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
     B_an['z'].active = Bz_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
     return B_an
 
 # Create vector potential
-A_an = Field(manifold, dtype=Float2)
+A_an = Field(manifold, dtype=Float3)
 A_an['x'].active = 0
 A_an['y'].active = -((Bz + B0*(di.vec[m]['bz']*phase(xg, yg, -dt/2)))/
                     (1j*kx)).real
@@ -198,7 +198,7 @@ A_an['z'].active =  ((By + B0*(di.vec[m]['by']*phase(xg, yg, -dt/2)))/
 A_an.copy_guards()
 
 # Set initial magnetic field perturbation using the vector potential
-B = Field(manifold, dtype=Float2)
+B = Field(manifold, dtype=Float3)
 manifold.curl(A_an, B, down=False)
 # Add background magnetic field
 B['x'].active += Bx

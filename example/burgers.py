@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Particles, Sources
+from skeletor import cppinit, Float, Float3, Particles, Sources
 from skeletor import Field
 from skeletor.manifolds.second_order import Manifold
 import numpy
@@ -121,10 +121,10 @@ def rho(a, t):
 a = manifold.x
 
 # Electric field
-E = Field(manifold, dtype=Float2)
+E = Field(manifold, dtype=Float3)
 E.fill((0.0, 0.0, 0.0))
 
-B = Field(manifold, dtype=Float2)
+B = Field(manifold, dtype=Float3)
 B.fill((0.0, 0.0, 0.0))
 
 

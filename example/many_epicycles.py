@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
+from skeletor import cppinit, Float, Float3, Grid, Field, Particles, Sources
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -182,7 +182,7 @@ assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
 # Electric field in y-direction
-E_star = Field(grid, comm, dtype=Float2)
+E_star = Field(grid, comm, dtype=Float3)
 E_star.fill((0.0, 0.0))
 
 for i in range(nx+2):

@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
+from skeletor import cppinit, Float, Float3, Grid, Field, Particles, Sources
 from skeletor import Poisson
 from skeletor.manifolds.mpifft4py import Manifold
 import numpy
@@ -133,11 +133,11 @@ def landau_electrons(plot=False, fitplot=False):
     assert comm.allreduce(electrons.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(manifold, comm, dtype=Float2)
+    E = Field(manifold, comm, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
     E.copy_guards()
 
-    B = Field(manifold, comm, dtype=Float2)
+    B = Field(manifold, comm, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
     B.copy_guards()
 
