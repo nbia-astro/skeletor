@@ -64,10 +64,8 @@ class Particles(numpy.ndarray):
         from numpy import logical_and, sum
         from warnings import warn
 
-        dy = self.manifold.dy
-
-        ind = logical_and(y >= self.manifold.edges[0]*dy,
-                          y < self.manifold.edges[1]*dy)
+        ind = logical_and(y >= self.manifold.edges[0]*self.manifold.dy,
+                          y < self.manifold.edges[1]*self.manifold.dy)
 
         # Number of particles in subdomain
         self.np = sum(ind)
@@ -79,16 +77,13 @@ class Particles(numpy.ndarray):
             warn(msg + " (np={}, npmax={})".format(self.np, self.size))
 
         # Fill structured array
-        self["x"][:self.np] = x[ind]
-        self["y"][:self.np] = y[ind]
+        self["x"][:self.np] = x[ind]/self.manifold.dx
+        self["y"][:self.np] = y[ind]/self.manifold.dy
         self["vx"][:self.np] = vx[ind]
         self["vy"][:self.np] = vy[ind]
         self["vz"][:self.np] = vz[ind]
 
         self.units = True
-
-        # Convert positions to be measured in grid spacings
-        self.from_units()
 
     def move(self):
         """Uses ppic2's cppmove2 routine for moving particles
@@ -229,24 +224,3 @@ class Particles(numpy.ndarray):
         # Apply periodicity in x and y
         self.periodic_x()
         self.periodic_y()
-
-    def to_units(self):
-        """Convert particle positions to be the position in the simulation"""
-
-        assert not self.units, "Attempting to convert units twice!"
-
-        self["x"][:self.np] *= self.manifold.dx
-        self["y"][:self.np] *= self.manifold.dy
-
-        self.units = True
-
-    def from_units(self):
-        """Convert particle positions to be measured in grid
-        spacing coordinates"""
-
-        assert self.units, "Attempting to convert units twice!"
-
-        self["x"][:self.np] /= self.manifold.dx
-        self["y"][:self.np] /= self.manifold.dy
-
-        self.units = False

@@ -37,8 +37,8 @@ class InitialCondition():
                 manifold.Ly/manifold.comm.size*uniform(size=np)
 
         # Set initial position
-        ions['x'][:np] = x
-        ions['y'][:np] = y
+        ions['x'][:np] = x/manifold.dx
+        ions['y'][:np] = y/manifold.dy
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
@@ -116,8 +116,8 @@ class DensityPertubation(InitialCondition):
             y[k*npx:(k+1)*npx] = Uy[k]
 
         # Set initial positions
-        ions['x'][:np] = x
-        ions['y'][:np] = y
+        ions['x'][:np] = x/manifold.dx
+        ions['y'][:np] = y/manifold.dy
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
