@@ -177,7 +177,7 @@ sources = Sources(grid, comm, dtype=Float)
 # Deposit sources
 sources.deposit(ions)
 assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-sources.rho.add_guards_ppic2()
+sources.current.add_guards_ppic2()
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
@@ -230,7 +230,7 @@ for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-    sources.rho.add_guards_ppic2()
+    sources.current.add_guards_ppic2()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 

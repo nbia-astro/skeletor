@@ -21,7 +21,7 @@ class Experiment:
         self.io = io
 
         # Initialize sources
-        self.sources = Sources(manifold, npc)
+        self.sources = Sources(manifold)
 
         # Set the electric field to zero
         self.E = Field(manifold, comm, dtype=Float3)

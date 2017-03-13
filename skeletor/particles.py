@@ -6,7 +6,7 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, manifold, npmax, time=0.0, charge=1.0, mass=1.0):
+    def __new__(cls, manifold, npmax, time=0.0, charge=1.0, mass=1.0, n0=1.0):
 
         from .cython.types import Int, Particle
 
@@ -21,6 +21,8 @@ class Particles(numpy.ndarray):
         # Particle charge and mass
         obj.charge = charge
         obj.mass = mass
+        # Average number density
+        obj.n0 = n0
 
         obj.manifold = manifold
 
@@ -48,6 +50,7 @@ class Particles(numpy.ndarray):
 
         self.charge = getattr(obj, "charge", None)
         self.mass = getattr(obj, "mass", None)
+        self.n0 = getattr(obj, "n0", None)
         self.ihole = getattr(obj, "ihole", None)
         self.sbufl = getattr(obj, "sbufl", None)
         self.sbufr = getattr(obj, "sbufr", None)
@@ -182,18 +185,16 @@ class Particles(numpy.ndarray):
         S = 0.0
 
         # Zero out the sources
-        sources.rho.fill(0.0)
-        sources.J.fill((0.0, 0.0, 0.0))
+        sources.current.fill((0.0, 0.0, 0.0, 0.0))
 
         push_and_deposit(self[:self.np], E, B, qtmh, dt, self.manifold,
-                         self.ihole, sources.rho, sources.J, S, update)
+                         self.ihole, sources.current, S, update)
 
         # Set boundary flags to False
-        sources.rho.boundaries_set = False
-        sources.J.boundaries_set = False
+        sources.current.boundaries_set = False
 
         # Normalize sources with particle charge
-        sources.normalize(self.charge)
+        sources.normalize(self)
         # Add and copy boundary layers
         sources.set_boundaries()
 

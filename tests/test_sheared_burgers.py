@@ -184,18 +184,17 @@ def test_sheared_burgers(plot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Initialize sources
-    sources = Sources(manifold, npc)
-    sources.rho = ShearField(manifold, time=0, dtype=Float)
+    sources = Sources(manifold)
     rho_periodic = ShearField(manifold, time=0, dtype=Float)
-    J_periodic = ShearField(manifold, time=0, dtype=Float3)
+    Jx_periodic = ShearField(manifold, time=0, dtype=Float)
 
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
-    sources.rho.add_guards()
+    sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
-    sources.rho.copy_guards()
+    sources.current.copy_guards()
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
@@ -216,8 +215,8 @@ def test_sheared_burgers(plot=False):
 
     global_rho = concatenate(sources.rho.trim())
     global_rho_periodic = concatenate(rho_periodic.trim())
-    global_J = concatenate(sources.J.trim())
-    global_J_periodic = concatenate(J_periodic.trim())
+    global_Jx = concatenate(sources.Jx.trim())
+    global_Jx_periodic = concatenate(Jx_periodic.trim())
 
     if comm.rank == 0:
 
@@ -233,9 +232,8 @@ def test_sheared_burgers(plot=False):
             fig, axes = plt.subplots(num=1, ncols=2, nrows=2)
             im1a = axes[0, 0].imshow(global_rho)
             im2a = axes[0, 1].imshow(global_rho_periodic)
-            im1b = axes[1, 0].imshow(global_J['x']/global_rho)
-            im2b = axes[1, 1].imshow(global_J_periodic['x']
-                                     / global_rho_periodic)
+            im1b = axes[1, 0].imshow(global_Jx/global_rho)
+            im2b = axes[1, 1].imshow(global_Jx_periodic/global_rho_periodic)
 
             plt.figure(2)
             plt.clf()
@@ -253,10 +251,9 @@ def test_sheared_burgers(plot=False):
                            'b',
                            manifold.x, (global_rho_periodic.mean(axis=0)),
                            'r--')
-            im5 = ax2.plot(manifold.x, (global_J_periodic['x']
-                           / global_rho_periodic).mean(axis=0), 'b',
-                           manifold.x, (global_J_periodic['x']
-                           / global_rho_periodic).mean(axis=0), 'r--')
+            vx = global_Jx_periodic/global_rho_periodic
+            im5 = ax2.plot(manifold.x, vx.mean(axis=0), 'b',
+                           manifold.x, vx.mean(axis=0), 'r--')
 
     for it in range(nt):
         # Updates the particle position and velocity, deposits the charge and
@@ -279,33 +276,29 @@ def test_sheared_burgers(plot=False):
 
         # Deposit sources
         sources.deposit(ions)
-        sources.rho.time = t
-        sources.J.time = t
+        sources.current.time = t
 
-        sources.rho.add_guards()
-        sources.J.add_guards()
-
-        sources.rho.copy_guards()
-        sources.J.copy_guards()
+        sources.current.add_guards()
+        sources.current.copy_guards()
 
         # Copy density into a shear field
         rho_periodic.active = sources.rho.trim()
-        J_periodic.active = sources.J.trim()
+        Jx_periodic.active = sources.Jx.trim()
 
         # Translate the density to be periodic in y
         rho_periodic.translate(-t)
         rho_periodic.copy_guards()
 
-        J_periodic.translate(-t)
-        J_periodic.copy_guards()
+        Jx_periodic.translate(-t)
+        Jx_periodic.copy_guards()
 
         # Calculate rms of numerical solution wrt to the analytical solution
         err = rms(sources.rho.trim() - rho2d_an(xx, yy, t))
 
         global_rho = concatenate(sources.rho.trim())
         global_rho_periodic = concatenate(rho_periodic.trim())
-        global_J = concatenate(sources.J.trim())
-        global_J_periodic = concatenate(J_periodic.trim())
+        global_Jx = concatenate(sources.Jx.trim())
+        global_Jx_periodic = concatenate(Jx_periodic.trim())
 
         if comm.rank == 0:
             # Make sure that test has passed
@@ -315,14 +308,14 @@ def test_sheared_burgers(plot=False):
                     # Update 2D images
                     im1a.set_data(global_rho)
                     im2a.set_data(global_rho_periodic)
-                    im1b.set_data(global_J['x']/global_rho)
-                    im2b.set_data(global_J_periodic['x']/global_rho_periodic)
+                    im1b.set_data(global_Jx/global_rho)
+                    im2b.set_data(global_Jx_periodic/global_rho_periodic)
                     for im in (im1a, im2a, im1b, im2b):
                         im.autoscale()
                     # Update 1D solutions (numerical and analytical)
                     im4[0].set_ydata(global_rho_periodic.mean(axis=0))
-                    im5[0].set_ydata((global_J_periodic['x']
-                                     / global_rho_periodic).mean(axis=0))
+                    vx = global_Jx_periodic/global_rho_periodic
+                    im5[0].set_ydata(vx.mean(axis=0))
                     xp = euler(manifold.x, t)
                     im4[1].set_data(xp, rho_an(manifold.x, t))
                     im5[1].set_data(xp, velocity(manifold.x))

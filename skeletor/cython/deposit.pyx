@@ -3,9 +3,8 @@ from cython.parallel import prange, parallel
 from libc.stdlib cimport abort, malloc, free
 
 
-def deposit(
-        particle_t[:] particles, real_t[:, :] density, real3_t[:,:] J,
-        grid_t grid, real_t S):
+def deposit(particle_t[:] particles, real4_t[:,:] current,
+            grid_t grid, real_t S):
 
     cdef int Np = particles.shape[0]
     cdef int ip
@@ -17,4 +16,4 @@ def deposit(
 
     # Density deposition
     for ip in range(Np):
-        deposit_particle(particles[ip], density, J, grid, S, offset)
+        deposit_particle(particles[ip], current, grid, S, offset)

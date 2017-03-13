@@ -98,7 +98,7 @@ def test_twostream(plot=False, fitplot=False):
     B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Initialize Poisson solver
     poisson = Poisson(manifold)
@@ -107,7 +107,7 @@ def test_twostream(plot=False, fitplot=False):
 
     # Deposit sources
     sources.deposit(electrons)
-    sources.rho.add_guards()
+    sources.current.add_guards()
 
     # Solve Gauss' law
     poisson(sources.rho, E)
@@ -167,7 +167,7 @@ def test_twostream(plot=False, fitplot=False):
         sources.deposit(electrons)
 
         # Boundary calls
-        sources.rho.add_guards()
+        sources.current.add_guards()
 
         # Solve Gauss' law
         poisson(sources.rho, E)

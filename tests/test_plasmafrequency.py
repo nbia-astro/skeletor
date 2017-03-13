@@ -99,7 +99,7 @@ def test_plasmafrequency(plot=False):
     B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Initialize integro-differential operators
     poisson = Poisson(manifold)
@@ -111,7 +111,7 @@ def test_plasmafrequency(plot=False):
     # Adjust density (we should do this somewhere else)
     # sources.rho /= npc
     # assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
-    sources.rho.add_guards()
+    sources.current.add_guards()
     # assert numpy.isclose(comm.allreduce(
     # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
@@ -163,7 +163,7 @@ def test_plasmafrequency(plot=False):
         # sources.rho /= npc
         # assert numpy.isclose(sources.rho.sum(),electrons.np*charge/npc)
         # Boundary calls
-        sources.rho.add_guards()
+        sources.current.add_guards()
 
         # assert numpy.isclose(comm.allreduce(
         #     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
