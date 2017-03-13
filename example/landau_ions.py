@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Field, Particles, Sources
+from skeletor import cppinit, Float, Float3, Field, Particles, Sources
 from skeletor import Ohm
 from skeletor.manifolds.second_order import Manifold
 import numpy
@@ -120,16 +120,16 @@ def landau_ions(plot=False, fitplot=False):
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(manifold, comm, dtype=Float2)
+    E = Field(manifold, comm, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
     E.copy_guards()
 
-    B = Field(manifold, comm, dtype=Float2)
+    B = Field(manifold, comm, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
     B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Initialize Ohm's law solver
     ohm = Ohm(manifold, temperature=Te, charge=charge)
@@ -139,10 +139,10 @@ def landau_ions(plot=False, fitplot=False):
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
-    sources.rho.add_guards()
+    sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
-    sources.rho.copy_guards()
+    sources.current.copy_guards()
 
     # Calculate electric field (Solve Ohm's law)
     ohm(sources, B, E)
@@ -199,8 +199,8 @@ def landau_ions(plot=False, fitplot=False):
         sources.deposit(ions)
 
         # Boundary calls
-        sources.rho.add_guards()
-        sources.rho.copy_guards()
+        sources.current.add_guards()
+        sources.current.copy_guards()
 
         # Calculate forces (Solve Ohm's law)
         ohm(sources, B, E)

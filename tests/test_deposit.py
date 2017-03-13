@@ -18,7 +18,7 @@ mass = 1.0
 manifold = Manifold(nx, ny, comm)
 
 # # Initialize sources
-sources = Sources(manifold, npc)
+sources = Sources(manifold)
 
 # Total number of particles
 np = npc*nx*ny
@@ -68,6 +68,6 @@ def test_add_guards():
     cells and all subdomains must yield the *total* number of particles times
     the particle charge.
     """
-    sources.rho.add_guards()
+    sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=SUM), np*charge/npc)

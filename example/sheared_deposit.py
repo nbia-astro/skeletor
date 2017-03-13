@@ -96,19 +96,16 @@ assert all(ions["y"][:ions.np] < manifold.edges[1])
 assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
 # Initialize sources
-sources = Sources(manifold, npc)
-sources.rho.time = t
-sources.J.time = t
+sources = Sources(manifold)
+sources.current.time = t
 
 # Deposit sources
 sources.deposit(ions)
 assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
-sources.rho.add_guards()
-sources.J.add_guards_vector()
+sources.current.add_guards()
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
-sources.rho.copy_guards()
-sources.J.copy_guards()
+sources.current.copy_guards()
 
 
 def concatenate(arr):
@@ -118,13 +115,13 @@ def concatenate(arr):
 
 
 global_rho = concatenate(sources.rho.trim())
-global_J = concatenate(sources.J.trim())
+global_Jx = concatenate(sources.Jx.trim())
 
 plt.rc('image', origin='lower', interpolation='nearest', cmap='coolwarm')
 plt.figure(1)
 plt.clf()
-plt.plot(manifold.x, (global_J['x']/global_rho)[:, 5])
+plt.plot(manifold.x, (global_Jx/global_rho)[:, 5])
 plt.figure(2)
 plt.clf()
-plt.imshow(global_J['x']/global_rho)
+plt.imshow(global_Jx/global_rho)
 plt.show()

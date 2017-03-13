@@ -96,7 +96,7 @@ def test_burgers(plot=False):
     manifold = Manifold(nx, ny, comm)
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
@@ -155,7 +155,7 @@ def test_burgers(plot=False):
         """
         # Deposit charge
         sources.deposit(ions)
-        sources.rho.add_guards()
+        sources.current.add_guards()
 
         # Deposited charge density in the active cells averaged over y
         rho1 = sources.rho.active.mean(axis=0)

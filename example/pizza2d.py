@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Particles, Sources
+from skeletor import cppinit, Float, Float3, Particles, Sources
 from skeletor import ShearField
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy
@@ -126,15 +126,16 @@ assert comm.allreduce(ions.np, op=MPI.SUM) == np
 sources = Sources(manifold)
 sources.rho = ShearField(manifold, time=0, dtype=Float)
 rho_periodic = ShearField(manifold, time=0, dtype=Float)
-J_periodic = ShearField(manifold, time=0, dtype=Float2)
+Jx_periodic = ShearField(manifold, time=0, dtype=Float3)
+Jy_periodic = ShearField(manifold, time=0, dtype=Float3)
 
 # Deposit sources
 sources.deposit(ions)
 assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-sources.rho.add_guards()
+sources.current.add_guards()
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge)
-sources.rho.copy_guards()
+sources.current.copy_guards()
 
 
 def concatenate(arr):
@@ -155,43 +156,46 @@ def update(t):
 
     # Deposit sources
     sources.deposit(ions)
-    sources.rho.time = t
-    sources.J.time = t
+    sources.current.time = t
 
     assert numpy.isclose(sources.rho.sum(), ions.np*charge)
-    sources.rho.add_guards()
-    sources.J.add_guards_vector()
+    sources.current.add_guards()
 
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge)
 
-    sources.rho.copy_guards()
-    sources.J.copy_guards()
+    sources.current.copy_guards()
 
     assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
-    J_periodic.active = sources.J.trim()
+    Jx_periodic.active = sources.Jx.trim()
+    Jy_periodic.active = sources.Jy.trim()
 
     # Translate the density to be periodic in y
     rho_periodic.translate(-t)
     rho_periodic.copy_guards()
 
-    J_periodic.translate_vector(-t)
-    J_periodic.copy_guards()
+    Jx_periodic.translate(-t)
+    Jx_periodic.copy_guards()
+
+    Jy_periodic.translate(-t)
+    Jy_periodic.copy_guards()
 
     global_rho = concatenate(sources.rho.trim())
     global_rho_periodic = concatenate(rho_periodic.trim())
-    global_J = concatenate(sources.J.trim())
-    global_J_periodic = concatenate(J_periodic.trim())
+    global_Jx = concatenate(sources.Jx.trim())
+    global_Jx_periodic = concatenate(Jx_periodic.trim())
+    global_Jy = concatenate(sources.Jy.trim())
+    global_Jy_periodic = concatenate(Jy_periodic.trim())
     if comm.rank == 0:
         im1a.set_data(global_rho)
         im2a.set_data(global_rho_periodic)
-        im1b.set_data(global_J['x']/global_rho)
-        im2b.set_data(global_J_periodic['x']/global_rho_periodic)
-        im1c.set_data(global_J['y']/global_rho)
-        im2c.set_data(global_J_periodic['y']/global_rho_periodic)
+        im1b.set_data(global_Jx/global_rho)
+        im2b.set_data(global_Jx_periodic/global_rho_periodic)
+        im1c.set_data(global_Jy/global_rho)
+        im2c.set_data(global_Jy_periodic/global_rho_periodic)
         im1a.autoscale()
         im2a.autoscale()
         im1b.autoscale()
@@ -199,9 +203,9 @@ def update(t):
         im1c.autoscale()
         im2c.autoscale()
         im4[0].set_ydata(global_rho_periodic.mean(axis=0)/npc)
-        im5[0].set_ydata((global_J_periodic['x']/global_rho_periodic).
+        im5[0].set_ydata((global_Jx_periodic/global_rho_periodic).
                          mean(axis=0))
-        im6[0].set_ydata((global_J_periodic['y']/global_rho_periodic).
+        im6[0].set_ydata((global_Jy_periodic/global_rho_periodic).
                          mean(axis=0))
         xp_par = x_an(manifold.x, 0, t) + S*y_an(manifold.x, 0, t)*t
         xp_par %= nx
@@ -215,8 +219,10 @@ def update(t):
 if comm.rank == 0:
     global_rho = concatenate(sources.rho.trim())
     global_rho_periodic = concatenate(rho_periodic.trim())
-    global_J = concatenate(sources.J.trim())
-    global_J_periodic = concatenate(J_periodic.trim())
+    global_Jx = concatenate(sources.Jx.trim())
+    global_Jx_periodic = concatenate(Jx_periodic.trim())
+    global_Jy = concatenate(sources.Jy.trim())
+    global_Jy_periodic = concatenate(Jy_periodic.trim())
 
     plt.rc('image', origin='upper', interpolation='nearest',
            cmap='coolwarm')
@@ -225,10 +231,10 @@ if comm.rank == 0:
     fig, axes = plt.subplots(num=1, ncols=2, nrows=3)
     im1a = axes[0, 0].imshow(global_rho)
     im2a = axes[0, 1].imshow(global_rho_periodic)
-    im1b = axes[1, 0].imshow(global_J['x']/global_rho)
-    im2b = axes[1, 1].imshow(global_J_periodic['x']/global_rho_periodic)
-    im1c = axes[2, 0].imshow(global_J['y']/global_rho)
-    im2c = axes[2, 1].imshow(global_J_periodic['y']/global_rho_periodic)
+    im1b = axes[1, 0].imshow(global_Jx/global_rho)
+    im2b = axes[1, 1].imshow(global_Jx_periodic/global_rho_periodic)
+    im1c = axes[2, 0].imshow(global_Jy/global_rho)
+    im2c = axes[2, 1].imshow(global_Jy_periodic/global_rho_periodic)
     axtime1 = plt.axes([0.125, 0.1, 0.775, 0.03])
     stime1 = mw.Slider(axtime1, 'Time', -numpy.pi, numpy.pi/2, 0)
     stime1.on_changed(update)
@@ -255,13 +261,13 @@ if comm.rank == 0:
                    'b',
                    manifold.x, (global_rho_periodic.mean(axis=0))/npc,
                    'r--')
-    im5 = ax2.plot(manifold.x, (global_J_periodic['x']/global_rho_periodic)
+    im5 = ax2.plot(manifold.x, (global_Jx_periodic/global_rho_periodic)
                    .mean(axis=0), 'b',
-                   manifold.x, (global_J_periodic['x']/global_rho_periodic)
+                   manifold.x, (global_Jx_periodic/global_rho_periodic)
                    .mean(axis=0), 'r--')
-    im6 = ax3.plot(manifold.x, (global_J_periodic['y']/global_rho_periodic)
+    im6 = ax3.plot(manifold.x, (global_Jy_periodic/global_rho_periodic)
                    .mean(axis=0), 'b',
-                   manifold.x, (global_J_periodic['y']/global_rho_periodic)
+                   manifold.x, (global_Jy_periodic/global_rho_periodic)
                    .mean(axis=0), 'r--')
     update(0)
     plt.show()

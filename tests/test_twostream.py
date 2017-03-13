@@ -20,9 +20,6 @@ def test_twostream(plot=False, fitplot=False):
     # Number of time steps
     nt = 1000
 
-    # Background ion density
-    n0 = 1.0
-
     # Particle charge and mass
     charge = -1.0
     mass = 1.0
@@ -101,7 +98,7 @@ def test_twostream(plot=False, fitplot=False):
     B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Initialize Poisson solver
     poisson = Poisson(manifold)
@@ -110,8 +107,7 @@ def test_twostream(plot=False, fitplot=False):
 
     # Deposit sources
     sources.deposit(electrons)
-    sources.rho.add_guards()
-    sources.rho += n0
+    sources.current.add_guards()
 
     # Solve Gauss' law
     poisson(sources.rho, E)
@@ -171,8 +167,7 @@ def test_twostream(plot=False, fitplot=False):
         sources.deposit(electrons)
 
         # Boundary calls
-        sources.rho.add_guards()
-        sources.rho += n0
+        sources.current.add_guards()
 
         # Solve Gauss' law
         poisson(sources.rho, E)

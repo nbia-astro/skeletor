@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Particles, Sources
+from skeletor import cppinit, Float, Float3, Particles, Sources
 from skeletor import Field
 from skeletor.manifolds.second_order import Manifold
 import numpy
@@ -96,12 +96,12 @@ assert all(ions["y"][:ions.np] < manifold.edges[1])
 assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
 # Initialize sources
-sources = Sources(manifold, npc)
+sources = Sources(manifold)
 
 # Deposit sources
 sources.deposit(ions)
 assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
-sources.rho.add_guards()
+sources.current.add_guards()
 assert numpy.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
@@ -121,10 +121,10 @@ def rho(a, t):
 a = manifold.x
 
 # Electric field
-E = Field(manifold, dtype=Float2)
+E = Field(manifold, dtype=Float3)
 E.fill((0.0, 0.0, 0.0))
 
-B = Field(manifold, dtype=Float2)
+B = Field(manifold, dtype=Float3)
 B.fill((0.0, 0.0, 0.0))
 
 
@@ -139,7 +139,7 @@ if visualization:
     import matplotlib.pyplot as plt
 
     global_rho = concatenate(sources.rho.trim())
-    global_J = concatenate(sources.J.trim())
+    global_Jx = concatenate(sources.Jx.trim())
 
     if comm.rank == 0:
         plt.rc('image', origin='upper', interpolation='nearest',
@@ -148,13 +148,13 @@ if visualization:
         plt.clf()
         fig, axes = plt.subplots(num=1, nrows=2)
         im1 = axes[0].imshow(global_rho)
-        im2 = axes[1].imshow(global_J['x'])
+        im2 = axes[1].imshow(global_Jx)
         plt.figure(2)
         plt.clf()
         fig2, (ax1, ax2) = plt.subplots(num=2, nrows=2)
         im3 = ax1.plot(manifold.x, global_rho.mean(axis=0)/npc, 'b-',
                        xp(a, t), rho(a, t), 'r--')
-        im4 = ax2.plot(manifold.x, ((global_J['x']/global_rho).mean(axis=0)),
+        im4 = ax2.plot(manifold.x, ((global_Jx/global_rho).mean(axis=0)),
                        'b', xp(a, 0), ux(a), 'r--')
         ax1.set_ylim(0, 3)
 
@@ -167,13 +167,11 @@ for it in range(nt):
     sources.deposit(ions)
 
     assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
-    sources.rho.add_guards()
-    sources.J.add_guards_vector()
+    sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
-    sources.rho.copy_guards()
-    sources.J.copy_guards()
+    sources.current.copy_guards()
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
@@ -188,14 +186,14 @@ for it in range(nt):
     if visualization:
         if (it % 60 == 0):
             global_rho = concatenate(sources.rho.trim())
-            global_J = concatenate(sources.J.trim())
+            global_Jx = concatenate(sources.Jx.trim())
             if comm.rank == 0:
                 im1.set_data(global_rho)
-                im2.set_data(global_J['x'])
+                im2.set_data(global_Jx)
                 im1.autoscale()
                 im2.autoscale()
                 im3[0].set_ydata(global_rho.mean(axis=0))
                 im3[1].set_data(xp(a, t), rho(a, t))
-                im4[0].set_ydata(((global_J['x']/global_rho)).mean(axis=0))
+                im4[0].set_ydata(((global_Jx/global_rho)).mean(axis=0))
                 im4[1].set_data(xp(a, t), ux(a))
                 plt.pause(1e-7)

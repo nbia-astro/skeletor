@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Grid, Field, Particles, Sources
+from skeletor import cppinit, Float, Float3, Grid, Field, Particles, Sources
 from skeletor import Poisson
 from skeletor.manifolds.mpifft4py import Manifold
 import numpy
@@ -29,7 +29,7 @@ def landau_electrons(plot=False, fitplot=False):
     cfl = 0.05
     # Number of periods to run for
     nperiods = 3.0
-    # Background ion density
+    # Background electron number density
     n0 = 1.0
 
 
@@ -133,16 +133,16 @@ def landau_electrons(plot=False, fitplot=False):
     assert comm.allreduce(electrons.np, op=MPI.SUM) == np
 
     # Set the electric field to zero
-    E = Field(manifold, comm, dtype=Float2)
+    E = Field(manifold, comm, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
     E.copy_guards()
 
-    B = Field(manifold, comm, dtype=Float2)
+    B = Field(manifold, comm, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
     B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Initialize Poisson solver
     poisson = Poisson(manifold)
@@ -152,12 +152,9 @@ def landau_electrons(plot=False, fitplot=False):
     # Deposit sources
     sources.deposit(electrons)
     assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
-    sources.rho.add_guards()
+    sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
-
-    # Add ion charge density
-    sources.rho += n0
 
     # Calculate electric field (Solve Gauss' law)
     poisson(sources.rho, E)
@@ -214,10 +211,7 @@ def landau_electrons(plot=False, fitplot=False):
         sources.deposit(electrons)
 
         # Boundary calls
-        sources.rho.add_guards()
-
-        # Add ion charge density
-        sources.rho += n0
+        sources.current.add_guards()
 
         # Calculate forces (Solve Gauss' law)
         poisson(sources.rho, E)

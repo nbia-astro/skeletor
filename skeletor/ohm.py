@@ -33,11 +33,8 @@ class Ohm:
 
     def __call__(self, sources, B, E, set_boundaries=False):
 
-        # Short-hand for rho
-        rho = sources.rho
-
         # Calculate electron pressure contribution to the electric field
-        self.gradient(self.log(rho), E)
+        self.gradient(self.log(sources.rho), E)
         E['x'] *= -self.alpha
         E['y'] *= -self.alpha
 
@@ -47,9 +44,9 @@ class Ohm:
 
         for dim in ('x', 'y', 'z'):
             # Subtract ion current to get electron current
-            self.Je[dim] -= sources.J[dim]
+            self.Je[dim] -= sources.current[dim]
             # Negative electron fluid velocity
-            self.Je[dim] /= rho
+            self.Je[dim] /= sources.rho
 
         # Interpolate the B-field onto the location of E
         self.unstagger(B, self.B)

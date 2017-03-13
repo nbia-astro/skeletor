@@ -101,7 +101,7 @@ def test_skeletor():
         # Test charge deposition #
         ##########################
 
-        sources = Sources(manifold, npc)
+        sources = Sources(manifold)
 
         sources.deposit(ions)
 
@@ -111,16 +111,14 @@ def test_skeletor():
 
         # Add charge from guard cells to corresponding active cells.
         # Afterwards erases charge in guard cells.
-        sources.rho.add_guards()
-        sources.J.add_guards_vector()
+        sources.current.add_guards()
 
         # Make sure the charge deposited into *active* cells (no guard cells)
         # equals the number of particles times the particle charge
         assert numpy.isclose(comm.allreduce(
             sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
-        sources.rho.copy_guards()
-        sources.J.copy_guards()
+        sources.current.copy_guards()
 
         # Combine charge density from all processes into a single array
         global_rho += [numpy.concatenate(comm.allgather(sources.rho.trim()))]

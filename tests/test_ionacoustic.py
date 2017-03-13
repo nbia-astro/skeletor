@@ -102,7 +102,7 @@ def test_ionacoustic(plot=False):
     B.copy_guards()
 
     # Initialize sources
-    sources = Sources(manifold, npc)
+    sources = Sources(manifold)
 
     # Initialize Ohm's law solver
     ohm = Ohm(manifold, temperature=Te, charge=charge)
@@ -112,8 +112,8 @@ def test_ionacoustic(plot=False):
     # Deposit sources
     sources.deposit(ions)
     assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
-    sources.rho.add_guards()
-    sources.rho.copy_guards()
+    sources.current.add_guards()
+    sources.current.copy_guards()
     assert numpy.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
 
@@ -167,8 +167,8 @@ def test_ionacoustic(plot=False):
         sources.deposit(ions)
 
         # Boundary calls
-        sources.rho.add_guards()
-        sources.rho.copy_guards()
+        sources.current.add_guards()
+        sources.current.copy_guards()
 
         # Calculate forces (Solve Ohm's law)
         ohm(sources, B, E)
