@@ -1,4 +1,4 @@
-from skeletor import Float, Field, ShearField, Grid
+from skeletor import Float, Field, ShearField
 from skeletor.manifolds.second_order import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy
@@ -18,22 +18,19 @@ def test_copy_guards_with_shear(plot=False):
     t = 0.2
 
     # Create numerical grid
-    manifold = ShearingManifold(nx, ny, comm, lbx=1, lby=2, Lx=nx, Ly=ny,
-                                S=S, Omega=0)
-
-    grid = Grid(nx, ny, comm, lbx=1, lby=2, Lx=nx, Ly=ny)
+    manifold = ShearingManifold(nx, ny, comm, lbx=1, lby=2, S=S, Omega=0)
 
     # Coordinate arrays
-    xx, yy = numpy.meshgrid(grid.x, grid.y)
+    xx, yy = numpy.meshgrid(manifold.x, manifold.y)
 
     # Wavenumbers of mode
     ikx = 1
-    kx = 2*numpy.pi*ikx/nx
+    kx = 2*numpy.pi*ikx/manifold.Lx
     ky = kx*S*t
     A = 0.2
 
     # Initialize density field using standard field class
-    f = Field(grid, dtype=Float)
+    f = Field(manifold, dtype=Float)
     f.fill(0.0)
     f.active = 1 + A*numpy.sin(kx*xx + ky*yy)
 
@@ -47,8 +44,9 @@ def test_copy_guards_with_shear(plot=False):
     g.copy_guards()
 
     # Grid including first ghost zone
-    xg = numpy.arange(-grid.lbx, grid.nx + grid.lbx) + 0.5
-    xxg, yyg = numpy.meshgrid(xg, grid.yg)
+    xg = (numpy.arange(
+            -manifold.lbx, manifold.nx + manifold.lbx) + 0.5)*manifold.dx
+    xxg, yyg = numpy.meshgrid(xg, manifold.yg)
 
     # Analytic field including first ghost-zone
     g_an = 1 + A*numpy.sin(kx*xxg + ky*yyg)
