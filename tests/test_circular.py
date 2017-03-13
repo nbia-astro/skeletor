@@ -140,12 +140,14 @@ def test_circular(plot=False):
     init = InitialCondition(npc, quiet=quiet)
     init(manifold, ions)
 
-    # Perturbation to particle velocities
-    ions['vx'] = Ux_an(ions['x'], ions['y'], t=-dt/2)
-    ions['vy'] = Uy_an(ions['x'], ions['y'], t=-dt/2)
-    ions['vz'] = Uz_an(ions['x'], ions['y'], t=-dt/2)
+    # Particle position in physical units
+    x = ions['x']*manifold.dx
+    y = ions['y']*manifold.dy
 
-    ions.from_units()
+    # Perturbation to particle velocities
+    ions['vx'] = Ux_an(x, y, t=-dt/2)
+    ions['vy'] = Uy_an(x, y, t=-dt/2)
+    ions['vz'] = Uz_an(x, y, t=-dt/2)
 
     def B_an(t):
         B_an = Field(manifold, dtype=Float3)
