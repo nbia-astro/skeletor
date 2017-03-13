@@ -14,7 +14,7 @@ charge = 1.0
 mass = 1.0
 
 # Create numerical grid with weird setup of ghost layers
-manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny, lbx=1, lby=2)
+manifold = Manifold(nx, ny, comm, lbx=1, lby=2)
 
 # # Initialize sources
 sources = Sources(manifold)
@@ -31,8 +31,8 @@ particles = Particles(manifold, npmax, charge=charge, mass=mass)
 numpy.random.set_state(comm.bcast(numpy.random.get_state()))
 
 # Uniform distribution of particle positions
-x = nx*numpy.random.uniform(size=np).astype(Float)
-y = ny*numpy.random.uniform(size=np).astype(Float)
+x = manifold.Lx*numpy.random.uniform(size=np).astype(Float)
+y = manifold.Ly*numpy.random.uniform(size=np).astype(Float)
 # Normal distribution of particle velocities
 vx = numpy.empty(np, Float)
 vy = numpy.empty(np, Float)
