@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float2, Grid, Field, Particles
+from skeletor import cppinit, Float3, Grid, Field, Particles
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -118,7 +118,7 @@ ions.initialize(x, y, vx, vy, grid)
 assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
 # Electric field in y-direction
-E_star = Field(grid, comm, dtype=Float2)
+E_star = Field(grid, comm, dtype=Float3)
 E_star.fill((0.0, 0.0))
 
 for i in range(nx+2):

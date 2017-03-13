@@ -1,4 +1,4 @@
-from skeletor import Float2, Field, Particles
+from skeletor import Float3, Field, Particles
 from skeletor import Ohm, Faraday, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 from skeletor.predictor_corrector import Experiment
@@ -133,7 +133,7 @@ from numpy.random import normal
 # ions['vz'][:ions.np] = vtz*normal(size=ions.np)
 
 # Add background magnetic field
-B = Field(manifold, dtype=Float2)
+B = Field(manifold, dtype=Float3)
 B.fill((Bx, By, Bz))
 B['x'] += ampl*normal(size=B['x'].shape)
 B['y'] += ampl*normal(size=B['y'].shape)

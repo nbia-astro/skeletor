@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float2, Particles, Sources
+from skeletor import cppinit, Float, Float3, Particles, Sources
 from skeletor import ShearField
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy
@@ -197,7 +197,7 @@ assert comm.allreduce(ions.np, op=MPI.SUM) == np
 sources = Sources(manifold)
 sources.rho = ShearField(manifold, time=t, dtype=Float)
 rho_periodic = ShearField(manifold, time=0, dtype=Float)
-J_periodic = ShearField(manifold, time=0, dtype=Float2)
+J_periodic = ShearField(manifold, time=0, dtype=Float3)
 
 # Deposit sources
 sources.deposit(ions)
@@ -216,7 +216,7 @@ sources.J.copy_guards()
 ag = manifold.x
 
 # Electric field
-E = ShearField(manifold, dtype=Float2)
+E = ShearField(manifold, dtype=Float3)
 E.fill((0.0, 0.0))
 
 

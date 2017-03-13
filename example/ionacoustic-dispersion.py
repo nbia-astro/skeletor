@@ -1,4 +1,4 @@
-from skeletor import Float, Float2, Field, Particles, Sources
+from skeletor import Float, Float3, Field, Particles, Sources
 from skeletor import Ohm
 from skeletor.manifolds.second_order import Manifold
 import numpy
@@ -119,10 +119,10 @@ ions.initialize(x, y, vx, vy, vz)
 assert comm.allreduce(ions.np, op=MPI.SUM) == np
 
 # Set the electric field to zero
-E = Field(manifold, dtype=Float2)
+E = Field(manifold, dtype=Float3)
 E.fill((0.0, 0.0, 0.0))
 E.copy_guards()
-B = Field(manifold, dtype=Float2)
+B = Field(manifold, dtype=Float3)
 B.fill((0.0, 0.0, 0.0))
 B.copy_guards()
 
