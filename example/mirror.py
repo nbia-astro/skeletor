@@ -100,7 +100,7 @@ vz = comm.bcast(vz, root=0)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm, lbx=2, lby=2)
+manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny, lbx=2, lby=2)
 
 # Time step
 dt = 1e-3
