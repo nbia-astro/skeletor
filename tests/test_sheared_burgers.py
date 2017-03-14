@@ -69,22 +69,22 @@ def test_sheared_burgers(plot=False):
         ∂v(a,τ)/∂a"""
         return ampl*kx*numpy.cos(kx*a)
 
-    def euler(a, τ):
+    def euler(a, tau):
         """
         This function converts from Lagrangian to Eulerian sheared coordinate
         x' by solving ∂x'(a, τ)/∂τ = U(a) for x'(a, τ) subject to the initial
         condition x'(a, 0) = a.
         """
-        return a + velocity(a)*τ
+        return a + velocity(a)*tau
 
-    def euler_prime(a, τ):
+    def euler_prime(a, tau):
         """
         The derivative ∂x'/∂a of the conversion function defined above, which
         is related to the mass density in Lagrangian coordinates through
         rho(a, τ)/rho_0(a) = (∂x'/∂a)⁻¹, where rho_0(a) = rho(a, 0) is the
         initial mass density.
         """
-        return 1 + velocity_prime(a)*τ
+        return 1 + velocity_prime(a)*tau
 
     def lagrange(xp, t, tol=1.48e-8, maxiter=50):
         """
@@ -321,6 +321,8 @@ def test_sheared_burgers(plot=False):
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
+
+
 if __name__ == "__main__":
     import argparse
 

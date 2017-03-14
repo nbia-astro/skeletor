@@ -272,6 +272,7 @@ def test_circular(plot=False):
     # Check if test has passed
     assert (val < tol), (val, tol)
 
+
 if __name__ == "__main__":
     import argparse
 

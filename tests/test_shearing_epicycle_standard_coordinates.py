@@ -126,11 +126,13 @@ def test_shearing_epicycle(plot=False):
         import warnings
 
         plt.rc('image', origin='lower', interpolation='nearest')
-        plt.figure(1);plt.clf()
+        plt.figure(1)
+        plt.clf()
         fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
         lines1 = ax1.plot(ions['x'][0]*manifold.dx, ions['y'][0]*manifold.dy,
                           'b.', x_an(0), y_an(0), 'rx')
-        lines2 = ax2.plot(ions['vx'][0], ions['vy'][0], 'b.',  vx_an(0), vy_an(0), 'rx')
+        lines2 = ax2.plot(ions['vx'][0], ions['vy'][0], 'b.',
+                          vx_an(0), vy_an(0), 'rx')
         ax1.set_xlim(0, Lx)
         ax1.set_ylim(0, Ly)
         ax2.set_xlim(-1.1*og*ampl, 1.1*og*ampl)

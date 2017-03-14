@@ -41,6 +41,7 @@ vz = numpy.empty(np, Float)
 # Assign particles to subdomains
 particles.initialize(x, y, vx, vy, vz)
 
+
 def test_extended_grid():
     # deposit particles
     sources.deposit(particles)

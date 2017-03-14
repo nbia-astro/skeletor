@@ -1,4 +1,4 @@
-from skeletor import Float, Float3, Field, Particles, Sources
+from skeletor import Float3, Field, Particles, Sources
 from skeletor.manifolds.mpifft4py import Manifold
 from skeletor import Poisson, InitialCondition
 import numpy
@@ -69,7 +69,7 @@ def test_plasmafrequency(plot=False):
     ky = 2*numpy.pi*iky/manifold.Ly
     k = numpy.sqrt(kx*kx + ky*ky)
 
-        # x- and y-grid
+    # x- and y-grid
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of electrons in each partition

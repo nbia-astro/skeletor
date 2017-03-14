@@ -295,8 +295,8 @@ def test_sheared_disturbance(plot=False):
         # Make figures
         if (it % 60 == 0):
             # Calculate rms of numerical solution wrt to analytical solution
-            a_2d = find_a(xx, yy, t)
-            err = rms(sources.rho.trim() - rho_an(a_2d, t))
+            # a_2d = find_a(xx, yy, t)
+            # err = rms(sources.rho.trim() - rho_an(a_2d, t))
             # Check if test is passed
             # assert err < 1e-2, err
             if plot:
@@ -337,6 +337,8 @@ def test_sheared_disturbance(plot=False):
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
+
+
 if __name__ == "__main__":
     import argparse
 
