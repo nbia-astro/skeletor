@@ -27,8 +27,8 @@ class InitialCondition():
             npy = manifold.nyp*sqrt_npc
             x1 = manifold.Lx*(arange(npx) + 0.5)/npx
             y1 = manifold.edges[0]*manifold.dy + \
-                 manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
-            x, y =  meshgrid(x1, y1)
+                manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
+            x, y = meshgrid(x1, y1)
             x = x.flatten()
             y = y.flatten()
         else:
@@ -42,13 +42,14 @@ class InitialCondition():
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
-        ions['vx'][:np] = self.vt*normal (size=np)
-        ions['vy'][:np] = self.vt*normal (size=np)
-        ions['vz'][:np] = self.vt*normal (size=np)
+        ions['vx'][:np] = self.vt*normal(size=np)
+        ions['vy'][:np] = self.vt*normal(size=np)
+        ions['vz'][:np] = self.vt*normal(size=np)
 
         ions.np = np
 
         ions.units = True
+
 
 class DensityPertubation(InitialCondition):
 
@@ -95,7 +96,7 @@ class DensityPertubation(InitialCondition):
         U = (arange(npx) + 0.5)/npx
         # Particle y positions
         Uy = manifold.edges[0]*manifold.dy + \
-              manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
+            manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
 
         self.X = empty_like(U)
 
@@ -112,7 +113,7 @@ class DensityPertubation(InitialCondition):
         y = empty(np)
 
         # Calculate particle x-positions
-        for k in range (0, self.npy):
+        for k in range(0, self.npy):
             self.find_X(U, Uy[k])
             x[k*npx:(k+1)*npx] = self.X
             y[k*npx:(k+1)*npx] = Uy[k]
@@ -123,9 +124,9 @@ class DensityPertubation(InitialCondition):
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
-        ions['vx'][:np] = self.vt*normal (size=np)
-        ions['vy'][:np] = self.vt*normal (size=np)
-        ions['vz'][:np] = self.vt*normal (size=np)
+        ions['vx'][:np] = self.vt*normal(size=np)
+        ions['vy'][:np] = self.vt*normal(size=np)
+        ions['vz'][:np] = self.vt*normal(size=np)
 
         ions.np = np
 
@@ -139,7 +140,7 @@ class DensityPertubation(InitialCondition):
         import sympy as sym
 
         # Define symbols
-        x, y = sym.symbols ("x, y")
+        x, y = sym.symbols("x, y")
 
         # Density distribution
         n = 1 + self.ampl*sym.cos(self.kx*x + self.ky*y + phase)
@@ -159,6 +160,6 @@ class DensityPertubation(InitialCondition):
         Find a row of y-values for each value of x.
         """
         self.X[0] = self.newton(lambda x: self.cdf(x, y) - U[0], 0)
-        for i in range (1, self.npx):
+        for i in range(1, self.npx):
             self.X[i] = self.newton(lambda x: self.cdf(x, y) - U[i],
                                     self.X[i-1])
