@@ -200,6 +200,7 @@ def test_ionacoustic(plot=False):
     # Check if test has passed
     assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge
 
+
 if __name__ == "__main__":
     import argparse
 

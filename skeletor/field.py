@@ -1,4 +1,4 @@
-from numpy import ndarray, asarray, zeros, dtype
+from numpy import ndarray, asarray, zeros
 from .cython.types import Float
 
 

@@ -1,4 +1,4 @@
-from skeletor import Float3, Grid, Field, Particles
+from skeletor import Float3, Field, Particles
 from skeletor.manifolds.ppic2 import Manifold
 import numpy
 from mpi4py import MPI

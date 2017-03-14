@@ -1,5 +1,6 @@
 from .cython.types import Float3
 
+
 class Faraday:
 
     def __init__(self, manifold):

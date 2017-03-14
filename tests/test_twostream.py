@@ -57,8 +57,8 @@ def test_twostream(plot=False, fitplot=False):
     vy = vdy*numpy.ones_like(y)
 
     # Have two particles at position
-    x = numpy.concatenate([x,x])
-    y = numpy.concatenate([y,y])
+    x = numpy.concatenate([x, x])
+    y = numpy.concatenate([y, y])
 
     x += 1e-4*numpy.cos(kx*x)
 
@@ -94,7 +94,6 @@ def test_twostream(plot=False, fitplot=False):
     # Set the electric field to zero
     E = Field(manifold, comm, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
-
 
     B = Field(manifold, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
@@ -249,6 +248,7 @@ def test_twostream(plot=False, fitplot=False):
             plt.ylabel(r"$E^2$")
             plt.legend(loc=2)
             plt.show()
+
 
 if __name__ == "__main__":
     import argparse

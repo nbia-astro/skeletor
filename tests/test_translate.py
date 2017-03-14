@@ -1,4 +1,4 @@
-from skeletor import Float, Grid, ShearField
+from skeletor import Float, ShearField
 from skeletor.manifolds.mpifft4py import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy

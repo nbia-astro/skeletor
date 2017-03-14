@@ -1,5 +1,6 @@
 from .cython.types import Float3
 
+
 class Ohm:
 
     """Solve Ohm's law"""
@@ -23,8 +24,8 @@ class Ohm:
         # Pre-allocate array for electron current and interpolated B-field
         self.Je = Field(manifold, dtype=Float3)
         self.B = Field(manifold, dtype=Float3)
-        self.Je.fill((0,0,0))
-        self.B.fill((0,0,0))
+        self.Je.fill((0, 0, 0))
+        self.B.fill((0, 0, 0))
 
     @property
     def alpha(self):
@@ -40,7 +41,6 @@ class Ohm:
 
         # Ampere's law to calculate total current
         self.curl(B, self.Je)
-
 
         for dim in ('x', 'y', 'z'):
             # Subtract ion current to get electron current
@@ -61,5 +61,3 @@ class Ohm:
         # Set boundary condition on E?
         if set_boundaries:
             E.copy_guards()
-
-

@@ -1,8 +1,8 @@
 class Experiment:
 
-    def __init__ (self, manifold, ions, ohm, B, npc, io=None):
+    def __init__(self, manifold, ions, ohm, B, npc, io=None):
 
-        from skeletor import Float3, Field, Sources, Faraday, Particles
+        from skeletor import Float3, Field, Sources, Faraday
         from mpi4py.MPI import COMM_WORLD as comm
 
         # Numerical grid with differential operators
@@ -55,10 +55,10 @@ class Experiment:
         self.ions.drift(dt/2)
 
         # Iterate to find true electric field at time 0
-        for it in range (maxiter):
+        for it in range(maxiter):
 
             # Compute electric field at time 1/2
-            self.step (dt, update=False)
+            self.step(dt, update=False)
 
             # Average to get electric field at time 0
             for dim in ('x', 'y', 'z'):
@@ -67,18 +67,19 @@ class Experiment:
             # Compute difference to previous iteration
             diff2 = 0.0
             for dim in ('x', 'y', 'z'):
-                diff2 += ((self.E3[dim] - self.E[dim]).trim ()**2).mean()
+                diff2 += ((self.E3[dim] - self.E[dim]).trim()**2).mean()
             diff = sqrt(comm.allreduce(diff2, op=SUM)/comm.size)
             if comm.rank == 0:
-                print ("Difference to previous iteration: {}".format (diff))
+                print("Difference to previous iteration: {}".format(diff))
 
             # Update electric field
             self.E[...] = self.E3
 
             # Return if difference is sufficiently small
-            if diff < tol: return
+            if diff < tol:
+                return
 
-        raise RuntimeError ("Exceeded maxiter={} iterations!".format (maxiter))
+        raise RuntimeError("Exceeded maxiter={} iterations!".format(maxiter))
 
     def step(self, dt, update):
 
@@ -109,7 +110,7 @@ class Experiment:
 
         # Predictor step
         # Get electric field at n+1/2
-        self.step (dt, update=True)
+        self.step(dt, update=True)
         self.E3[...] = self.E2
 
         # Predict electric field at n+1
@@ -118,7 +119,7 @@ class Experiment:
 
         # Corrector step
         # Get electric field at n+3/2
-        self.step (dt, update=False)
+        self.step(dt, update=False)
 
         # Predict electric field at n+1
         for dim in ('x', 'y', 'z'):

@@ -55,24 +55,25 @@ def test_burgers(plot=False):
 
     def velocity_prime(a):
         "Derivative of particle velocity in Lagrangian coordinates: ∂v(a,τ)/∂a"
+
         return ampl*kx*np.cos(kx*a)
 
-    def euler(a, τ):
+    def euler(a, tau):
         """
         This function converts from Lagrangian to Eulerian coordinate by
         solving ∂x(a, τ)/∂τ = u(a) for x(a, τ) subject to the initial condition
         x(a, 0) = a.
         """
-        return (a + velocity(a)*τ) % manifold.Lx
+        return (a + velocity(a)*tau) % manifold.Lx
 
-    def euler_prime(a, τ):
+    def euler_prime(a, tau):
         """
         The derivative ∂x/∂a of the conversion function defined above, which is
         related to the mass density in Lagrangian coordinates through
             rho(a, τ)/rho_0(a) = (∂x/∂a)⁻¹,
         where rho_0(a) = rho(a, 0) is the initial mass density.
         """
-        return 1 + velocity_prime(a)*τ
+        return 1 + velocity_prime(a)*tau
 
     def lagrange(x, t, tol=1.48e-8, maxiter=50):
         """
