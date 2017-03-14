@@ -95,7 +95,7 @@ class DensityPertubation(InitialCondition):
         # Uniformly distributed numbers from 0 to 1
         U = (arange(npx) + 0.5)/npx
         # Particle y positions
-        Uy = manifold.edges[0]*manifold.dy + \
+        y1 = manifold.edges[0]*manifold.dy + \
             manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
 
         self.X = empty_like(U)
@@ -114,9 +114,9 @@ class DensityPertubation(InitialCondition):
 
         # Calculate particle x-positions
         for k in range(0, self.npy):
-            self.find_X(U, Uy[k])
+            self.find_X(U, y1[k])
             x[k*npx:(k+1)*npx] = self.X
-            y[k*npx:(k+1)*npx] = Uy[k]
+            y[k*npx:(k+1)*npx] = y1[k]
 
         # Set initial positions
         ions['x'][:np] = x/manifold.dx
