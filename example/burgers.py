@@ -72,7 +72,7 @@ idproc, nvp = cppinit(comm)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm)
+manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny)
 
 # x- and y-grid
 xx, yy = numpy.meshgrid(manifold.x, manifold.y)

@@ -41,8 +41,8 @@ def push_and_deposit(
     dtds2.x = 0.5*dt/grid.dx
     dtds2.y = 0.5*dt/grid.dy
 
-    # TODO: Define this in types.pxd
-    cdef real_t Lx = <real_t> grid.nx
+    # Define this in order to avoid implicit type conversions
+    cdef real_t nx = <real_t> grid.nx
 
     for ip in range(Np):
         # Copy particle data to temporary struct
@@ -75,7 +75,7 @@ def push_and_deposit(
             drift(&particle, dtds2)
 
             # Boundary conditions
-            periodic_x(&particle, Lx)
+            periodic_x(&particle, nx)
 
             # Calculate ihole for use in PPIC2's ccpmove2
             ih = calculate_ihole(particle, ihole, grid, ih, ip)

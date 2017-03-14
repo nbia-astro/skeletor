@@ -1,4 +1,4 @@
-from skeletor import Float, Float3, Field, Particles, Sources
+from skeletor import Float3, Field, Particles, Sources
 from skeletor import Ohm, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 import numpy
@@ -28,32 +28,8 @@ def test_ionacoustic(plot=False):
     # CFL number
     cfl = 0.5
 
-
     # Number of periods to run for
     nperiods = 1
-
-    # Sound speed
-    cs = numpy.sqrt(Te/mass)
-
-    # Time step
-    dt = cfl/cs
-
-    # Total number of particles in simulation
-    np = npc*nx*ny
-
-    # Wave vector and its modulus
-    kx = 2*numpy.pi*ikx/nx
-    ky = 2*numpy.pi*iky/ny
-    k = numpy.sqrt(kx*kx + ky*ky)
-
-    # Frequency
-    omega = k*cs
-
-    # Simulation time
-    tend = 2*numpy.pi*nperiods/omega
-
-    # Number of time steps
-    nt = int(tend/dt)
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
@@ -69,10 +45,33 @@ def test_ionacoustic(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm)
+    manifold = Manifold(nx, ny, comm, Lx=1.0, Ly=1.0)
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+
+    # Sound speed
+    cs = numpy.sqrt(Te/mass)
+
+    # Time step
+    dt = cfl/cs*manifold.dx
+
+    # Total number of particles in simulation
+    np = npc*nx*ny
+
+    # Wave vector and its modulus
+    kx = 2*numpy.pi*ikx/manifold.Lx
+    ky = 2*numpy.pi*iky/manifold.Ly
+    k = numpy.sqrt(kx*kx + ky*ky)
+
+    # Frequency
+    omega = k*cs
+
+    # Simulation time
+    tend = 2*numpy.pi*nperiods/omega
+
+    # Number of time steps
+    nt = int(tend/dt)
 
     # Maximum number of electrons in each partition
     npmax = int(1.5*np/comm.size)
@@ -81,12 +80,16 @@ def test_ionacoustic(plot=False):
     ions = Particles(manifold, npmax, charge=charge, mass=mass)
 
     # Create a uniform density field
-    init = InitialCondition(npc, quiet=True)
+    init = InitialCondition(npc, quiet=quiet)
     init(manifold, ions)
 
+    # Particle position in physical units
+    x = ions['x']*manifold.dx
+    y = ions['y']*manifold.dy
+
     # Perturbation to particle velocities
-    ions['vx'] = ux_an(ions['x'], ions['y'], t=dt/2)
-    ions['vy'] = uy_an(ions['x'], ions['y'], t=dt/2)
+    ions['vx'] = ux_an(x, y, t=dt/2)
+    ions['vy'] = uy_an(x, y, t=dt/2)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
@@ -99,7 +102,6 @@ def test_ionacoustic(plot=False):
     B = Field(manifold, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
     B.copy_guards()
-
 
     # Initialize sources
     sources = Sources(manifold)

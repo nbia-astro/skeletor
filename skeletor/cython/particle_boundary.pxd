@@ -1,13 +1,14 @@
 from types cimport real_t, particle_t, grid_t
 
-cdef inline void periodic_x_cdef(particle_t *particle, real_t Lx) nogil:
+cdef inline void periodic_x_cdef(particle_t *particle, real_t nx) nogil:
     while particle.x < 0.0:
-        particle.x = particle.x + Lx
-    while particle.x >= Lx:
-        particle.x = particle.x - Lx
+        particle.x = particle.x + nx
+    while particle.x >= nx:
+        particle.x = particle.x - nx
+
 
 cdef inline int calculate_ihole_cdef(particle_t particle, int[:] ihole,
-                           grid_t grid, int ih, int ip) nogil:
+                                     grid_t grid, int ih, int ip) nogil:
 
     cdef int ntmax = ihole.shape[0] - 1
 

@@ -36,7 +36,7 @@ def test_sheared_burgers(plot=False):
     S = -3/2
 
     # Amplitude of perturbation
-    ampl = 2.
+    ampl = 0.0625
 
     # Number of grid points in x- and y-direction
     nx, ny = 32, 32
@@ -44,21 +44,8 @@ def test_sheared_burgers(plot=False):
     # Average number of particles per cell
     npc = 16
 
-    # Wave numbers
-    kx = 2*numpy.pi/nx
-
     # Total number of particles in simulation
     np = npc*nx*ny
-
-    # Uniform distribution of particle positions (quiet start)
-    sqrt_npc = int(numpy.sqrt(npc))
-    assert sqrt_npc**2 == npc
-    dx = dy = 1/sqrt_npc
-    a, b = numpy.meshgrid(
-            numpy.arange(dx/2, nx+dx/2, dx),
-            numpy.arange(dy/2, ny+dy/2, dy))
-    a = a.flatten()
-    b = b.flatten()
 
     def mean(f, axis=None):
         """Compute mean of an array across processors."""
@@ -152,6 +139,9 @@ def test_sheared_burgers(plot=False):
     # x- and y-grid
     xx, yy = numpy.meshgrid(manifold.x, manifold.y)
 
+    # Wave numbers
+    kx = 2*numpy.pi/manifold.Lx
+
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
     npmax = int(5*np/comm.size)
@@ -159,16 +149,22 @@ def test_sheared_burgers(plot=False):
     # Create particle array
     ions = Particles(manifold, npmax, time=t, charge=charge, mass=mass)
 
+    # Lagrangian particle coordinates (quiet start)
+    sqrt_npc = int(numpy.sqrt(npc))
+    assert sqrt_npc**2 == npc, "'npc' must be a square of an integer."
+    a, b = [ab.flatten().astype(Float) for ab in numpy.meshgrid(
+        (numpy.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
+        (numpy.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
+
+    # Eulerian particle coordinates and veloctities
+    x = x_an(a, b, t)
+    y = b
+    vx = vx_an(a, b, t)
+    vy = numpy.zeros_like(vx)
+    vz = vy
+
     # Assign particles to subdomains (zero velocity and uniform distribution)
-    ions.initialize(a, b, a*0, b*0, b*0)
-
-    # Position and velocities for this subdomain only
-    x_sub = numpy.copy(ions['x'][:ions.np])
-    y_sub = numpy.copy(ions['y'][:ions.np])
-
-    # Set initial condition
-    ions['vx'][:ions.np] = vx_an(x_sub, y_sub, t)
-    ions['x'][:ions.np] = x_an(x_sub, y_sub, t)
+    ions.initialize(x, y, vx, vy, vz)
 
     # Set boundary condition on particles
     ions.time = t
@@ -198,6 +194,7 @@ def test_sheared_burgers(plot=False):
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
+    Jx_periodic.active = sources.Jx.trim()
 
     # Set the electric field to zero
     E = ShearField(manifold, dtype=Float3)
@@ -241,7 +238,7 @@ def test_sheared_burgers(plot=False):
             ax1.set_ylim(0, 2)
             ax2.set_ylim(-1*ampl, 1*ampl)
             for ax in (ax1, ax2):
-                ax.set_xlim(0, nx)
+                ax.set_xlim(0, manifold.Lx)
             ax1.set_xlabel(r"$x'$")
             ax1.set_title(r'$\rho/\rho_0$')
             # Create slider widget for changing time

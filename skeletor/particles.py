@@ -109,7 +109,7 @@ class Particles(numpy.ndarray):
         """Applies periodic boundaries on particles along x"""
         from .cython.particle_boundary import periodic_x
 
-        periodic_x(self[:self.np], self.manifold.nx)
+        periodic_x(self[:self.np], self.manifold)
 
     def periodic_y(self):
         """Applies periodic boundaries on particles along y
@@ -132,7 +132,7 @@ class Particles(numpy.ndarray):
 
         from .cython.particle_boundary import shear_periodic_y
 
-        shear_periodic_y(self[:self.np], self.manifold.ny, self.manifold.S,
+        shear_periodic_y(self[:self.np], self.manifold, self.manifold.S,
                          self.time)
 
         self.periodic_y()

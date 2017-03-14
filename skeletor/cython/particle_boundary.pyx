@@ -2,13 +2,14 @@ from types cimport real_t, particle_t, grid_t
 from cython.parallel import prange
 
 
-def periodic_x(particle_t[:] particles, int nx):
+def periodic_x(particle_t[:] particles, grid_t grid):
     cdef int Np = particles.shape[0]
-    cdef real_t Lx = <real_t> nx
+    cdef real_t nx = <real_t> grid.nx  # Avoid mixed-type arithmetic
     cdef int ip
 
     for ip in prange(Np, nogil=True, schedule='static'):
-        periodic_x_cdef(&particles[ip], Lx)
+        periodic_x_cdef(&particles[ip], nx)
+
 
 def calculate_ihole(particle_t[:] particles, int[:] ihole, grid_t grid):
     cdef int ih = 0
@@ -21,7 +22,8 @@ def calculate_ihole(particle_t[:] particles, int[:] ihole, grid_t grid):
     if ihole[0] >= 0:
         ihole[0] = ih
 
-def shear_periodic_y(particle_t[:] particles, int ny, real_t S, real_t t):
+
+def shear_periodic_y(particle_t[:] particles, grid_t grid, real_t S, real_t t):
     """Shearing periodic boundaries along y.
 
        This function modifies x and vx and subsequently applies periodic
@@ -31,15 +33,17 @@ def shear_periodic_y(particle_t[:] particles, int ny, real_t S, real_t t):
        used the values of y to update x and vx.
     """
     cdef int Np = particles.shape[0]
-    cdef real_t Ly = <real_t> ny
+    cdef real_t ny = <real_t> grid.ny
+    cdef real_t vx_boost = S*grid.Ly
+    cdef real_t x_boost = vx_boost*t/grid.dx
     cdef int ip
 
     for ip in prange(Np, nogil=True, schedule='static'):
         # Left
         if particles[ip].y < 0.0:
-            particles[ip].x = particles[ip].x - S*Ly*t
-            particles[ip].vx = particles[ip].vx - S*Ly
+            particles[ip].x = particles[ip].x - x_boost
+            particles[ip].vx = particles[ip].vx - vx_boost
         # Right
-        if particles[ip].y >= Ly:
-            particles[ip].x = particles[ip].x + S*Ly*t
-            particles[ip].vx = particles[ip].vx + S*Ly
+        if particles[ip].y >= ny:
+            particles[ip].x = particles[ip].x + x_boost
+            particles[ip].vx = particles[ip].vx + vx_boost

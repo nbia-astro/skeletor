@@ -17,6 +17,8 @@ def test_skeletor():
 
     # Number of grid points in x- and y-direction
     nx, ny = 32, 32
+    # Domain size
+    Lx, Ly = 1.0, 1.0
 
     # Average number of particles per cell
     npc = 256
@@ -42,8 +44,8 @@ def test_skeletor():
     np = npc*nx*ny
 
     # Uniform distribution of particle positions
-    x = nx*numpy.random.uniform(size=np).astype(Float)
-    y = nx*numpy.random.uniform(size=np).astype(Float)
+    x = Lx*numpy.random.uniform(size=np).astype(Float)
+    y = Ly*numpy.random.uniform(size=np).astype(Float)
     # Normal distribution of particle velocities
     vx = vdx + vtx*numpy.random.normal(size=np).astype(Float)
     vy = vdy + vty*numpy.random.normal(size=np).astype(Float)
@@ -56,10 +58,10 @@ def test_skeletor():
 
         # Create numerical grid. This contains information about the extent of
         # the subdomain assigned to each processor.
-        manifold = Manifold(nx, ny, comm)
+        manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
 
         # Maximum number of ions in each partition
-        npmax = int(1.5*np/comm.size)
+        npmax = int(2.0*np/comm.size)
 
         # Create particle array
         ions = Particles(manifold, npmax, charge=charge, mass=mass)

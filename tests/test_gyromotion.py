@@ -33,7 +33,7 @@ def test_gyromotion(plot=False):
     phi = 0
 
     # Amplitude of perturbation
-    ampl = 8
+    ampl = 8/32
 
     # Number of grid points in x- and y-direction
     nx, ny = 32, 64
@@ -41,8 +41,8 @@ def test_gyromotion(plot=False):
     # Total number of particles in simulation
     np = 1
 
-    x0 = 8.
-    y0 = 33.
+    x0 = 8/32
+    y0 = 33/32
 
     x0 = numpy.array(x0)
     y0 = numpy.array(y0)
@@ -70,7 +70,7 @@ def test_gyromotion(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm)
+    manifold = Manifold(nx, ny, comm, Lx=1.0, Ly=2.0)
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)
@@ -107,10 +107,11 @@ def test_gyromotion(plot=False):
         plt.rc('image', origin='lower', interpolation='nearest')
         plt.figure(1)
         fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
-        lines = ax1.plot(ions['x'][0], ions['y'][0],
-                         'b.', x_an(0), y_an(0), 'rx')
-        ax1.set_xlim(-1, nx+1)
-        ax1.set_ylim(-1, ny+1)
+        x = ions['x'][0]*manifold.dx
+        y = ions['y'][0]*manifold.dy
+        lines = ax1.plot(x, y, 'b.', x_an(0), y_an(0), 'rx')
+        ax1.set_xlim(-manifold.dx, manifold.Lx + manifold.dx)
+        ax1.set_ylim(-manifold.dy, manifold.Ly + manifold.dy)
 
     t = 0
     ##########################################################################
@@ -129,8 +130,8 @@ def test_gyromotion(plot=False):
         ind = numpy.logical_and(ions['y'][0] >= manifold.edges[0],
                                 ions['y'][0] < manifold.edges[1])
         if ind:
-            diff_x = abs(ions['x'][0]-x_an(t))
-            diff_y = abs(ions['y'][0]-y_an(t))
+            diff_x = abs(ions['x'][0]*manifold.dx - x_an(t))
+            diff_y = abs(ions['y'][0]*manifold.dy - y_an(t))
             # Round off errrors giving trouble when comparing
 
             err = numpy.max([diff_x, diff_y])/ampl
@@ -144,7 +145,9 @@ def test_gyromotion(plot=False):
         if plot:
             if (it % 100 == 0):
                 if ind:
-                    lines[0].set_data(ions['x'][0], ions['y'][0])
+                    x = ions['x'][0]*manifold.dx
+                    y = ions['y'][0]*manifold.dy
+                    lines[0].set_data(x, y)
                     lines[1].set_data(x_an(t), y_an(t))
                     with warnings.catch_warnings():
                         warnings.filterwarnings(

@@ -143,7 +143,7 @@ for i in range(nx):
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm)
+manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny)
 
 # Time step
 # dt = cfl*manifold.dx/vph

@@ -34,7 +34,7 @@ def test_twostream(plot=False, fitplot=False):
     np = npc*nx*ny
 
     # Mean velocity of electrons in x-direction
-    vdx, vdy = 6.0, 0.
+    vdx, vdy = 1/10, 0.
 
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0., 0.
@@ -80,6 +80,9 @@ def test_twostream(plot=False, fitplot=False):
 
     # Create particle array
     electrons = Particles(manifold, npmax, charge=charge, mass=mass)
+
+    x *= manifold.dx
+    y *= manifold.dy
 
     # Assign particles to subdomains
     electrons.initialize(x, y, vx, vy, vz)
@@ -217,7 +220,7 @@ def test_twostream(plot=False, fitplot=False):
                                numpy.log(E_pot[first:last]))
 
         # Theoretical gamma (TODO: Solve dispersion relation here)
-        gamma_t = 0.352982
+        gamma_t = 0.3532818590
 
         # Gamma from the fit
         gamma_f = popt[1]

@@ -18,7 +18,8 @@ def test_translate(plot=False):
     t = 0.2
 
     # Create numerical grid
-    manifold = ShearingManifold(nx, ny, comm, lbx=1, lby=2, S=S, Omega=0)
+    manifold = ShearingManifold(nx, ny, comm, Lx=2.0, Ly=1.0, lbx=1, lby=2,
+                                S=S, Omega=0)
 
     # Coordinate arrays
     xx, yy = numpy.meshgrid(manifold.x, manifold.y)
@@ -26,7 +27,7 @@ def test_translate(plot=False):
     # Wavenumbers of mode
     ikx = 1
     A = 0.2
-    kx = 2*numpy.pi*ikx/nx
+    kx = 2*numpy.pi*ikx/manifold.Lx
 
     def rho_an(t):
         ky = kx*S*t
