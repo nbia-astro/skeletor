@@ -91,11 +91,13 @@ class DensityPertubation(InitialCondition):
         assert sqrt_npc**2 == self.npc
         npx = manifold.nx*sqrt_npc
         npy = manifold.nyp*sqrt_npc
-        Ux = (arange(npx) + 0.5)/npx
+        # Uniformly distributed numbers from 0 to 1
+        U = (arange(npx) + 0.5)/npx
+        # Particle y positions
         Uy = manifold.edges[0]*manifold.dy + \
-             manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
+              manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
 
-        self.X = empty_like(Ux)
+        self.X = empty_like(U)
 
         # Find cdf
         self.find_cdf()
@@ -109,9 +111,9 @@ class DensityPertubation(InitialCondition):
         x = empty(np)
         y = empty(np)
 
-        # Calculate particle positions
+        # Calculate particle x-positions
         for k in range (0, self.npy):
-            self.find_X(Ux, Uy[k])
+            self.find_X(U, Uy[k])
             x[k*npx:(k+1)*npx] = self.X
             y[k*npx:(k+1)*npx] = Uy[k]
 
@@ -152,11 +154,11 @@ class DensityPertubation(InitialCondition):
         # Turn sympy function into numpy function
         self.cdf = sym.lambdify((x, y), cdf_sym, "numpy")
 
-    def find_X(self, Ux, y):
+    def find_X(self, U, y):
         """
         Find a row of y-values for each value of x.
         """
-        self.X[0] = self.newton(lambda x: self.cdf(x, y) - Ux[0], 0)
+        self.X[0] = self.newton(lambda x: self.cdf(x, y) - U[0], 0)
         for i in range (1, self.npx):
-            self.X[i] = self.newton(lambda x: self.cdf(x, y) - Ux[i],
+            self.X[i] = self.newton(lambda x: self.cdf(x, y) - U[i],
                                     self.X[i-1])
