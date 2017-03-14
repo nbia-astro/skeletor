@@ -82,11 +82,13 @@ def test_plasmafrequency(plot=False):
     init = InitialCondition(npc, quiet=quiet)
     init(manifold, electrons)
 
-    # Perturbation to particle velocities
-    electrons['vx'] = ux_an(electrons['x'], electrons['y'], t=0)
-    electrons['vy'] = uy_an(electrons['x'], electrons['y'], t=0)
+    # Particle position in physical units
+    x = electrons['x']*manifold.dx
+    y = electrons['y']*manifold.dy
 
-    electrons.from_units()
+    # Perturbation to particle velocities
+    electrons['vx'] = ux_an(x, y, t=0)
+    electrons['vy'] = uy_an(x, y, t=0)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
