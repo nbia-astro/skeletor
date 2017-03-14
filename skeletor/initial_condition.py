@@ -25,20 +25,16 @@ class InitialCondition():
             assert sqrt_npc**2 == self.npc
             npx = manifold.nx*sqrt_npc
             npy = manifold.nyp*sqrt_npc
-            x1 = manifold.Lx*(arange(npx) + 0.5)/npx
-            y1 = manifold.edges[0]*manifold.dy + \
-                manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
-            x, y = meshgrid(x1, y1)
-            x = x.flatten()
-            y = y.flatten()
+            x1 = (arange(npx) + 0.5)/sqrt_npc
+            y1 = (arange(npy) + 0.5)/sqrt_npc + manifold.edges[0]
+            x, y = [xy.flatten() for xy in meshgrid(x1, y1)]
         else:
-            x = manifold.Lx*uniform(size=np)
-            y = manifold.edges[0]*manifold.dy + \
-                manifold.Ly/manifold.comm.size*uniform(size=np)
+            x = manifold.nx*uniform(size=np)
+            y = manifold.nyp*uniform(size=np) + manifold.edges[0]
 
         # Set initial position
-        ions['x'][:np] = x/manifold.dx
-        ions['y'][:np] = y/manifold.dy
+        ions['x'][:np] = x
+        ions['y'][:np] = y
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
@@ -95,8 +91,7 @@ class DensityPertubation(InitialCondition):
         # Uniformly distributed numbers from 0 to 1
         U = (arange(npx) + 0.5)/npx
         # Particle y positions
-        y1 = manifold.edges[0]*manifold.dy + \
-            manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
+        y1 = ((arange(npy) + 0.5)/sqrt_npc + manifold.edges[0])*manifold.dy
 
         self.X = empty_like(U)
 
