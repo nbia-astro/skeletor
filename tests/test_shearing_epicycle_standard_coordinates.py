@@ -45,16 +45,18 @@ def test_shearing_epicycle(plot=False):
     phi = 0
 
     # Amplitude of perturbation
-    ampl = 5
+    ampl = 0.2
 
     # Number of grid points in x- and y-direction
     nx, ny = 32, 64
 
+    Lx, Ly = 1, 2
+
     # Total number of particles in simulation
     np = 1
 
-    x0 = 16.
-    y0 = 32.
+    x0 = Lx/2
+    y0 = Ly/2
 
     x0 = numpy.array(x0)
     y0 = numpy.array(y0)
@@ -63,13 +65,13 @@ def test_shearing_epicycle(plot=False):
 
     def y_an(t):
         f = -(Sz/og)*ampl*numpy.sin(og*t + phi)*numpy.ones(np) \
-             + y0 + S*t*(x0-nx/2)
+             + y0 + S*t*(x0-Lx/2)
         return f
 
     def vx_an(t): return -og*ampl*numpy.sin(og*t + phi)*numpy.ones(np)
 
     def vy_an(t):
-        return (-Sz*ampl*numpy.cos(og*t + phi) + S*(x0-nx/2))*numpy.ones(np)
+        return (-Sz*ampl*numpy.cos(og*t + phi) + S*(x0-Lx/2))*numpy.ones(np)
 
     # Particle position at t = -dt/2
     x = x_an(-dt/2)
@@ -86,7 +88,7 @@ def test_shearing_epicycle(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = ShearingManifold(nx, ny, comm, Lx=nx, Ly=ny, Omega=Omega, S=S)
+    manifold = ShearingManifold(nx, ny, comm, Lx=Lx, Ly=Ly, Omega=Omega, S=S)
 
     # x- and y-grid
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)
@@ -108,7 +110,7 @@ def test_shearing_epicycle(plot=False):
     # Electric field in x-direction
     E_star = Field(manifold, dtype=Float3)
     E_star.fill((0.0, 0.0, 0.0))
-    E_star['x'].active = -2*S*(xg-nx/2)*mass/charge*Omega
+    E_star['x'].active = -2*S*(xg-Lx/2)*mass/charge*Omega
     # Note: this does not set the correct boundary condition in x. And that's
     # fine as long as the particle doesn't cross the x-boundaries.
     E_star.copy_guards()
@@ -126,12 +128,13 @@ def test_shearing_epicycle(plot=False):
         plt.rc('image', origin='lower', interpolation='nearest')
         plt.figure(1);plt.clf()
         fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
-        lines1 = ax1.plot(ions['x'][0], ions['y'][0], 'b.', x_an(0), y_an(0), 'rx')
+        lines1 = ax1.plot(ions['x'][0]*manifold.dx, ions['y'][0]*manifold.dy,
+                          'b.', x_an(0), y_an(0), 'rx')
         lines2 = ax2.plot(ions['vx'][0], ions['vy'][0], 'b.',  vx_an(0), vy_an(0), 'rx')
-        ax1.set_xlim(-1, nx+1)
-        ax1.set_ylim(-1, ny+1)
+        ax1.set_xlim(0, Lx)
+        ax1.set_ylim(0, Ly)
         ax2.set_xlim(-1.1*og*ampl, 1.1*og*ampl)
-        ax2.set_ylim((-Sz*ampl+S*x0), (Sz*ampl+S*x0))
+        ax2.set_ylim(-Sz*ampl + (x0-Lx/2), Sz*ampl + (x0-Lx/2))
         ax1.set_xlabel('x')
         ax1.set_ylabel('y')
         ax2.set_xlabel('vx')
@@ -177,7 +180,8 @@ def test_shearing_epicycle(plot=False):
         if plot:
             if (it % 200 == 0):
                 if comm.rank == 0:
-                    lines1[0].set_data(ions['x'][0], ions['y'][0])
+                    lines1[0].set_data(ions['x'][0]*manifold.dx,
+                                       ions['y'][0]*manifold.dy)
                     lines1[1].set_data(x_an(t), numpy.mod(y_an(t), ny))
                     lines2[0].set_data(ions['vx'][0], ions['vy'][0])
                     lines2[1].set_data(vx_an(t), vy_an(t))
