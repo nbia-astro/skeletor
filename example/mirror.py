@@ -44,7 +44,7 @@ vtz = vty
 cs = numpy.sqrt(Te/mass)
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 # Wave vector and its modulus
 kx = 2*numpy.pi*ikx/Lx
@@ -114,10 +114,10 @@ faraday = Faraday(manifold)
 xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of electrons in each partition
-npmax = int(1.5*np/comm.size)
+Nmax = int(1.5*N/comm.size)
 
 # Create particle array
-ions = Particles(manifold, npmax, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
@@ -128,9 +128,9 @@ ions.initialize(x, y, vx, vy, vz)
 
 # Perturbation to particle velocities
 from numpy.random import normal
-# ions['vx'][:ions.np] = vtx*normal(size=ions.np)
-# ions['vy'][:ions.np] = vty*normal(size=ions.np)
-# ions['vz'][:ions.np] = vtz*normal(size=ions.np)
+# ions['vx'][:ions.N] = vtx*normal(size=ions.N)
+# ions['vy'][:ions.N] = vty*normal(size=ions.N)
+# ions['vz'][:ions.N] = vtz*normal(size=ions.N)
 
 # Add background magnetic field
 B = Field(manifold, dtype=Float3)

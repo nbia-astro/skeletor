@@ -49,7 +49,7 @@ npc = 16
 kx = 2*numpy.pi/nx
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 if quiet:
     # Uniform distribution of particle positions (quiet start)
@@ -62,8 +62,8 @@ if quiet:
     a = a.flatten()
     b = b.flatten()
 else:
-    a = nx*numpy.random.uniform(size=np).astype(Float)
-    b = ny*numpy.random.uniform(size=np).astype(Float)
+    a = nx*numpy.random.uniform(size=N).astype(Float)
+    b = ny*numpy.random.uniform(size=N).astype(Float)
 
 
 def x_an(ap, bp, t):
@@ -177,21 +177,21 @@ xx, yy = numpy.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
-npmax = int(1.25*np/nvp)
+Nmax = int(1.25*N/nvp)
 
 # Create particle array
-ions = Particles(manifold, npmax, time=dt/2, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, time=dt/2, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy)
 
 # Make sure particles actually reside in the local subdomain
-assert all(ions["y"][:ions.np] >= manifold.edges[0])
-assert all(ions["y"][:ions.np] < manifold.edges[1])
+assert all(ions["y"][:ions.N] >= manifold.edges[0])
+assert all(ions["y"][:ions.N] < manifold.edges[1])
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-assert comm.allreduce(ions.np, op=MPI.SUM) == np
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(manifold)
@@ -202,10 +202,10 @@ Jy_periodic = ShearField(manifold, time=0, dtype=Float3)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+assert numpy.isclose(sources.rho.sum(), ions.N*charge)
 sources.current.add_guards()
 assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+    sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 sources.current.copy_guards()
 
 # Copy density into a shear field

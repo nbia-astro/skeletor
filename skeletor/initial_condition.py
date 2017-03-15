@@ -17,7 +17,7 @@ class InitialCondition():
         from numpy.random import uniform, normal
 
         # Total number particles in one MPI domain
-        np = manifold.nx*manifold.nyp*self.npc
+        N = manifold.nx*manifold.nyp*self.npc
 
         if self.quiet:
             # Uniform distribution of particle positions (quiet start)
@@ -29,20 +29,20 @@ class InitialCondition():
             y1 = (arange(npy) + 0.5)/sqrt_npc + manifold.edges[0]
             x, y = [xy.flatten() for xy in meshgrid(x1, y1)]
         else:
-            x = manifold.nx*uniform(size=np)
-            y = manifold.nyp*uniform(size=np) + manifold.edges[0]
+            x = manifold.nx*uniform(size=N)
+            y = manifold.nyp*uniform(size=N) + manifold.edges[0]
 
         # Set initial position
-        ions['x'][:np] = x
-        ions['y'][:np] = y
+        ions['x'][:N] = x
+        ions['y'][:N] = y
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
-        ions['vx'][:np] = self.vt*normal(size=np)
-        ions['vy'][:np] = self.vt*normal(size=np)
-        ions['vz'][:np] = self.vt*normal(size=np)
+        ions['vx'][:N] = self.vt*normal(size=N)
+        ions['vy'][:N] = self.vt*normal(size=N)
+        ions['vz'][:N] = self.vt*normal(size=N)
 
-        ions.np = np
+        ions.N = N
 
         ions.units = True
 
@@ -103,9 +103,9 @@ class DensityPertubation(InitialCondition):
         self.npx = npx
         self.npy = npy
 
-        np = npx*npy
-        x = empty(np)
-        y = empty(np)
+        N = npx*npy
+        x = empty(N)
+        y = empty(N)
 
         # Calculate particle x-positions
         for k in range(0, self.npy):
@@ -114,16 +114,16 @@ class DensityPertubation(InitialCondition):
             y[k*npx:(k+1)*npx] = y1[k]
 
         # Set initial positions
-        ions['x'][:np] = x/manifold.dx
-        ions['y'][:np] = y/manifold.dy
+        ions['x'][:N] = x/manifold.dx
+        ions['y'][:N] = y/manifold.dy
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
-        ions['vx'][:np] = self.vt*normal(size=np)
-        ions['vy'][:np] = self.vt*normal(size=np)
-        ions['vz'][:np] = self.vt*normal(size=np)
+        ions['vx'][:N] = self.vt*normal(size=N)
+        ions['vy'][:N] = self.vt*normal(size=N)
+        ions['vz'][:N] = self.vt*normal(size=N)
 
-        ions.np = np
+        ions.N = N
 
         ions.units = True
 

@@ -55,7 +55,7 @@ Ly = 1
 ampl = Lx/3
 
 # Total number of particles in simulation
-np = 1
+N = 1
 
 y0 = Ly/2
 x0 = Lx/2
@@ -65,20 +65,20 @@ y0 = numpy.array(y0)
 
 
 def y_an(t):
-    return ampl*numpy.cos(og*t + phi)*numpy.ones(np) + y0
+    return ampl*numpy.cos(og*t + phi)*numpy.ones(N) + y0
 
 
 def x_an(t):
-    x = +(Sz/og)*ampl*numpy.sin(og*t+phi)*numpy.ones(np) + x0 - S*t*y0
+    x = +(Sz/og)*ampl*numpy.sin(og*t+phi)*numpy.ones(N) + x0 - S*t*y0
     return x
 
 
 def vy_an(t):
-    return -og*ampl*numpy.sin(og*t + phi)*numpy.ones(np)
+    return -og*ampl*numpy.sin(og*t + phi)*numpy.ones(N)
 
 
 def vx_an(t):
-    return (Sz*ampl*numpy.cos(og*t + phi) - S*y0)*numpy.ones(np)
+    return (Sz*ampl*numpy.cos(og*t + phi) - S*y0)*numpy.ones(N)
 
 
 # Particle position at t = -dt/2
@@ -107,17 +107,17 @@ xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
-npmax = np
+Nmax = N
 
 # Create particle array
-ions = Particles(manifold, npmax, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-assert comm.allreduce(ions.np, op=MPI.SUM) == np
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 E = Field(manifold, comm, dtype=Float3)
 E.fill((0.0, 0.0, 0.0))

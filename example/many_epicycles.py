@@ -61,7 +61,7 @@ npc = 64
 Te = 1.0
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 if quiet:
     # Uniform distribution of particle positions (quiet start)
@@ -74,8 +74,8 @@ if quiet:
     x0 = x.flatten()
     y0 = y.flatten()
 else:
-    x0 = nx*numpy.random.uniform(size=np).astype(Float)
-    y0 = ny*numpy.random.uniform(size=np).astype(Float)
+    x0 = nx*numpy.random.uniform(size=N).astype(Float)
+    y0 = ny*numpy.random.uniform(size=N).astype(Float)
 
 
 def y_an(t):
@@ -89,7 +89,7 @@ def x_an(t):
 
 
 def vy_an(t):
-    vy = -og*ampl*numpy.sin(og*t + phi)*numpy.ones(np)
+    vy = -og*ampl*numpy.sin(og*t + phi)*numpy.ones(N)
     return vy.astype(Float)
 
 
@@ -155,31 +155,31 @@ xg, yg = numpy.meshgrid(grid.x, grid.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
-npmax = int(1.25*np/nvp)
+Nmax = int(1.25*N/nvp)
 
 # Create particle array
-ions = Particles(npmax, charge, mass, Omega=Omega, S=S)
+ions = Particles(Nmax, charge, mass, Omega=Omega, S=S)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, grid)
 
 # Make sure particles actually reside in the local subdomain
-assert all(ions["y"][:ions.np] >= grid.edges[0])
-assert all(ions["y"][:ions.np] < grid.edges[1])
+assert all(ions["y"][:ions.N] >= grid.edges[0])
+assert all(ions["y"][:ions.N] < grid.edges[1])
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-assert comm.allreduce(ions.np, op=MPI.SUM) == np
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(grid, comm, dtype=Float)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+assert numpy.isclose(sources.rho.sum(), ions.N*charge)
 sources.current.add_guards_ppic2()
 assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+    sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 
 # Electric field in y-direction
 E_star = Field(grid, comm, dtype=Float3)
@@ -207,8 +207,8 @@ if plot:
         plt.figure(1)
         plt.clf()
         fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
-        lines1 = ax1.plot(ions['y'][:np], ions['y'][:np], 'b.')
-        lines2 = ax2.plot(ions['vx'][:np], ions['vy'][:np], 'b.')
+        lines1 = ax1.plot(ions['y'][:N], ions['y'][:N], 'b.')
+        lines2 = ax2.plot(ions['vx'][:N], ions['vy'][:N], 'b.')
         ax1.set_xlim(-1, ny+1)
         ax1.set_ylim(-1, nx+1)
         ax1.set_xlabel('y')
@@ -229,16 +229,16 @@ k = 0
 for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+    assert numpy.isclose(sources.rho.sum(), ions.N*charge)
     sources.current.add_guards_ppic2()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+        sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
     ions.push(E_star, dt, t=t)
 
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
+    assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
     # Update time
     t += dt
@@ -248,9 +248,9 @@ for it in range(nt):
         if (it % 100 == 0):
             global_rho = concatenate(sources.rho.trim())
             if comm.rank == 0:
-                lines1[0].set_data(ions['y'][:np], ions['x'][:np])
+                lines1[0].set_data(ions['y'][:N], ions['x'][:N])
                 # lines1[1].set_data(numpy.mod(y_an(t), ny), x_an(t))
-                lines2[0].set_data(ions['vx'][:np], ions['vy'][:np])
+                lines2[0].set_data(ions['vx'][:N], ions['vy'][:N])
                 im1.set_data(global_rho)
                 im1.autoscale()
                 # lines2[1].set_data(vx_an(t), vy_an(t))

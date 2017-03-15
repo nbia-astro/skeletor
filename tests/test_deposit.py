@@ -21,23 +21,23 @@ manifold = Manifold(nx, ny, comm)
 sources = Sources(manifold)
 
 # Total number of particles
-np = npc*nx*ny
+N = npc*nx*ny
 # Maximum number of particles in each partition
-npmax = int(1.5*np/comm.size)
+Nmax = int(1.5*N/comm.size)
 
 # Create particle array
-particles = Particles(manifold, npmax, charge=charge, mass=mass)
+particles = Particles(manifold, Nmax, charge=charge, mass=mass)
 
 # Synchronize random number generator across ALL processes
 numpy.random.set_state(comm.bcast(numpy.random.get_state()))
 
 # Uniform distribution of particle positions
-x = manifold.Lx*numpy.random.uniform(size=np).astype(Float)
-y = manifold.Ly*numpy.random.uniform(size=np).astype(Float)
+x = manifold.Lx*numpy.random.uniform(size=N).astype(Float)
+y = manifold.Ly*numpy.random.uniform(size=N).astype(Float)
 # Normal distribution of particle velocities
-vx = numpy.empty(np, Float)
-vy = numpy.empty(np, Float)
-vz = numpy.empty(np, Float)
+vx = numpy.empty(N, Float)
+vy = numpy.empty(N, Float)
+vz = numpy.empty(N, Float)
 
 # Assign particles to subdomains
 particles.initialize(x, y, vx, vy, vz)
@@ -49,7 +49,7 @@ particles.initialize(x, y, vx, vy, vz)
 #     summing over all subdomains gives back the total number of particles.
 #     """
 #     # TODO: Figure out why this test sometimes fails.
-#     assert comm.allreduce(particles.np, op=SUM) == np
+#     assert comm.allreduce(particles.N, op=SUM) == N
 
 
 def test_deposit():
@@ -58,7 +58,7 @@ def test_deposit():
     the number of particles in each subdomain times the particle charge.
     """
     sources.deposit(particles)
-    assert numpy.isclose(sources.rho.sum(), charge*particles.np/npc)
+    assert numpy.isclose(sources.rho.sum(), charge*particles.N/npc)
 
 
 def test_add_guards():
@@ -70,4 +70,4 @@ def test_add_guards():
     """
     sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=SUM), np*charge/npc)
+        sources.rho.trim().sum(), op=SUM), N*charge/npc)

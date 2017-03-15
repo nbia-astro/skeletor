@@ -101,10 +101,10 @@ def test_burgers(plot=False):
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
-    npmax = int(1.25*npc*nx*ny/comm.size)
+    Nmax = int(1.25*npc*nx*ny/comm.size)
 
     # Create particle array
-    ions = Particles(manifold, npmax, time=0.0, charge=1.0, mass=1.0)
+    ions = Particles(manifold, Nmax, time=0.0, charge=1.0, mass=1.0)
 
     if plot:
         import matplotlib.pyplot as plt

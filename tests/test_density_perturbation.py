@@ -38,10 +38,10 @@ manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
 xg, yg = np.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of electrons in each partition
-npmax = int(1.5*N/comm.size)
+Nmax = int(1.5*N/comm.size)
 
 # Create particle array
-ions = Particles(manifold, npmax, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
 # Create a uniform density field
 init = InitialCondition(npc, quiet=quiet)
@@ -57,7 +57,7 @@ def test_density_perturbation(plot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert np.isclose(sources.rho.sum(), ions.np*charge/npc)
+    assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
     sources.current.copy_guards()
     assert np.isclose(comm.allreduce(

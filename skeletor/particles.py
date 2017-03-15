@@ -6,17 +6,17 @@ class Particles(numpy.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, manifold, npmax, time=0.0, charge=1.0, mass=1.0, n0=1.0):
+    def __new__(cls, manifold, Nmax, time=0.0, charge=1.0, mass=1.0, n0=1.0):
 
         from .cython.types import Int, Particle
 
         # Size of buffer for passing particles between processors
-        nbmax = int(max(0.1*npmax, 1))
+        nbmax = int(max(0.1*Nmax, 1))
         # Size of ihole buffer for particles leaving processor
         ntmax = 2*nbmax
 
         # Create structured array to hold the particle phase space coordinates
-        obj = super().__new__(cls, shape=npmax, dtype=Particle)
+        obj = super().__new__(cls, shape=Nmax, dtype=Particle)
 
         # Particle charge and mass
         obj.charge = charge
@@ -68,20 +68,20 @@ class Particles(numpy.ndarray):
                           y < self.manifold.edges[1]*self.manifold.dy)
 
         # Number of particles in subdomain
-        self.np = sum(ind)
+        self.N = sum(ind)
 
         # Make sure particle array is large enough
-        assert self.size >= self.np
-        if self.size < int(5/4*self.np):
+        assert self.size >= self.N
+        if self.size < int(5/4*self.N):
             msg = "Particle array is probably not large enough"
-            warn(msg + " (np={}, npmax={})".format(self.np, self.size))
+            warn(msg + " (N={}, Nmax={})".format(self.N, self.size))
 
         # Fill structured array
-        self["x"][:self.np] = x[ind]/self.manifold.dx
-        self["y"][:self.np] = y[ind]/self.manifold.dy
-        self["vx"][:self.np] = vx[ind]
-        self["vy"][:self.np] = vy[ind]
-        self["vz"][:self.np] = vz[ind]
+        self["x"][:self.N] = x[ind]/self.manifold.dx
+        self["y"][:self.N] = y[ind]/self.manifold.dy
+        self["vx"][:self.N] = vx[ind]
+        self["vy"][:self.N] = vy[ind]
+        self["vz"][:self.N] = vz[ind]
 
         self.units = True
 
@@ -97,19 +97,19 @@ class Particles(numpy.ndarray):
             msg = "ihole overflow error: ntmax={}, ierr={}"
             raise RuntimeError(msg.format(self.ihole.size - 1, ierr))
 
-        self.np = cppmove2(
-                self, self.np, self.sbufl, self.sbufr, self.rbufl,
+        self.N = cppmove2(
+                self, self.N, self.sbufl, self.sbufr, self.rbufl,
                 self.rbufr, self.ihole, self.info, self.manifold)
 
         # Make sure particles actually reside in the local subdomain
-        assert all(self["y"][:self.np] >= self.manifold.edges[0])
-        assert all(self["y"][:self.np] < self.manifold.edges[1])
+        assert all(self["y"][:self.N] >= self.manifold.edges[0])
+        assert all(self["y"][:self.N] < self.manifold.edges[1])
 
     def periodic_x(self):
         """Applies periodic boundaries on particles along x"""
         from .cython.particle_boundary import periodic_x
 
-        periodic_x(self[:self.np], self.manifold)
+        periodic_x(self[:self.N], self.manifold)
 
     def periodic_y(self):
         """Applies periodic boundaries on particles along y
@@ -119,7 +119,7 @@ class Particles(numpy.ndarray):
         """
         from .cython.particle_boundary import calculate_ihole
 
-        calculate_ihole(self[:self.np], self.ihole, self.manifold)
+        calculate_ihole(self[:self.N], self.ihole, self.manifold)
 
         self.move()
 
@@ -132,7 +132,7 @@ class Particles(numpy.ndarray):
 
         from .cython.particle_boundary import shear_periodic_y
 
-        shear_periodic_y(self[:self.np], self.manifold, self.manifold.S,
+        shear_periodic_y(self[:self.N], self.manifold, self.manifold.S,
                          self.time)
 
         self.periodic_y()
@@ -151,7 +151,7 @@ class Particles(numpy.ndarray):
 
         qtmh = self.charge/self.mass*dt/2
 
-        push(self[:self.np], E, B, qtmh, dt, self.manifold)
+        push(self[:self.N], E, B, qtmh, dt, self.manifold)
 
         # Shearing periodicity
         if self.manifold.shear:
@@ -182,7 +182,7 @@ class Particles(numpy.ndarray):
         # Zero out the sources
         sources.current.fill((0.0, 0.0, 0.0, 0.0))
 
-        push_and_deposit(self[:self.np], E, B, qtmh, dt, self.manifold,
+        push_and_deposit(self[:self.N], E, B, qtmh, dt, self.manifold,
                          self.ihole, sources.current, S, update)
 
         # Set boundary flags to False
@@ -205,7 +205,7 @@ class Particles(numpy.ndarray):
 
         qtmh = self.charge/self.mass*dt/2
 
-        push(self[:self.np], E, B, qtmh, dt, self.manifold,
+        push(self[:self.N], E, B, qtmh, dt, self.manifold,
              self.manifold.Omega, self.manifold.S)
 
         # Shearing periodicity
@@ -219,7 +219,7 @@ class Particles(numpy.ndarray):
 
     def drift(self, dt):
         from .cython.particle_push import drift as cython_drift
-        cython_drift(self[:self.np], dt, self.manifold)
+        cython_drift(self[:self.N], dt, self.manifold)
 
         # Apply periodicity in x and y
         self.periodic_x()
