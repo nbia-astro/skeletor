@@ -1,8 +1,8 @@
-from numpy import ndarray, asarray, zeros
 from .cython.types import Float
+import numpy as np
 
 
-class Field(ndarray):
+class Field(np.ndarray):
 
     def __new__(cls, grid, time=0.0, **kwds):
 
@@ -17,7 +17,7 @@ class Field(ndarray):
         obj.below = (grid.comm.rank - 1) % grid.comm.size
 
         # Scratch array needed for PPIC2's "add_guards" routine
-        obj.scr = zeros((2, grid.nx + 2), Float)
+        obj.scr = np.zeros((2, grid.nx + 2), Float)
 
         # Boolean indicating whether boundaries are set
         obj.boundaries_set = False
@@ -48,13 +48,13 @@ class Field(ndarray):
                 sendbuf, dest=self.below, source=self.above)
 
     def trim(self):
-        return asarray(self[self.grid.lby:self.grid.uby,
-                            self.grid.lbx:self.grid.ubx])
+        return np.asarray(self[self.grid.lby:self.grid.uby,
+                               self.grid.lbx:self.grid.ubx])
 
     @property
     def active(self):
-        return asarray(self[self.grid.lby:self.grid.uby,
-                            self.grid.lbx:self.grid.ubx])
+        return np.asarray(self[self.grid.lby:self.grid.uby,
+                               self.grid.lbx:self.grid.ubx])
 
     @active.setter
     def active(self, rhs):
@@ -132,16 +132,13 @@ class ShearField(Field):
 
     def __new__(cls, grid, time=0.0, **kwds):
 
-        from numpy.fft import rfftfreq
-        from numpy import outer, pi
-
         obj = super().__new__(cls, grid, time=time, **kwds)
 
         # Wave numbers for real-to-complex transforms
-        obj.kx = 2*pi*rfftfreq(grid.nx)/grid.dx
+        obj.kx = 2*np.pi*np.fft.rfftfreq(grid.nx)/grid.dx
 
         # Outer product of y and kx
-        obj.y_kx = outer(grid.y, obj.kx)
+        obj.y_kx = np.outer(grid.y, obj.kx)
 
         return obj
 
@@ -156,23 +153,20 @@ class ShearField(Field):
         self.y_kx = getattr(obj, "y_kx", None)
 
     def _translate_boundary(self, trans, iy):
-
         "Translation using FFTs"
-        from numpy.fft import rfft, irfft
-        from numpy import exp
 
         # Short hand
         g = self.grid
 
         # Translate in real space by phase shifting in spectral space
-        phase = -1j*self.kx*trans
+        fac = np.exp(-1j*self.kx*trans)
         if self.dtype.names is None:
-            self[iy, g.lbx:g.ubx] = \
-                irfft(exp(phase)*rfft(self[iy, g.lbx:g.ubx]))
+            self[iy, g.lbx:g.ubx] = np.fft.irfft(
+                    fac*np.fft.rfft(self[iy, g.lbx:g.ubx]))
         else:
             for dim in self.dtype.names:
-                self[iy, g.lbx:g.ubx][dim] = \
-                    irfft(exp(phase)*rfft(self[iy, g.lbx:g.ubx][dim]))
+                self[iy, g.lbx:g.ubx][dim] = np.fft.irfft(
+                        fac*np.fft.rfft(self[iy, g.lbx:g.ubx][dim]))
 
         # Update x-boundaries
         self[iy, g.ubx:] = self[iy, g.lbx:g.lbx+g.lbx]
@@ -252,35 +246,32 @@ class ShearField(Field):
 
     def translate(self, time):
         """Translation using numpy's fft."""
-        from numpy.fft import rfft, irfft
-        from numpy import exp
 
         # Fourier transform along x
-        fx_hat = rfft(self.trim(), axis=1)
+        fx_hat = np.fft.rfft(self.trim(), axis=1)
 
         # Translate along x by an amount -S*t*y
-        fx_hat *= exp(1j*self.grid.S*time*self.y_kx)
+        fx_hat *= np.exp(1j*self.grid.S*time*self.y_kx)
 
         # Inverse Fourier transform along x
-        self.active = irfft(fx_hat, axis=1)
+        self.active = np.fft.irfft(fx_hat, axis=1)
 
         # Set boundary condition?
         self.boundaries_set = False
 
     def translate_vector(self, time):
         """Translation using numpy's fft."""
-        from numpy.fft import rfft, irfft
-        from numpy import exp
+        # TODO: Combine this with `translate()`
 
         for dim in ('x', 'y', 'z'):
             # Fourier transform along x
-            fx_hat = rfft(self.trim()[dim], axis=1)
+            fx_hat = np.fft.rfft(self.trim()[dim], axis=1)
 
             # Translate along x by an amount -S*t*y
-            fx_hat *= exp(1j*self.grid.S*time*self.y_kx)
+            fx_hat *= np.exp(1j*self.grid.S*time*self.y_kx)
 
             # Inverse Fourier transform along x
-            self.active[dim] = irfft(fx_hat, axis=1)
+            self.active[dim] = np.fft.irfft(fx_hat, axis=1)
 
         # Set boundary condition?
         self.boundaries_set = False

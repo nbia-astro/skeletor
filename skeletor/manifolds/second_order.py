@@ -1,4 +1,5 @@
 from ..grid import Grid
+import numpy as np
 
 
 class Manifold(Grid):
@@ -81,9 +82,7 @@ class Manifold(Grid):
         divergence(f['x'], f['y'], g, self)
 
     def log(self, f):
-        from numpy import log as numpy_log
-
-        return numpy_log(f)
+        return np.log(f)
 
     def grad_inv_del(self, qe, fxye):
 

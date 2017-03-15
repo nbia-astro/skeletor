@@ -1,20 +1,19 @@
 from ..grid import Grid
+import numpy as np
 
 
 class Manifold(Grid):
 
     def __init__(self, nx, ny, comm, ax=0.0, ay=0.0, **grid_kwds):
 
-        from math import log2
-        from numpy import zeros, sum, where, zeros_like, array, exp
         from mpiFFT4py.line import R2C
         from mpi4py import MPI
         from skeletor import Float, Complex
 
         super().__init__(nx, ny, comm, **grid_kwds)
 
-        self.indx = int(log2(nx))
-        self.indy = int(log2(ny))
+        self.indx = int(np.log2(nx))
+        self.indy = int(np.log2(ny))
 
         assert nx == 2**self.indx, "'nx' needs to be a power of two"
         assert ny == 2**self.indy, "'ny' needs to be a power of two"
@@ -24,9 +23,9 @@ class Manifold(Grid):
         self.ay = ay
 
         # Length vector
-        L = array([self.Ly, self.Lx], dtype=Float)
+        L = np.array([self.Ly, self.Lx], dtype=Float)
         # Grid size vector
-        N = array([self.ny, self.nx], dtype=int)
+        N = np.array([self.ny, self.nx], dtype=int)
 
         # Create FFT object
         if str(Float) == 'float64':
@@ -37,9 +36,9 @@ class Manifold(Grid):
         self.FFT = R2C(N, L, MPI.COMM_WORLD, precision)
 
         # Pre-allocate array for Fourier transform and force
-        self.f_hat = zeros(self.FFT.complex_shape(), dtype=Complex)
-        self.gx_hat = zeros_like(self.f_hat)
-        self.gy_hat = zeros_like(self.f_hat)
+        self.f_hat = np.zeros(self.FFT.complex_shape(), dtype=Complex)
+        self.gx_hat = np.zeros_like(self.f_hat)
+        self.gy_hat = np.zeros_like(self.f_hat)
 
         # Scaled local wavevector
         k = self.FFT.get_scaled_local_wavenumbermesh()
@@ -50,11 +49,11 @@ class Manifold(Grid):
         self.ky = k[0]
 
         # Local wavenumber squared
-        k2 = sum(k*k, 0, dtype=Float)
+        k2 = np.sum(k*k, 0, dtype=Float)
         # Inverse of the wavenumber squared
-        self.k21 = 1 / where(k2 == 0, 1, k2).astype(Float)
+        self.k21 = 1 / np.where(k2 == 0, 1, k2).astype(Float)
         # Effective inverse wave number for finite size particles
-        self.k21_eff = self.k21*exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
+        self.k21_eff = self.k21*np.exp(-((self.kx*ax)**2 + (self.ky*ay)**2))
 
         # Rotation and shear is always false for this manifold
         self.shear = False
@@ -74,9 +73,8 @@ class Manifold(Grid):
     def log(self, f):
         """Custom log function that works on the
             active cells of skeletor fields"""
-        from numpy import log as numpy_log
         g = f.copy()
-        g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = numpy_log(f.active)
+        g[f.grid.lby:f.grid.uby, f.grid.lbx:f.grid.ubx] = np.log(f.active)
 
         g.boundaries_set = False
         return g
@@ -98,23 +96,21 @@ class ShearingManifold(Manifold):
 
     def __init__(self, nx, ny, comm, S=0, Omega=0, **manifold_kwds):
 
-        from numpy.fft import rfftfreq
-        from numpy import outer, pi, zeros
         from skeletor import Complex
 
         super().__init__(nx, ny, comm, **manifold_kwds)
 
         shape = self.ny//self.comm.size, self.nx//2+1
-        self.temp = zeros(shape, dtype=Complex)
+        self.temp = np.zeros(shape, dtype=Complex)
 
         # Wave numbers for real-to-complex transforms
-        kx_vec = 2*pi*rfftfreq(self.nx)/self.dx
+        kx_vec = 2*np.pi*np.fft.rfftfreq(self.nx)/self.dx
 
         # Outer product of y and kx
-        self.y_kx = outer(self.y, kx_vec)
+        self.y_kx = np.outer(self.y, kx_vec)
 
         # Maximum value of ky
-        self.ky_max = pi/self.dy
+        self.ky_max = np.pi/self.dy
 
         # Aspect ratio of grid
         self.aspect = self.Lx/self.Ly
@@ -129,21 +125,17 @@ class ShearingManifold(Manifold):
         self.rotation = (Omega != 0)
 
     def _rfft2(self, f, f_hat, phase):
-        from numpy import exp
         self.FFT.rfftx(f, self.temp)
-        self.temp *= exp(-1j*phase)
+        self.temp *= np.exp(-1j*phase)
         self.FFT.ffty(self.temp, f_hat)
 
     def _irfft2(self, f_hat, f, phase):
-        from numpy import exp
         self.FFT.iffty(f_hat, self.temp)
-        self.temp *= exp(1j*phase)
+        self.temp *= np.exp(1j*phase)
         self.FFT.irfftx(self.temp, f)
 
     def gradient(self, f, g):
         """Gradient in the shearing sheet using mpifft4py"""
-
-        from numpy import pi, mod
 
         St = self.S*f.time
         # We only need to know how much time has elapsed since the last time
@@ -155,7 +147,7 @@ class ShearingManifold(Manifold):
 
         # Phase shift to make 'psi' strictly periodic in 'y'.
         # This is an angle, so it can be mapped into the interval [0, 2*pi)
-        phase = mod(self.y_kx*St, 2*pi)
+        phase = np.mod(self.y_kx*St, 2*np.pi)
 
         self._rfft2(f.active, self.f_hat, phase)
 
@@ -163,7 +155,7 @@ class ShearingManifold(Manifold):
         # Exploit periodicity in Fourier space (i.e. aliasing) and make sure
         # that  -π/δy ≤ ky < π/δy
         ky = self.ky + dky
-        ky = mod(ky + self.ky_max, 2*self.ky_max) - self.ky_max
+        ky = np.mod(ky + self.ky_max, 2*self.ky_max) - self.ky_max
 
         # Take derivative
         self.gx_hat[:] = 1j*self.kx*self.f_hat

@@ -1,7 +1,7 @@
 from skeletor import Float, Float3, Field, Particles, Sources
 from skeletor import Ohm
 from skeletor.manifolds.second_order import Manifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -34,7 +34,7 @@ vtx, vty = 0.0, 0.0
 nperiods = 4
 
 # Sound speed
-cs = numpy.sqrt(Te/mass)
+cs = np.sqrt(Te/mass)
 
 vph = cs
 
@@ -43,18 +43,18 @@ N = npc*nx*ny
 
 
 # Wave vector and its modulus
-kx = 2*numpy.pi*ikx/Lx
-ky = 2*numpy.pi*iky/Ly
-k = numpy.sqrt(kx*kx + ky*ky)
+kx = 2*np.pi*ikx/Lx
+ky = 2*np.pi*iky/Ly
+k = np.sqrt(kx*kx + ky*ky)
 
 # Frequency
 omega = k*vph
 
 # Time step
-dt = 2**numpy.floor(numpy.log2(0.5*dx/vph))
+dt = 2**np.floor(np.log2(0.5*dx/vph))
 
 # Simulation time
-tend = 2*numpy.pi*nperiods/omega
+tend = 2*np.pi*nperiods/omega
 
 # Number of time steps
 nt = int(tend/dt)
@@ -62,48 +62,48 @@ nt = int(tend/dt)
 
 def rho_an(x, y, t):
     """Analytic density as function of x, y and t"""
-    return charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+    return charge*(1 + A*np.cos(kx*x+ky*y)*np.sin(omega*t))
 
 
 def ux_an(x, y, t):
     """Analytic x-velocity as function of x, y and t"""
-    return -A*vph*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*kx/k
+    return -A*vph*np.sin(kx*x+ky*y)*np.cos(omega*t)*kx/k
 
 
 def uy_an(x, y, t):
     """Analytic y-velocity as function of x, y and t"""
-    return -A*vph*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k
+    return -A*vph*np.sin(kx*x+ky*y)*np.cos(omega*t)*ky/k
 
 if quiet:
     # Uniform distribution of particle positions (quiet start)
-    sqrt_npc = int(numpy.sqrt(npc))
+    sqrt_npc = int(np.sqrt(npc))
     assert sqrt_npc**2 == npc
     npx = nx*sqrt_npc
     npy = ny*sqrt_npc
-    x, y = numpy.meshgrid(
-            Lx*(numpy.arange(npx) + 0.5)/npx,
-            Ly*(numpy.arange(npy) + 0.5)/npy)
+    x, y = np.meshgrid(
+            Lx*(np.arange(npx) + 0.5)/npx,
+            Ly*(np.arange(npy) + 0.5)/npy)
     x = x.flatten()
     y = y.flatten()
 else:
-    x = Lx*numpy.random.uniform(size=N).astype(Float)
-    y = Ly*numpy.random.uniform(size=N).astype(Float)
+    x = Lx*np.random.uniform(size=N).astype(Float)
+    y = Ly*np.random.uniform(size=N).astype(Float)
 
 # Perturbation to particle velocities
 vx = ux_an(x, y, t=dt/2)
 vy = uy_an(x, y, t=dt/2)
-vz = numpy.zeros_like(vx)
+vz = np.zeros_like(vx)
 
 # Add thermal velocity
-vx += vtx*numpy.random.normal(size=N).astype(Float)
-vy += vty*numpy.random.normal(size=N).astype(Float)
+vx += vtx*np.random.normal(size=N).astype(Float)
+vy += vty*np.random.normal(size=N).astype(Float)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
 manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
 
 # x- and y-grid
-xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+xg, yg = np.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of electrons in each partition
 Nmax = int(1.5*N/comm.size)
@@ -137,9 +137,9 @@ ohm = Ohm(manifold, temperature=Te, charge=charge)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
+assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
 sources.current.add_guards()
-assert numpy.isclose(comm.allreduce(
+assert np.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 sources.current.copy_guards()
 
@@ -152,7 +152,7 @@ E.copy_guards()
 # Concatenate local arrays to obtain global arrays
 # The result is available on all processors.
 def concatenate(arr):
-    return numpy.concatenate(comm.allgather(arr))
+    return np.concatenate(comm.allgather(arr))
 
 # Make initial figure
 if plot:
@@ -183,7 +183,7 @@ t = 0
 diff2 = 0
 # Big array for storing density at every time step
 if comm.rank == 0:
-    data = numpy.zeros((ny, nx, nt))
+    data = np.zeros((ny, nx, nt))
 
 ##########################################################################
 # Main loop over time                                                    #
@@ -233,24 +233,23 @@ for it in range(nt):
 # Analyze simulation                                                     #
 ##########################################################################
 if comm.rank == 0:
-    from numpy.fft import rfftfreq, rfft2
     import matplotlib.pyplot as plt
     # Remove mean density
     data -= data.mean()
 
     # Wave numbers
-    kx = 2*numpy.pi*rfftfreq(nx)/manifold.dx
+    kx = 2*np.pi*np.fft.rfftfreq(nx)/manifold.dx
 
     # Frequency
-    w = 2*numpy.pi*rfftfreq(nt)/dt
+    w = 2*np.pi*np.fft.rfftfreq(nt)/dt
 
     # Average out y dimension (for now)
-    sli = numpy.mean(data, axis=0).T
+    sli = np.mean(data, axis=0).T
 
     ikx_min = 32
     # Compute spacetime spectrum. Only show positive half of both frequency and
     # wavenumber spectra.
-    spec = rfft2(sli)[:nt//2, :]
+    spec = np.fft.rfft2(sli)[:nt//2, :]
 
     dx = manifold.dx
 
@@ -258,13 +257,13 @@ if comm.rank == 0:
 
     plt.figure(2)
     plt.clf()
-    plt.imshow((numpy.log(numpy.abs(spec)**2.)),
+    plt.imshow((np.log(np.abs(spec)**2.)),
                extent=(kx[0], kx[-1], w[0], w[-1]))
 
     from dispersion_solvers import IonacousticDispersion
 
     solve = IonacousticDispersion(Ti=1e-2, Te=Te, b=0, p=2, dx=dx)
-    kxvec = numpy.linspace(1e-2, kx[-2], 100)
+    kxvec = np.linspace(1e-2, kx[-2], 100)
     vph = solve.cold(kxvec)
     plt.plot(kxvec, kxvec*vph, 'k')
     plt.plot(kxvec, kxvec*cs, 'k--')

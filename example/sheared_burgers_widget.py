@@ -7,7 +7,7 @@ also test_burgers.py.
 
 from skeletor import cppinit, Float, Float3, Particles, Sources, ShearField
 from skeletor.manifolds.second_order import ShearingManifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 import matplotlib.pyplot as plt
@@ -33,25 +33,25 @@ nx, ny = 64, 64
 npc = 64
 
 # Wave numbers
-kx = 2*numpy.pi/nx
+kx = 2*np.pi/nx
 
 # Total number of particles in simulation
 N = npc*nx*ny
 
 # Uniform distribution of particle positions (quiet start)
-sqrt_npc = int(numpy.sqrt(npc))
+sqrt_npc = int(np.sqrt(npc))
 assert sqrt_npc**2 == npc
 dx = dy = 1/sqrt_npc
-a, b = numpy.meshgrid(
-        numpy.arange(dx/2, nx+dx/2, dx),
-        numpy.arange(dy/2, ny+dy/2, dy))
+a, b = np.meshgrid(
+        np.arange(dx/2, nx+dx/2, dx),
+        np.arange(dy/2, ny+dy/2, dy))
 a = a.flatten()
 b = b.flatten()
 
 
 def mean(f, axis=None):
     """Compute mean of an array across processors."""
-    result = numpy.mean(f, axis=axis)
+    result = np.mean(f, axis=axis)
     if axis is None or axis == 0:
         # If the mean is to be taken over *all* axes or just the y-axis,
         # then we need to communicate
@@ -61,18 +61,18 @@ def mean(f, axis=None):
 
 def rms(f):
     """Compute root-mean-square of an array across processors."""
-    return numpy.sqrt(mean(f**2))
+    return np.sqrt(mean(f**2))
 
 
 def velocity(a):
     """Particle velocity in Lagrangian coordinates."""
-    return ampl*numpy.sin(kx*a)
+    return ampl*np.sin(kx*a)
 
 
 def velocity_prime(a):
     """Derivative of particle velocity in Lagrangian coordinates:
     ∂v(a,τ)/∂a"""
-    return ampl*kx*numpy.cos(kx*a)
+    return ampl*kx*np.cos(kx*a)
 
 
 def euler(a, τ):
@@ -146,8 +146,8 @@ def x_an(a, b, t):
 x = a
 y = b
 
-vx = numpy.zeros_like(x)
-vy = numpy.zeros_like(y)
+vx = np.zeros_like(x)
+vy = np.zeros_like(y)
 
 # Start parallel processing
 idproc, nvp = cppinit(comm)
@@ -157,7 +157,7 @@ idproc, nvp = cppinit(comm)
 manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
 
 # x- and y-grid
-xx, yy = numpy.meshgrid(manifold.x, manifold.y)
+xx, yy = np.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
@@ -185,9 +185,9 @@ Jx_periodic = ShearField(manifold, time=0, dtype=Float3)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.N*charge)
+assert np.isclose(sources.rho.sum(), ions.N*charge)
 sources.current.add_guards()
-assert numpy.isclose(comm.allreduce(
+assert np.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 sources.current.copy_guards()
 
@@ -198,7 +198,7 @@ rho_periodic.active = sources.rho.trim()
 def concatenate(arr):
     """Concatenate local arrays to obtain global arrays
     The result is available on all processors."""
-    return numpy.concatenate(comm.allgather(arr))
+    return np.concatenate(comm.allgather(arr))
 
 
 def update(t):
@@ -225,10 +225,10 @@ def update(t):
     sources.deposit(ions)
     sources.current.time = t
 
-    assert numpy.isclose(sources.rho.sum(), ions.N*charge)
+    assert np.isclose(sources.rho.sum(), ions.N*charge)
     sources.current.add_guards()
 
-    assert numpy.isclose(comm.allreduce(
+    assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 
     sources.current.copy_guards()
@@ -293,7 +293,7 @@ if comm.rank == 0:
     im1b = axes[1, 0].imshow(global_Jx/global_rho)
     im2b = axes[1, 1].imshow(global_Jx_periodic/global_rho_periodic)
     axtime1 = plt.axes([0.125, 0.05, 0.775, 0.03])
-    stime1 = mw.Slider(axtime1, 'Time', -numpy.pi, numpy.pi/2, 0)
+    stime1 = mw.Slider(axtime1, 'Time', -np.pi, np.pi/2, 0)
     stime1.on_changed(update)
 
     plt.figure(2)
@@ -308,10 +308,10 @@ if comm.rank == 0:
     ax1.set_title(r'$\rho/\rho_0$')
     # Create slider widget for changing time
     axtime2 = plt.axes([0.125, 0.05, 0.775, 0.03])
-    stime2 = mw.Slider(axtime2, 'Time', -numpy.pi, numpy.pi/2, 0)
+    stime2 = mw.Slider(axtime2, 'Time', -np.pi, np.pi/2, 0)
     stime2.on_changed(update)
     xp = euler(manifold.x, 0)
-    xp = numpy.sort(xp)
+    xp = np.sort(xp)
     im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
                    'b',
                    manifold.x, (global_rho_periodic.mean(axis=0))/npc,

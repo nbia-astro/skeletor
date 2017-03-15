@@ -6,7 +6,7 @@ equation in the primed coordinate, x' = x + Sty. See also test_burgers.py.
 
 from skeletor import Float, Float3, Particles, Sources, ShearField
 from skeletor.manifolds.second_order import ShearingManifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -17,10 +17,10 @@ def test_sheared_burgers(plot=False):
     dt = 0.5e-2
 
     # Initial time of particle positions
-    t = -numpy.pi/3
+    t = -np.pi/3
 
     # Simulation time
-    tend = numpy.pi/3
+    tend = np.pi/3
 
     # Number of time steps
     nt = int((tend-t)/dt)
@@ -49,7 +49,7 @@ def test_sheared_burgers(plot=False):
 
     def mean(f, axis=None):
         """Compute mean of an array across processors."""
-        result = numpy.mean(f, axis=axis)
+        result = np.mean(f, axis=axis)
         if axis is None or axis == 0:
             # If the mean is to be taken over *all* axes or just the y-axis,
             # then we need to communicate
@@ -58,16 +58,16 @@ def test_sheared_burgers(plot=False):
 
     def rms(f):
         """Compute root-mean-square of an array across processors."""
-        return numpy.sqrt(mean(f**2))
+        return np.sqrt(mean(f**2))
 
     def velocity(a):
         """Particle velocity in Lagrangian coordinates."""
-        return ampl*numpy.sin(kx*a)
+        return ampl*np.sin(kx*a)
 
     def velocity_prime(a):
         """Derivative of particle velocity in Lagrangian coordinates:
         ∂v(a,τ)/∂a"""
-        return ampl*kx*numpy.cos(kx*a)
+        return ampl*kx*np.cos(kx*a)
 
     def euler(a, tau):
         """
@@ -137,10 +137,10 @@ def test_sheared_burgers(plot=False):
     manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
 
     # x- and y-grid
-    xx, yy = numpy.meshgrid(manifold.x, manifold.y)
+    xx, yy = np.meshgrid(manifold.x, manifold.y)
 
     # Wave numbers
-    kx = 2*numpy.pi/manifold.Lx
+    kx = 2*np.pi/manifold.Lx
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
@@ -150,17 +150,17 @@ def test_sheared_burgers(plot=False):
     ions = Particles(manifold, Nmax, time=t, charge=charge, mass=mass)
 
     # Lagrangian particle coordinates (quiet start)
-    sqrt_npc = int(numpy.sqrt(npc))
+    sqrt_npc = int(np.sqrt(npc))
     assert sqrt_npc**2 == npc, "'npc' must be a square of an integer."
-    a, b = [ab.flatten().astype(Float) for ab in numpy.meshgrid(
-        (numpy.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
-        (numpy.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
+    a, b = [ab.flatten().astype(Float) for ab in np.meshgrid(
+        (np.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
+        (np.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
 
     # Eulerian particle coordinates and veloctities
     x = x_an(a, b, t)
     y = b
     vx = vx_an(a, b, t)
-    vy = numpy.zeros_like(vx)
+    vy = np.zeros_like(vx)
     vz = vy
 
     # Assign particles to subdomains (zero velocity and uniform distribution)
@@ -186,9 +186,9 @@ def test_sheared_burgers(plot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
+    assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
-    assert numpy.isclose(comm.allreduce(
+    assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
     sources.current.copy_guards()
 
@@ -208,7 +208,7 @@ def test_sheared_burgers(plot=False):
     def concatenate(arr):
         """Concatenate local arrays to obtain global arrays
         The result is available on all processors."""
-        return numpy.concatenate(comm.allgather(arr))
+        return np.concatenate(comm.allgather(arr))
 
     global_rho = concatenate(sources.rho.trim())
     global_rho_periodic = concatenate(rho_periodic.trim())
@@ -243,7 +243,7 @@ def test_sheared_burgers(plot=False):
             ax1.set_title(r'$\rho/\rho_0$')
             # Create slider widget for changing time
             xp = euler(manifold.x, 0)
-            xp = numpy.sort(xp)
+            xp = np.sort(xp)
             im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0)),
                            'b',
                            manifold.x, (global_rho_periodic.mean(axis=0)),

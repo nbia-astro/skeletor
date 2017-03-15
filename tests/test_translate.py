@@ -1,7 +1,7 @@
 from skeletor import Float, ShearField
 from skeletor.manifolds.mpifft4py import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
-import numpy
+import numpy as np
 
 
 def test_translate(plot=False):
@@ -22,16 +22,16 @@ def test_translate(plot=False):
                                 S=S, Omega=0)
 
     # Coordinate arrays
-    xx, yy = numpy.meshgrid(manifold.x, manifold.y)
+    xx, yy = np.meshgrid(manifold.x, manifold.y)
 
     # Wavenumbers of mode
     ikx = 1
     A = 0.2
-    kx = 2*numpy.pi*ikx/manifold.Lx
+    kx = 2*np.pi*ikx/manifold.Lx
 
     def rho_an(t):
         ky = kx*S*t
-        return 1 + A*numpy.sin(kx*xx + ky*yy)
+        return 1 + A*np.sin(kx*xx + ky*yy)
 
     # Initialize density field using shear field class
     rho = ShearField(manifold, time=t, dtype=Float)
@@ -42,13 +42,13 @@ def test_translate(plot=False):
     rho.translate(t)
 
     # Compare field analytic field with field with translated field
-    assert(numpy.allclose(rho_an(t), rho.trim()))
+    assert(np.allclose(rho_an(t), rho.trim()))
 
     if plot:
         def concatenate(arr):
             """Concatenate local arrays to obtain global arrays
                 The result is available on all processors. """
-            return numpy.concatenate(comm.allgather(arr))
+            return np.concatenate(comm.allgather(arr))
 
         global_rho = concatenate(rho.trim())
         global_rho_an = concatenate(rho_an(t))

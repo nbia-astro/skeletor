@@ -2,7 +2,7 @@ from skeletor import Float, Particles, Sources
 from skeletor.manifolds.second_order import Manifold
 
 from mpi4py.MPI import COMM_WORLD as comm, SUM
-import numpy
+import numpy as np
 
 # Number of grid points in x- and y-direction (nx = 2**indx, ...)
 nx, ny = 512, 512
@@ -29,15 +29,15 @@ Nmax = int(1.5*N/comm.size)
 particles = Particles(manifold, Nmax, charge=charge, mass=mass)
 
 # Synchronize random number generator across ALL processes
-numpy.random.set_state(comm.bcast(numpy.random.get_state()))
+np.random.set_state(comm.bcast(np.random.get_state()))
 
 # Uniform distribution of particle positions
-x = manifold.Lx*numpy.random.uniform(size=N).astype(Float)
-y = manifold.Ly*numpy.random.uniform(size=N).astype(Float)
+x = manifold.Lx*np.random.uniform(size=N).astype(Float)
+y = manifold.Ly*np.random.uniform(size=N).astype(Float)
 # Normal distribution of particle velocities
-vx = numpy.empty(N, Float)
-vy = numpy.empty(N, Float)
-vz = numpy.empty(N, Float)
+vx = np.empty(N, Float)
+vy = np.empty(N, Float)
+vz = np.empty(N, Float)
 
 # Assign particles to subdomains
 particles.initialize(x, y, vx, vy, vz)
@@ -58,7 +58,7 @@ def test_deposit():
     the number of particles in each subdomain times the particle charge.
     """
     sources.deposit(particles)
-    assert numpy.isclose(sources.rho.sum(), charge*particles.N/npc)
+    assert np.isclose(sources.rho.sum(), charge*particles.N/npc)
 
 
 def test_add_guards():
@@ -69,5 +69,5 @@ def test_add_guards():
     the particle charge.
     """
     sources.current.add_guards()
-    assert numpy.isclose(comm.allreduce(
+    assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=SUM), N*charge/npc)
