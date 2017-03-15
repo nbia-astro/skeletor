@@ -37,7 +37,7 @@ def landau_electrons(plot=False, fitplot=False):
     dt = cfl/vtx
 
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     # Wave vector and its modulus
     kx = 2*numpy.pi*ikx/nx
@@ -91,8 +91,8 @@ def landau_electrons(plot=False, fitplot=False):
         x = x.flatten()
         y = y.flatten()
     else:
-        x = nx*numpy.random.uniform(size=np).astype(Float)
-        y = ny*numpy.random.uniform(size=np).astype(Float)
+        x = nx*numpy.random.uniform(size=N).astype(Float)
+        y = ny*numpy.random.uniform(size=N).astype(Float)
 
     # Perturbation to particle velocities
     vx = ux_an(x, y, t=0)
@@ -100,8 +100,8 @@ def landau_electrons(plot=False, fitplot=False):
     vz = numpy.zeros_like(vx)
 
     # Add thermal velocity
-    vx += vtx*numpy.random.normal(size=np).astype(Float)
-    vy += vty*numpy.random.normal(size=np).astype(Float)
+    vx += vtx*numpy.random.normal(size=N).astype(Float)
+    vy += vty*numpy.random.normal(size=N).astype(Float)
 
     # Start parallel processing
     idproc, nvp = cppinit(comm)
@@ -120,17 +120,17 @@ def landau_electrons(plot=False, fitplot=False):
     C = numpy.cos(kx*xg + ky*yg)/(nx*ny)
 
     # Maximum number of electrons in each partition
-    npmax = int(1.5*np/nvp)
+    Nmax = int(1.5*N/nvp)
 
     # Create particle array
-    electrons = Particles(manifold, npmax, charge=charge, mass=mass)
+    electrons = Particles(manifold, Nmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
     electrons.initialize(x, y, vx, vy, vz)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
-    assert comm.allreduce(electrons.np, op=MPI.SUM) == np
+    assert comm.allreduce(electrons.N, op=MPI.SUM) == N
 
     # Set the electric field to zero
     E = Field(manifold, comm, dtype=Float3)
@@ -151,10 +151,10 @@ def landau_electrons(plot=False, fitplot=False):
 
     # Deposit sources
     sources.deposit(electrons)
-    assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
+    assert numpy.isclose(sources.rho.sum(), electrons.N*charge/npc)
     sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+        sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
     # Calculate electric field (Solve Gauss' law)
     poisson(sources.rho, E)

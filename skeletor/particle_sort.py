@@ -14,6 +14,6 @@ class ParticleSort:
     def __call__(self, particles, particles2):
 
         cppdsortp2yl(
-                particles, particles2, self.npic, particles.np, self.grid)
+                particles, particles2, self.npic, particles.N, self.grid)
 
-        particles2.np = particles.np
+        particles2.N = particles.N

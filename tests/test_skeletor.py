@@ -41,15 +41,15 @@ def test_skeletor():
     numpy.random.set_state(MPI.COMM_WORLD.bcast(numpy.random.get_state()))
 
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     # Uniform distribution of particle positions
-    x = Lx*numpy.random.uniform(size=np).astype(Float)
-    y = Ly*numpy.random.uniform(size=np).astype(Float)
+    x = Lx*numpy.random.uniform(size=N).astype(Float)
+    y = Ly*numpy.random.uniform(size=N).astype(Float)
     # Normal distribution of particle velocities
-    vx = vdx + vtx*numpy.random.normal(size=np).astype(Float)
-    vy = vdy + vty*numpy.random.normal(size=np).astype(Float)
-    vz = vdz + vtz*numpy.random.normal(size=np).astype(Float)
+    vx = vdx + vtx*numpy.random.normal(size=N).astype(Float)
+    vy = vdy + vty*numpy.random.normal(size=N).astype(Float)
+    vz = vdz + vtz*numpy.random.normal(size=N).astype(Float)
 
     global_ions = []
     global_rho = []
@@ -61,17 +61,17 @@ def test_skeletor():
         manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
 
         # Maximum number of ions in each partition
-        npmax = int(2.0*np/comm.size)
+        Nmax = int(2.0*N/comm.size)
 
         # Create particle array
-        ions = Particles(manifold, npmax, charge=charge, mass=mass)
+        ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
         # Assign particles to subdomains
         ions.initialize(x, y, vx, vy, vz)
 
         # Make sure the numbers of particles in each subdomain add up to the
         # total number of particles
-        assert comm.allreduce(ions.np, op=MPI.SUM) == np
+        assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
         #######################
         # Test particle drift #
@@ -95,7 +95,7 @@ def test_skeletor():
 
         # Combine particles from all processes into a single array
         global_ions.append(
-                numpy.concatenate(comm.allgather(ions[:ions.np])))
+                numpy.concatenate(comm.allgather(ions[:ions.N])))
 
         ##########################
         # Test charge deposition #
@@ -107,7 +107,7 @@ def test_skeletor():
 
         # Make sure the charge deposited into *all* cells (active plus guard)
         # equals the number of particles times the particle charge
-        assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+        assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
 
         # Add charge from guard cells to corresponding active cells.
         # Afterwards erases charge in guard cells.
@@ -116,7 +116,7 @@ def test_skeletor():
         # Make sure the charge deposited into *active* cells (no guard cells)
         # equals the number of particles times the particle charge
         assert numpy.isclose(comm.allreduce(
-            sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+            sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
         sources.current.copy_guards()
 

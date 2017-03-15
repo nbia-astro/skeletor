@@ -39,7 +39,7 @@ cs = numpy.sqrt(Te/mass)
 vph = cs
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 
 # Wave vector and its modulus
@@ -86,8 +86,8 @@ if quiet:
     x = x.flatten()
     y = y.flatten()
 else:
-    x = Lx*numpy.random.uniform(size=np).astype(Float)
-    y = Ly*numpy.random.uniform(size=np).astype(Float)
+    x = Lx*numpy.random.uniform(size=N).astype(Float)
+    y = Ly*numpy.random.uniform(size=N).astype(Float)
 
 # Perturbation to particle velocities
 vx = ux_an(x, y, t=dt/2)
@@ -95,8 +95,8 @@ vy = uy_an(x, y, t=dt/2)
 vz = numpy.zeros_like(vx)
 
 # Add thermal velocity
-vx += vtx*numpy.random.normal(size=np).astype(Float)
-vy += vty*numpy.random.normal(size=np).astype(Float)
+vx += vtx*numpy.random.normal(size=N).astype(Float)
+vy += vty*numpy.random.normal(size=N).astype(Float)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
@@ -106,17 +106,17 @@ manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
 xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of electrons in each partition
-npmax = int(1.5*np/comm.size)
+Nmax = int(1.5*N/comm.size)
 
 # Create particle array
-ions = Particles(manifold, npmax, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-assert comm.allreduce(ions.np, op=MPI.SUM) == np
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Set the electric field to zero
 E = Field(manifold, dtype=Float3)
@@ -137,10 +137,10 @@ ohm = Ohm(manifold, temperature=Te, charge=charge)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
 sources.current.add_guards()
 assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+    sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 sources.current.copy_guards()
 
 # Calculate electric field (Solve Ohm's law)

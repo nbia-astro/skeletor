@@ -31,7 +31,7 @@ def test_plasmafrequency(plot=False):
     nperiods = 1
 
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     # Epsilon 0
     eps0 = 1
@@ -73,10 +73,10 @@ def test_plasmafrequency(plot=False):
     xg, yg = numpy.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of electrons in each partition
-    npmax = int(1.5*np/comm.size)
+    Nmax = int(1.5*N/comm.size)
 
     # Create particle array
-    electrons = Particles(manifold, npmax, charge=charge, mass=mass)
+    electrons = Particles(manifold, Nmax, charge=charge, mass=mass)
 
     # Create a uniform density field
     init = InitialCondition(npc, quiet=quiet)
@@ -92,7 +92,7 @@ def test_plasmafrequency(plot=False):
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
-    assert comm.allreduce(electrons.np, op=MPI.SUM) == np
+    assert comm.allreduce(electrons.N, op=MPI.SUM) == N
 
     # Set the electric field to zero
     E = Field(manifold, dtype=Float3)
@@ -114,10 +114,10 @@ def test_plasmafrequency(plot=False):
     sources.deposit(electrons)
     # Adjust density (we should do this somewhere else)
     # sources.rho /= npc
-    # assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
+    # assert numpy.isclose(sources.rho.sum(), electrons.N*charge/npc)
     sources.current.add_guards()
     # assert numpy.isclose(comm.allreduce(
-    # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+    # sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
     # Solve Gauss' law
     poisson(sources.rho, E)
@@ -165,12 +165,12 @@ def test_plasmafrequency(plot=False):
         sources.deposit(electrons)
         # Adjust density (TODO: we should do this somewhere else)
         # sources.rho /= npc
-        # assert numpy.isclose(sources.rho.sum(),electrons.np*charge/npc)
+        # assert numpy.isclose(sources.rho.sum(),electrons.N*charge/npc)
         # Boundary calls
         sources.current.add_guards()
 
         # assert numpy.isclose(comm.allreduce(
-        #     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+        #     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
         # Solve Gauss' law
         poisson(sources.rho, E)

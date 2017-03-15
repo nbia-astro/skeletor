@@ -53,7 +53,7 @@ def test_shearing_epicycle(plot=False):
     Lx, Ly = 1, 2
 
     # Total number of particles in simulation
-    np = 1
+    N = 1
 
     x0 = Lx/2
     y0 = Ly/2
@@ -61,17 +61,17 @@ def test_shearing_epicycle(plot=False):
     x0 = numpy.array(x0)
     y0 = numpy.array(y0)
 
-    def x_an(t): return ampl*numpy.cos(og*t + phi)*numpy.ones(np) + x0
+    def x_an(t): return ampl*numpy.cos(og*t + phi)*numpy.ones(N) + x0
 
     def y_an(t):
-        f = -(Sz/og)*ampl*numpy.sin(og*t + phi)*numpy.ones(np) \
+        f = -(Sz/og)*ampl*numpy.sin(og*t + phi)*numpy.ones(N) \
              + y0 + S*t*(x0-Lx/2)
         return f
 
-    def vx_an(t): return -og*ampl*numpy.sin(og*t + phi)*numpy.ones(np)
+    def vx_an(t): return -og*ampl*numpy.sin(og*t + phi)*numpy.ones(N)
 
     def vy_an(t):
-        return (-Sz*ampl*numpy.cos(og*t + phi) + S*(x0-Lx/2))*numpy.ones(np)
+        return (-Sz*ampl*numpy.cos(og*t + phi) + S*(x0-Lx/2))*numpy.ones(N)
 
     # Particle position at t = -dt/2
     x = x_an(-dt/2)
@@ -95,17 +95,17 @@ def test_shearing_epicycle(plot=False):
 
     # Maximum number of ions in each partition
     # For this test we only have one particle.
-    npmax = np
+    Nmax = N
 
     # Create particle array
-    ions = Particles(manifold, npmax, charge=charge, mass=mass)
+    ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
     ions.initialize(x, y, vx, vy, vz)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
+    assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
     # Electric field in x-direction
     E_star = Field(manifold, dtype=Float3)
@@ -151,7 +151,7 @@ def test_shearing_epicycle(plot=False):
         # receives particles to and from other processors/subdomains.
         ions.push(E_star, B, dt)
 
-        assert comm.allreduce(ions.np, op=MPI.SUM) == np
+        assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
         # Update time
         t += dt

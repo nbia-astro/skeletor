@@ -45,7 +45,7 @@ def test_sheared_burgers(plot=False):
     npc = 16
 
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     def mean(f, axis=None):
         """Compute mean of an array across processors."""
@@ -144,10 +144,10 @@ def test_sheared_burgers(plot=False):
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
-    npmax = int(5*np/comm.size)
+    Nmax = int(5*N/comm.size)
 
     # Create particle array
-    ions = Particles(manifold, npmax, time=t, charge=charge, mass=mass)
+    ions = Particles(manifold, Nmax, time=t, charge=charge, mass=mass)
 
     # Lagrangian particle coordinates (quiet start)
     sqrt_npc = int(numpy.sqrt(npc))
@@ -172,12 +172,12 @@ def test_sheared_burgers(plot=False):
     ions.periodic_x()
 
     # Make sure particles actually reside in the local subdomain
-    assert all(ions["y"][:ions.np] >= manifold.edges[0])
-    assert all(ions["y"][:ions.np] < manifold.edges[1])
+    assert all(ions["y"][:ions.N] >= manifold.edges[0])
+    assert all(ions["y"][:ions.N] < manifold.edges[1])
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
+    assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
     # Initialize sources
     sources = Sources(manifold)
@@ -186,10 +186,10 @@ def test_sheared_burgers(plot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+    assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+        sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
     sources.current.copy_guards()
 
     # Copy density into a shear field

@@ -57,7 +57,7 @@ def test_ionacoustic(plot=False):
     dt = cfl/cs*manifold.dx
 
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     # Wave vector and its modulus
     kx = 2*numpy.pi*ikx/manifold.Lx
@@ -74,10 +74,10 @@ def test_ionacoustic(plot=False):
     nt = int(tend/dt)
 
     # Maximum number of electrons in each partition
-    npmax = int(1.5*np/comm.size)
+    Nmax = int(1.5*N/comm.size)
 
     # Create particle array
-    ions = Particles(manifold, npmax, charge=charge, mass=mass)
+    ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
     # Create a uniform density field
     init = InitialCondition(npc, quiet=quiet)
@@ -93,7 +93,7 @@ def test_ionacoustic(plot=False):
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
+    assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
     # Set the electric field to zero
     E = Field(manifold, dtype=Float3)
@@ -113,11 +113,11 @@ def test_ionacoustic(plot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+    assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
     sources.current.copy_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+        sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
     # Calculate electric field (Solve Ohm's law)
     ohm(sources, B, E)

@@ -46,7 +46,7 @@ def test_sheared_disturbance(plot=False):
     npc = 16
 
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     def x_an(ap, bp, t):
         phi = kx*ap
@@ -139,10 +139,10 @@ def test_sheared_disturbance(plot=False):
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
-    npmax = int(2*np/comm.size)
+    Nmax = int(2*N/comm.size)
 
     # Create particle array
-    ions = Particles(manifold, npmax, time=dt/2, charge=charge, mass=mass)
+    ions = Particles(manifold, Nmax, time=dt/2, charge=charge, mass=mass)
 
     if quiet:
         # Uniform distribution of particle positions (quiet start)
@@ -152,33 +152,33 @@ def test_sheared_disturbance(plot=False):
             (numpy.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
             (numpy.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
     else:
-        a = manifold.Lx*numpy.random.uniform(size=np).astype(Float)
-        b = manifold.Ly*numpy.random.uniform(size=np).astype(Float)
+        a = manifold.Lx*numpy.random.uniform(size=N).astype(Float)
+        b = manifold.Ly*numpy.random.uniform(size=N).astype(Float)
 
     # Assign particles to subdomains
     ions.initialize(a, b, a*0, b*0, b*0)
 
     # Set initial condition for particles
     # Position and velocities for this subdomain only
-    x_sub = ions['x'][:ions.np]*manifold.dx
-    y_sub = ions['y'][:ions.np]*manifold.dy
+    x_sub = ions['x'][:ions.N]*manifold.dx
+    y_sub = ions['y'][:ions.N]*manifold.dy
     # Particle positions at time=t
-    ions['x'][:ions.np] = x_an(x_sub, y_sub, t)/manifold.dx
-    ions['y'][:ions.np] = y_an(x_sub, y_sub, t)/manifold.dy
+    ions['x'][:ions.N] = x_an(x_sub, y_sub, t)/manifold.dx
+    ions['y'][:ions.N] = y_an(x_sub, y_sub, t)/manifold.dy
     # Particle velocities at time = t-dt/2
-    ions['vx'][:ions.np] = vx_an(x_sub, y_sub, t-dt/2)
-    ions['vy'][:ions.np] = vy_an(x_sub, y_sub, t-dt/2)
+    ions['vx'][:ions.N] = vx_an(x_sub, y_sub, t-dt/2)
+    ions['vy'][:ions.N] = vy_an(x_sub, y_sub, t-dt/2)
     ions.time = t
     ions.shear_periodic_y()
     ions.periodic_x()
 
     # Make sure particles actually reside in the local subdomain
-    assert all(ions["y"][:ions.np] >= manifold.edges[0])
-    assert all(ions["y"][:ions.np] < manifold.edges[1])
+    assert all(ions["y"][:ions.N] >= manifold.edges[0])
+    assert all(ions["y"][:ions.N] < manifold.edges[1])
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
+    assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
     # Initialize sources
     sources = Sources(manifold)
@@ -188,10 +188,10 @@ def test_sheared_disturbance(plot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+    assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
     assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+        sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
     sources.current.copy_guards()
 
     # Copy density into a shear field
