@@ -1,4 +1,5 @@
 from .cython.ppic2_wrapper import cppdsortp2yl
+import numpy as np
 
 
 class ParticleSort:
@@ -6,10 +7,9 @@ class ParticleSort:
     def __init__(self, grid):
 
         from .cython.types import Int
-        from numpy import empty
 
         self.grid = grid
-        self.npic = empty(grid.nypmx, Int)
+        self.npic = np.empty(grid.nypmx, Int)
 
     def __call__(self, particles, particles2):
 

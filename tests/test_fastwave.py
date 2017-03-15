@@ -2,7 +2,7 @@ from skeletor import Float3, Field, Particles
 from skeletor import Ohm, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 from skeletor.predictor_corrector import Experiment
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -34,47 +34,47 @@ def test_fastwave(plot=False):
     nperiods = 1.0
 
     # Sound speed
-    cs = numpy.sqrt(Te/mass)
+    cs = np.sqrt(Te/mass)
 
     # Total number of particles in simulation
     N = npc*nx*ny
 
     # Wave vector and its modulus
-    kx = 2*numpy.pi*ikx/Lx
-    ky = 2*numpy.pi*iky/Ly
-    k = numpy.sqrt(kx*kx + ky*ky)
+    kx = 2*np.pi*ikx/Lx
+    ky = 2*np.pi*iky/Ly
+    k = np.sqrt(kx*kx + ky*ky)
 
     (Bx, By, Bz) = (0, 0, 1)
     B2 = Bx**2 + By**2 + Bz**2
     va2 = B2
 
-    vph = numpy.sqrt(cs*2 + va2)
+    vph = np.sqrt(cs*2 + va2)
 
     # Frequency
     omega = k*vph
 
     # Simulation time
-    tend = 2*numpy.pi*nperiods/omega
+    tend = 2*np.pi*nperiods/omega
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+        return charge*(1 + A*np.cos(kx*x+ky*y)*np.sin(omega*t))
 
     def Bz_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return Bz*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+        return Bz*(1 + A*np.cos(kx*x+ky*y)*np.sin(omega*t))
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
-        return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*kx/k
+        return -omega/k*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*kx/k
 
     def uy_an(x, y, t):
         """Analytic y-velocity as function of x, y and t"""
-        return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k
+        return -omega/k*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*ky/k
 
     def uz_an(x, y, t):
         """Analytic z-velocity as function of x, y and t"""
-        return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*0
+        return -omega/k*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*0
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
@@ -87,7 +87,7 @@ def test_fastwave(plot=False):
     nt = int(tend/dt)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+    xg, yg = np.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of electrons in each partition
     Nmax = int(1.5*N/comm.size)
@@ -129,7 +129,7 @@ def test_fastwave(plot=False):
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
     def concatenate(arr):
-        return numpy.concatenate(comm.allgather(arr))
+        return np.concatenate(comm.allgather(arr))
 
     # Make initial figure
     if plot:
@@ -212,7 +212,7 @@ def test_fastwave(plot=False):
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
 
-    val = numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt)
+    val = np.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt)
     tol = 6e-5*charge
 
     # Check if test has passed

@@ -2,11 +2,10 @@ from skeletor import Float, Float3, Field, Particles
 from skeletor import Ohm, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 from skeletor.predictor_corrector import Experiment
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 from dispersion_solvers import HallDispersion
-from numpy import cos, sin, pi, arctan
 
 
 def test_circular(plot=False):
@@ -35,23 +34,23 @@ def test_circular(plot=False):
     nperiods = 1.0
 
     # Sound speed
-    cs = numpy.sqrt(Te/mass)
+    cs = np.sqrt(Te/mass)
 
     # Total number of particles in simulation
     N = npc*nx*ny
 
     # Wave vector and its modulus
-    kx = 2*numpy.pi*ikx/Lx
-    ky = 2*numpy.pi*iky/Ly
-    k = numpy.sqrt(kx*kx + ky*ky)
+    kx = 2*np.pi*ikx/Lx
+    ky = 2*np.pi*iky/Ly
+    k = np.sqrt(kx*kx + ky*ky)
 
     # Angle of k-vector with respect to x-axis
-    theta = arctan(iky/ikx) if ikx != 0 else pi/2
+    theta = np.arctan(iky/ikx) if ikx != 0 else np.pi/2
 
     # Magnetic field strength
     B0 = 1
 
-    (Bx, By, Bz) = (B0*cos(theta), B0*sin(theta), 0)
+    (Bx, By, Bz) = (B0*np.cos(theta), B0*np.sin(theta), 0)
 
     rho0 = 1.0
 
@@ -76,23 +75,21 @@ def test_circular(plot=False):
 
     def frequency(kzva):
         hel = 1
-        from numpy import sqrt
-        return kzva*(sqrt(1.0 + (0.5*kzva/oc)**2) + 0.5*kzva/(hel*oc))
+        return kzva*(np.sqrt(1.0 + (0.5*kzva/oc)**2) + 0.5*kzva/(hel*oc))
 
     def get_dt(kzva):
-        from numpy import floor, log2
         dt = 1/frequency(kzva)
-        dt = 2.0**(floor(log2(dt)))
+        dt = 2.0**(np.floor(np.log2(dt)))
         return dt
 
-    kmax = numpy.pi/dx
+    kmax = np.pi/dx
 
     # Simulation time
-    tend = 2*numpy.pi*nperiods/omega
+    tend = 2*np.pi*nperiods/omega
 
     # Phase factor
     def phase(x, y, t):
-        return A*numpy.exp(1j*(di.omega[m]*t - kx*x - ky*y))
+        return A*np.exp(1j*(di.omega[m]*t - kx*x - ky*y))
 
     # Linear solutions in real space
     def rho_an(x, y, t):
@@ -128,7 +125,7 @@ def test_circular(plot=False):
     nt = int(tend/dt)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+    xg, yg = np.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of electrons in each partition
     Nmax = int(1.5*N/comm.size)
@@ -190,7 +187,7 @@ def test_circular(plot=False):
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
     def concatenate(arr):
-        return numpy.concatenate(comm.allgather(arr))
+        return np.concatenate(comm.allgather(arr))
 
     # Make initial figure
     if plot:
@@ -235,7 +232,7 @@ def test_circular(plot=False):
         # The update is handled by the experiment class
         e.iterate(dt)
         manifold.divergence(e.B, div)
-        divBmean = numpy.sqrt((div.trim()**2).mean())
+        divBmean = np.sqrt((div.trim()**2).mean())
         comm.allreduce(divBmean, op=MPI.SUM)
 
         # Difference between numerical and analytic solution
@@ -267,7 +264,7 @@ def test_circular(plot=False):
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
 
-    val = numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt)
+    val = np.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt)
     tol = 5e-4
     # Check if test has passed
     assert (val < tol), (val, tol)

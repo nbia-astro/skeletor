@@ -1,7 +1,7 @@
 from skeletor import cppinit, Float, Float3, Field, Particles, Sources
 from skeletor import Ohm
 from skeletor.manifolds.second_order import Manifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -26,14 +26,14 @@ def landau_ions(plot=False, fitplot=False):
     # Wavenumbers
     ikx, iky = 1, 0
     # Thermal velocity of electrons in x- and y-direction
-    vtx, vty = numpy.sqrt(Ti/mass), 0.0
+    vtx, vty = np.sqrt(Ti/mass), 0.0
     # CFL number
     cfl = 0.5
     # Number of periods to run for
     nperiods = 3.0
 
     # Sound speed
-    cs = numpy.sqrt(Te/mass)
+    cs = np.sqrt(Te/mass)
 
     # Time step
     dt = cfl/cs
@@ -42,53 +42,51 @@ def landau_ions(plot=False, fitplot=False):
     N = npc*nx*ny
 
     # Wave vector and its modulus
-    kx = 2*numpy.pi*ikx/nx
-    ky = 2*numpy.pi*iky/ny
-    k = numpy.sqrt(kx*kx + ky*ky)
+    kx = 2*np.pi*ikx/nx
+    ky = 2*np.pi*iky/ny
+    k = np.sqrt(kx*kx + ky*ky)
 
     # Frequency
     omega = k*cs
 
     # Simulation time
-    tend = 2*numpy.pi*nperiods/omega
+    tend = 2*np.pi*nperiods/omega
 
     # Number of time steps
     nt = int(tend/dt)
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return npc*charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+        return npc*charge*(1 + A*np.cos(kx*x+ky*y)*np.sin(omega*t))
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
-        return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*kx/k
+        return -omega/k*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*kx/k
 
     def uy_an(x, y, t):
         """Analytic y-velocity as function of x, y and t"""
-        return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k
+        return -omega/k*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*ky/k
 
     if quiet:
         # Uniform distribution of particle positions (quiet start)
-        sqrt_npc = int(numpy.sqrt(npc))
+        sqrt_npc = int(np.sqrt(npc))
         assert sqrt_npc**2 == npc
         dx = dy = 1/sqrt_npc
-        x, y = numpy.meshgrid(
-                numpy.arange(0, nx, dx),
-                numpy.arange(0, ny, dy))
+        x, y = np.meshgrid(np.arange(0, nx, dx), np.arange(0, ny, dy))
         x = x.flatten()
         y = y.flatten()
     else:
-        x = nx*numpy.random.uniform(size=N).astype(Float)
-        y = ny*numpy.random.uniform(size=N).astype(Float)
+        x = nx*np.random.uniform(size=N).astype(Float)
+        y = ny*np.random.uniform(size=N).astype(Float)
 
     # Perturbation to particle velocities
     vx = ux_an(x, y, t=0)
     vy = uy_an(x, y, t=0)
-    vz = numpy.zeros_like(vx)
+    vz = np.zeros_like(vx)
 
     # Add thermal velocity
-    vx += vtx*numpy.random.normal(size=N).astype(Float)
-    vy += vty*numpy.random.normal(size=N).astype(Float)
+    vx += vtx*np.random.normal(size=N).astype(Float)
+    vy += vty*np.random.normal(size=N).astype(Float)
 
     # Start parallel processing
     idproc, nvp = cppinit(comm)
@@ -98,13 +96,13 @@ def landau_ions(plot=False, fitplot=False):
     manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+    xg, yg = np.meshgrid(manifold.x, manifold.y)
 
     # Pair of Fourier basis functions with the specified wave numbers.
     # The basis functions are normalized so that the Fourier amplitude can be
     # computed by summing rather than averaging.
-    S = numpy.sin(kx*xg + ky*yg)/(nx*ny)
-    C = numpy.cos(kx*xg + ky*yg)/(nx*ny)
+    S = np.sin(kx*xg + ky*yg)/(nx*ny)
+    C = np.cos(kx*xg + ky*yg)/(nx*ny)
 
     # Maximum number of electrons in each partition
     Nmax = int(1.5*N/nvp)
@@ -138,9 +136,9 @@ def landau_ions(plot=False, fitplot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
+    assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
-    assert numpy.isclose(comm.allreduce(
+    assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
     sources.current.copy_guards()
 
@@ -152,7 +150,7 @@ def landau_ions(plot=False, fitplot=False):
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
     def concatenate(arr):
-        return numpy.concatenate(comm.allgather(arr))
+        return np.concatenate(comm.allgather(arr))
 
     global_E = concatenate(E.trim())
 
@@ -231,16 +229,16 @@ def landau_ions(plot=False, fitplot=False):
                         plt.pause(1e-7)
 
     # Sum squared amplitude over processor, then take the square root
-    ampl = numpy.sqrt(comm.allreduce(ampl2, op=MPI.SUM))
+    ampl = np.sqrt(comm.allreduce(ampl2, op=MPI.SUM))
     # Convert list of times into NumPy array
-    time = numpy.array(time)
+    time = np.array(time)
 
     # Test if growth rate is correct
     if comm.rank == 0:
         from scipy.signal import argrelextrema
 
         # Find first local maximum
-        index = argrelextrema(ampl, numpy.greater)
+        index = argrelextrema(ampl, np.greater)
         tmax = time[index][0]
         ymax = ampl[index][0]
 
@@ -253,7 +251,7 @@ def landau_ions(plot=False, fitplot=False):
             plt.figure(2)
             plt.clf()
             plt.semilogy(time, ampl, 'b')
-            plt.semilogy(time, ymax*numpy.exp(gamma_t*(time - tmax)), 'k-')
+            plt.semilogy(time, ymax*np.exp(gamma_t*(time - tmax)), 'k-')
 
             plt.title(r'$|\hat{\rho}(ikx=%d, iky=%d)|$' % (ikx, iky))
             plt.xlabel("time")

@@ -1,7 +1,7 @@
-import numpy
+import numpy as np
 
 
-class Particles(numpy.ndarray):
+class Particles(np.ndarray):
     """
     Container class for particles in a given subdomain
     """
@@ -27,16 +27,16 @@ class Particles(numpy.ndarray):
         obj.manifold = manifold
 
         # Location of hole left in particle arrays
-        obj.ihole = numpy.zeros(ntmax, Int)
+        obj.ihole = np.zeros(ntmax, Int)
 
         # Buffer arrays for MPI communcation
-        obj.sbufl = numpy.zeros(nbmax, Particle)
-        obj.sbufr = numpy.zeros(nbmax, Particle)
-        obj.rbufl = numpy.zeros(nbmax, Particle)
-        obj.rbufr = numpy.zeros(nbmax, Particle)
+        obj.sbufl = np.zeros(nbmax, Particle)
+        obj.sbufr = np.zeros(nbmax, Particle)
+        obj.rbufl = np.zeros(nbmax, Particle)
+        obj.rbufr = np.zeros(nbmax, Particle)
 
         # Info array used for checking errors in particle move
-        obj.info = numpy.zeros(7, Int)
+        obj.info = np.zeros(7, Int)
 
         # Set initial time
         obj.time = time
@@ -61,14 +61,13 @@ class Particles(numpy.ndarray):
 
     def initialize(self, x, y, vx, vy, vz):
 
-        from numpy import logical_and, sum
         from warnings import warn
 
-        ind = logical_and(y >= self.manifold.edges[0]*self.manifold.dy,
+        ind = np.logical_and(y >= self.manifold.edges[0]*self.manifold.dy,
                           y < self.manifold.edges[1]*self.manifold.dy)
 
         # Number of particles in subdomain
-        self.N = sum(ind)
+        self.N = np.sum(ind)
 
         # Make sure particle array is large enough
         assert self.size >= self.N

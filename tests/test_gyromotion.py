@@ -1,6 +1,6 @@
 from skeletor import Float, Float3, Field, Particles
 from skeletor.manifolds.ppic2 import Manifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -44,16 +44,16 @@ def test_gyromotion(plot=False):
     x0 = 8/32
     y0 = 33/32
 
-    x0 = numpy.array(x0)
-    y0 = numpy.array(y0)
+    x0 = np.array(x0)
+    y0 = np.array(y0)
 
-    def x_an(t): return (-ampl*numpy.cos(og*t + phi) + x0).astype(Float)
+    def x_an(t): return (-ampl*np.cos(og*t + phi) + x0).astype(Float)
 
-    def y_an(t): return (+ampl*numpy.sin(og*t + phi) + y0).astype(Float)
+    def y_an(t): return (+ampl*np.sin(og*t + phi) + y0).astype(Float)
 
-    def vx_an(t): return og*ampl*numpy.sin(og*t + phi)*numpy.ones(N)
+    def vx_an(t): return og*ampl*np.sin(og*t + phi)*np.ones(N)
 
-    def vy_an(t): return og*ampl*numpy.cos(og*t + phi)*numpy.ones(N)
+    def vy_an(t): return og*ampl*np.cos(og*t + phi)*np.ones(N)
 
     # Particle position at t = -dt/2
     x = x_an(-dt/2)
@@ -62,7 +62,7 @@ def test_gyromotion(plot=False):
     # Particle velocity at t = 0
     vx = vx_an(t=0)
     vy = vy_an(t=0)
-    vz = numpy.zeros_like(vx)
+    vz = np.zeros_like(vx)
 
     # Drift forward by dt/2
     x += vx*dt/2
@@ -73,7 +73,7 @@ def test_gyromotion(plot=False):
     manifold = Manifold(nx, ny, comm, Lx=1.0, Ly=2.0)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+    xg, yg = np.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of ions in each partition
     # For this test we only have one particle.
@@ -127,14 +127,14 @@ def test_gyromotion(plot=False):
         # Update time
         t += dt
         # True if particle is in this domain
-        ind = numpy.logical_and(ions['y'][0] >= manifold.edges[0],
+        ind = np.logical_and(ions['y'][0] >= manifold.edges[0],
                                 ions['y'][0] < manifold.edges[1])
         if ind:
             diff_x = abs(ions['x'][0]*manifold.dx - x_an(t))
             diff_y = abs(ions['y'][0]*manifold.dy - y_an(t))
             # Round off errrors giving trouble when comparing
 
-            err = numpy.max([diff_x, diff_y])/ampl
+            err = np.max([diff_x, diff_y])/ampl
             if err > 1.0:
                 err = 0.
             # Check if test has passed

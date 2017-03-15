@@ -1,7 +1,7 @@
 from skeletor import cppinit, Float, Float3, Particles, Sources
 from skeletor import Field
 from skeletor.manifolds.second_order import Manifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -37,7 +37,7 @@ nx, ny = 64, 1
 npc = 16
 
 # Wave numbers
-kx = 2*numpy.pi/nx
+kx = 2*np.pi/nx
 ky = 0
 
 # Total number of particles in simulation
@@ -45,25 +45,25 @@ N = npc*nx*ny
 
 if quiet:
     # Uniform distribution of particle positions (quiet start)
-    sqrt_npc = int(numpy.sqrt(npc))
+    sqrt_npc = int(np.sqrt(npc))
     assert sqrt_npc**2 == npc
     dx = dy = 1/sqrt_npc
-    a, b = numpy.meshgrid(
-            numpy.arange(dx/2, nx+dx/2, dx),
-            numpy.arange(dy/2, ny+dy/2, dy))
+    a, b = np.meshgrid(
+            np.arange(dx/2, nx+dx/2, dx),
+            np.arange(dy/2, ny+dy/2, dy))
     a = a.flatten()
     b = b.flatten()
 else:
-    a = nx*numpy.random.uniform(size=N).astype(Float)
-    b = ny*numpy.random.uniform(size=N).astype(Float)
+    a = nx*np.random.uniform(size=N).astype(Float)
+    b = ny*np.random.uniform(size=N).astype(Float)
 
 # Particle velocity at t = 0
-vx = ampl*numpy.sin(kx*a)
-vy = numpy.zeros_like(a)
-vz = numpy.zeros_like(a)
+vx = ampl*np.sin(kx*a)
+vy = np.zeros_like(a)
+vz = np.zeros_like(a)
 
 # Start the positions at time = t
-x = numpy.mod(a + vx*t, nx)
+x = np.mod(a + vx*t, nx)
 y = b
 
 
@@ -75,7 +75,7 @@ idproc, nvp = cppinit(comm)
 manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny)
 
 # x- and y-grid
-xx, yy = numpy.meshgrid(manifold.x, manifold.y)
+xx, yy = np.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
@@ -100,14 +100,14 @@ sources = Sources(manifold)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
+assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
 sources.current.add_guards()
-assert numpy.isclose(comm.allreduce(
+assert np.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
 
 def ux(a):
-    return ampl*numpy.sin(kx*a)
+    return ampl*np.sin(kx*a)
 
 
 def xp(a, t):
@@ -116,7 +116,8 @@ def xp(a, t):
 
 
 def rho(a, t):
-    return 1/(1 + ampl*kx*numpy.cos(kx*a)*t)
+    return 1/(1 + ampl*kx*np.cos(kx*a)*t)
+
 
 a = manifold.x
 
@@ -131,7 +132,7 @@ B.fill((0.0, 0.0, 0.0))
 def concatenate(arr):
     """Concatenate local arrays to obtain global arrays
     The result is available on all processors."""
-    return numpy.concatenate(comm.allgather(arr))
+    return np.concatenate(comm.allgather(arr))
 
 
 # Make initial figure
@@ -166,9 +167,9 @@ for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
 
-    assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
+    assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
-    assert numpy.isclose(comm.allreduce(
+    assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
     sources.current.copy_guards()

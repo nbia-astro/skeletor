@@ -1,6 +1,6 @@
 from skeletor import Float3, Field, Particles
 from skeletor.manifolds.mpifft4py import ShearingManifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -36,10 +36,10 @@ def test_shearing_epicycle(plot=False):
     Sz = ocbz + 2.0*Omega
 
     # Gyration frequency
-    og = numpy.sqrt(Sz*(Sz + S))
+    og = np.sqrt(Sz*(Sz + S))
 
     # Correct for discretization error
-    # og = numpy.arcsin (numpy.sqrt ((og*dt/2)**2/(1.0 + (Sz*dt/2)**2)))/(dt/2)
+    # og = np.arcsin (np.sqrt ((og*dt/2)**2/(1.0 + (Sz*dt/2)**2)))/(dt/2)
 
     # Phase
     phi = 0
@@ -58,20 +58,20 @@ def test_shearing_epicycle(plot=False):
     x0 = Lx/2
     y0 = Ly/2
 
-    x0 = numpy.array(x0)
-    y0 = numpy.array(y0)
+    x0 = np.array(x0)
+    y0 = np.array(y0)
 
-    def x_an(t): return ampl*numpy.cos(og*t + phi)*numpy.ones(N) + x0
+    def x_an(t): return ampl*np.cos(og*t + phi)*np.ones(N) + x0
 
     def y_an(t):
-        f = -(Sz/og)*ampl*numpy.sin(og*t + phi)*numpy.ones(N) \
+        f = -(Sz/og)*ampl*np.sin(og*t + phi)*np.ones(N) \
              + y0 + S*t*(x0-Lx/2)
         return f
 
-    def vx_an(t): return -og*ampl*numpy.sin(og*t + phi)*numpy.ones(N)
+    def vx_an(t): return -og*ampl*np.sin(og*t + phi)*np.ones(N)
 
     def vy_an(t):
-        return (-Sz*ampl*numpy.cos(og*t + phi) + S*(x0-Lx/2))*numpy.ones(N)
+        return (-Sz*ampl*np.cos(og*t + phi) + S*(x0-Lx/2))*np.ones(N)
 
     # Particle position at t = -dt/2
     x = x_an(-dt/2)
@@ -80,7 +80,7 @@ def test_shearing_epicycle(plot=False):
     # Particle velocity at t = 0
     vx = vx_an(t=0)
     vy = vy_an(t=0)
-    vz = numpy.zeros_like(vx)
+    vz = np.zeros_like(vx)
 
     # Drift forward by dt/2
     x += vx*dt/2
@@ -91,7 +91,7 @@ def test_shearing_epicycle(plot=False):
     manifold = ShearingManifold(nx, ny, comm, Lx=Lx, Ly=Ly, Omega=Omega, S=S)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+    xg, yg = np.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of ions in each partition
     # For this test we only have one particle.
@@ -157,7 +157,7 @@ def test_shearing_epicycle(plot=False):
         t += dt
 
         # True if particle is in this domain
-        ind = numpy.logical_and(ions['y'][0] >= manifold.edges[0],
+        ind = np.logical_and(ions['y'][0] >= manifold.edges[0],
                                 ions['y'][0] < manifold.edges[1])
         if ind:
             diff_x = abs(ions['x'][0]-x_an(t))
@@ -168,7 +168,7 @@ def test_shearing_epicycle(plot=False):
             if diff_y > ny/2:
                 diff_y = 0
 
-            err = numpy.max([diff_x, diff_y])/ampl
+            err = np.max([diff_x, diff_y])/ampl
             # Round off errrors giving trouble when comparing
             if err > 1.0:
                 err = 0.0
@@ -184,7 +184,7 @@ def test_shearing_epicycle(plot=False):
                 if comm.rank == 0:
                     lines1[0].set_data(ions['x'][0]*manifold.dx,
                                        ions['y'][0]*manifold.dy)
-                    lines1[1].set_data(x_an(t), numpy.mod(y_an(t), ny))
+                    lines1[1].set_data(x_an(t), np.mod(y_an(t), ny))
                     lines2[0].set_data(ions['vx'][0], ions['vy'][0])
                     lines2[1].set_data(vx_an(t), vy_an(t))
                     with warnings.catch_warnings():

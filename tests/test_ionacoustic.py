@@ -1,7 +1,7 @@
 from skeletor import Float3, Field, Particles, Sources
 from skeletor import Ohm, InitialCondition
 from skeletor.manifolds.second_order import Manifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -33,25 +33,25 @@ def test_ionacoustic(plot=False):
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return charge*(1 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+        return charge*(1 + A*np.cos(kx*x+ky*y)*np.sin(omega*t))
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
-        return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*kx/k
+        return -omega/k*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*kx/k
 
     def uy_an(x, y, t):
         """Analytic y-velocity as function of x, y and t"""
-        return -omega/k*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k
+        return -omega/k*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*ky/k
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     manifold = Manifold(nx, ny, comm, Lx=1.0, Ly=1.0)
 
     # x- and y-grid
-    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+    xg, yg = np.meshgrid(manifold.x, manifold.y)
 
     # Sound speed
-    cs = numpy.sqrt(Te/mass)
+    cs = np.sqrt(Te/mass)
 
     # Time step
     dt = cfl/cs*manifold.dx
@@ -60,15 +60,15 @@ def test_ionacoustic(plot=False):
     N = npc*nx*ny
 
     # Wave vector and its modulus
-    kx = 2*numpy.pi*ikx/manifold.Lx
-    ky = 2*numpy.pi*iky/manifold.Ly
-    k = numpy.sqrt(kx*kx + ky*ky)
+    kx = 2*np.pi*ikx/manifold.Lx
+    ky = 2*np.pi*iky/manifold.Ly
+    k = np.sqrt(kx*kx + ky*ky)
 
     # Frequency
     omega = k*cs
 
     # Simulation time
-    tend = 2*numpy.pi*nperiods/omega
+    tend = 2*np.pi*nperiods/omega
 
     # Number of time steps
     nt = int(tend/dt)
@@ -113,10 +113,10 @@ def test_ionacoustic(plot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.N*charge/npc)
+    assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
     sources.current.copy_guards()
-    assert numpy.isclose(comm.allreduce(
+    assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
     # Calculate electric field (Solve Ohm's law)
@@ -127,7 +127,7 @@ def test_ionacoustic(plot=False):
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
     def concatenate(arr):
-        return numpy.concatenate(comm.allgather(arr))
+        return np.concatenate(comm.allgather(arr))
 
     # Make initial figure
     if plot:
@@ -198,7 +198,7 @@ def test_ionacoustic(plot=False):
                         plt.pause(1e-7)
 
     # Check if test has passed
-    assert numpy.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge
+    assert np.sqrt(comm.allreduce(diff2, op=MPI.SUM)/nt) < 4e-5*charge
 
 
 if __name__ == "__main__":

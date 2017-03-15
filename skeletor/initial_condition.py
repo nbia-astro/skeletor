@@ -1,3 +1,5 @@
+import numpy as np
+
 class InitialCondition():
 
     def __init__(self, npc, quiet=False, vt=0.0):
@@ -13,24 +15,21 @@ class InitialCondition():
 
     def __call__(self, manifold, ions):
 
-        from numpy import sqrt, arange, meshgrid
-        from numpy.random import uniform, normal
-
         # Total number particles in one MPI domain
         N = manifold.nx*manifold.nyp*self.npc
 
         if self.quiet:
             # Uniform distribution of particle positions (quiet start)
-            sqrt_npc = int(sqrt(self.npc))
+            sqrt_npc = int(np.sqrt(self.npc))
             assert sqrt_npc**2 == self.npc
             npx = manifold.nx*sqrt_npc
             npy = manifold.nyp*sqrt_npc
-            x1 = (arange(npx) + 0.5)/sqrt_npc
-            y1 = (arange(npy) + 0.5)/sqrt_npc + manifold.edges[0]
-            x, y = [xy.flatten() for xy in meshgrid(x1, y1)]
+            x1 = (np.arange(npx) + 0.5)/sqrt_npc
+            y1 = (np.arange(npy) + 0.5)/sqrt_npc + manifold.edges[0]
+            x, y = [xy.flatten() for xy in np.meshgrid(x1, y1)]
         else:
-            x = manifold.nx*uniform(size=N)
-            y = manifold.nyp*uniform(size=N) + manifold.edges[0]
+            x = manifold.nx*np.random.uniform(size=N)
+            y = manifold.nyp*np.random.uniform(size=N) + manifold.edges[0]
 
         # Set initial position
         ions['x'][:N] = x
@@ -38,9 +37,9 @@ class InitialCondition():
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
-        ions['vx'][:N] = self.vt*normal(size=N)
-        ions['vy'][:N] = self.vt*normal(size=N)
-        ions['vz'][:N] = self.vt*normal(size=N)
+        ions['vx'][:N] = self.vt*np.random.normal(size=N)
+        ions['vy'][:N] = self.vt*np.random.normal(size=N)
+        ions['vz'][:N] = self.vt*np.random.normal(size=N)
 
         ions.N = N
 
@@ -75,25 +74,23 @@ class DensityPertubation(InitialCondition):
     def __call__(self, manifold, ions):
 
         from scipy.optimize import newton
-        from numpy import pi, sqrt, arange, empty, empty_like
-        from numpy.random import normal
 
         self.Lx = manifold.Lx
         self.Ly = manifold.Ly
 
-        self.kx = self.ikx*2*pi/self.Lx
-        self.ky = self.iky*2*pi/self.Ly
+        self.kx = self.ikx*2*np.pi/self.Lx
+        self.ky = self.iky*2*np.pi/self.Ly
 
-        sqrt_npc = int(sqrt(self.npc))
+        sqrt_npc = int(np.sqrt(self.npc))
         assert sqrt_npc**2 == self.npc
         npx = manifold.nx*sqrt_npc
         npy = manifold.nyp*sqrt_npc
         # Uniformly distributed numbers from 0 to 1
-        U = (arange(npx) + 0.5)/npx
+        U = (np.arange(npx) + 0.5)/npx
         # Particle y positions
-        y1 = ((arange(npy) + 0.5)/sqrt_npc + manifold.edges[0])*manifold.dy
+        y1 = ((np.arange(npy) + 0.5)/sqrt_npc + manifold.edges[0])*manifold.dy
 
-        self.X = empty_like(U)
+        self.X = np.empty_like(U)
 
         # Find cdf
         self.find_cdf()
@@ -104,8 +101,8 @@ class DensityPertubation(InitialCondition):
         self.npy = npy
 
         N = npx*npy
-        x = empty(N)
-        y = empty(N)
+        x = np.empty(N)
+        y = np.empty(N)
 
         # Calculate particle x-positions
         for k in range(0, self.npy):
@@ -119,9 +116,9 @@ class DensityPertubation(InitialCondition):
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
-        ions['vx'][:N] = self.vt*normal(size=N)
-        ions['vy'][:N] = self.vt*normal(size=N)
-        ions['vz'][:N] = self.vt*normal(size=N)
+        ions['vx'][:N] = self.vt*np.random.normal(size=N)
+        ions['vy'][:N] = self.vt*np.random.normal(size=N)
+        ions['vz'][:N] = self.vt*np.random.normal(size=N)
 
         ions.N = N
 

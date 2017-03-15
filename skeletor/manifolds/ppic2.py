@@ -1,4 +1,5 @@
 from ..grid import Grid
+import numpy as np
 
 
 class Manifold(Grid):
@@ -8,7 +9,6 @@ class Manifold(Grid):
         from ..cython.types import Complex, Complex2, Float, Float3, Int
         from ..cython.ppic2_wrapper import cwpfft2rinit, cppois22
         from math import log2
-        from numpy import zeros
 
         super().__init__(nx, ny, comm, **grid_kwds)
 
@@ -33,18 +33,18 @@ class Manifold(Grid):
         kxp = (nxh - 1)//self.comm.size + 1
         kyp = (ny - 1)//self.comm.size + 1
 
-        self.qt = zeros((kxp, nye), Complex)
-        self.fxyt = zeros((kxp, nye), Complex2)
-        self.mixup = zeros(nxhy, Int)
-        self.sct = zeros(nxyh, Complex)
-        self.ffc = zeros((kxp, nyh), Complex)
-        self.bs = zeros((kyp, kxp), Complex2)
-        self.br = zeros((kyp, kxp), Complex2)
+        self.qt = np.zeros((kxp, nye), Complex)
+        self.fxyt = np.zeros((kxp, nye), Complex2)
+        self.mixup = np.zeros(nxhy, Int)
+        self.sct = np.zeros(nxyh, Complex)
+        self.ffc = np.zeros((kxp, nyh), Complex)
+        self.bs = np.zeros((kyp, kxp), Complex2)
+        self.br = np.zeros((kyp, kxp), Complex2)
 
         # Declare charge and electric fields with fixed number of guard layers.
         # This is necessary for interfacing with PPIC2's C-routines.
-        self.qe = zeros((self.nyp+1, nx+2), dtype=Float)
-        self.fxye = zeros((self.nyp+1, nx+2), dtype=Float3)
+        self.qe = np.zeros((self.nyp+1, nx+2), dtype=Float)
+        self.fxye = np.zeros((self.nyp+1, nx+2), dtype=Float3)
 
         # Prepare fft tables
         cwpfft2rinit(self.mixup, self.sct, self.indx, self.indy)
@@ -96,9 +96,8 @@ class Manifold(Grid):
     def log(self, f):
         """Custom log function that works on the
             active cells of skeletor fields"""
-        from numpy import log as numpy_log
         g = f.copy()
-        g[self.lby:self.uby, self.lbx:self.ubx] = numpy_log(f.active)
+        g[self.lby:self.uby, self.lbx:self.ubx] = np.log(f.active)
 
         g.boundaries_set = False
         return g
