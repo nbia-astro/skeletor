@@ -27,9 +27,6 @@ def test_twostream(plot=False, fitplot=False):
     # Timestep
     dt = 0.05
 
-    # wavenumber
-    kx = 2*np.pi/nx
-
     # Total number of particles in simulation
     N = npc*nx*ny
 
@@ -39,14 +36,20 @@ def test_twostream(plot=False, fitplot=False):
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0., 0.
 
+    # Create numerical grid. This contains information about the extent of
+    # the subdomain assigned to each processor.
+    manifold = Manifold(nx, ny, comm)
+
+    # wavenumber
+    kx = 2*np.pi/manifold.Lx
+
     if quiet:
         # Uniform distribution of particle positions (quiet start)
         sqrt_npc = int(np.sqrt(npc//2))
         assert (sqrt_npc)**2*2 == npc
-        dx = dy = 1/sqrt_npc
-        x, y = np.meshgrid(np.arange(0, nx, dx), np.arange(0, ny, dy))
-        x = x.flatten()
-        y = y.flatten()
+        x1 = (np.arange(manifold.nx*sqrt_npc))*manifold.dx/sqrt_npc
+        y1 = (np.arange(manifold.ny*sqrt_npc))*manifold.dy/sqrt_npc
+        x, y = [xy.flatten() for xy in np.meshgrid(x1, y1)]
     else:
         x = nx*np.random.uniform(size=N).astype(Float)
         y = ny*np.random.uniform(size=N).astype(Float)
@@ -58,7 +61,8 @@ def test_twostream(plot=False, fitplot=False):
     x = np.concatenate([x, x])
     y = np.concatenate([y, y])
 
-    x += 1e-4*np.cos(kx*x)
+    # Small perturbation to get the instability going
+    x += 1e-4*manifold.dx*np.cos(kx*x)
 
     # Make counterpropagating in x
     vx = np.concatenate([vx, -vx])
@@ -69,18 +73,11 @@ def test_twostream(plot=False, fitplot=False):
     vy += vty*np.random.normal(size=N).astype(Float)
     vz = np.zeros_like(vx)
 
-    # Create numerical grid. This contains information about the extent of
-    # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm)
-
     # Maximum number of electrons in each partition
     Nmax = int(1.5*N/comm.size)
 
     # Create particle array
     electrons = Particles(manifold, Nmax, charge=charge, mass=mass)
-
-    x *= manifold.dx
-    y *= manifold.dy
 
     # Assign particles to subdomains
     electrons.initialize(x, y, vx, vy, vz)
@@ -216,11 +213,28 @@ def test_twostream(plot=False, fitplot=False):
         popt, pcov = curve_fit(lin_func, time[first:last],
                                np.log(E_pot[first:last]))
 
-        # Theoretical gamma (TODO: Solve dispersion relation here)
-        gamma_t = 0.3532818590
-
         # Gamma from the fit
         gamma_f = popt[1]
+
+        # Plasma frequency (squared) of each beam
+        # Note the factor of 1/2, which is due to the fact that electrons.n0 is
+        # the *total* number density of the two beams combined.
+        # Note also that we're working in units where the vacuum permittivity
+        # ε0 has been scaled out.
+        wp2 = charge*charge*0.5*electrons.n0/mass
+        # Doppler frequency (squared)
+        kv2 = kx*kx*vdx*vdx
+        # The dispersion relation of the two stream instability with two
+        # counter-propagating beams with velocities v and -v and having equal
+        # number densities is
+        #   (ω² - k²v²)² - 2(k²v² + ω²) ωp² = 0,
+        # where
+        #   ωp² = e²n/m
+        # is the plasma frequency of each beam. The above dispersion relation
+        # is a quadratic equation in ω². The unstable root is
+        w2 = kv2 + wp2 - np.sqrt(wp2*(4*kv2 + wp2))
+        # The corresponding growth rate is
+        gamma_t = np.sqrt(-w2)
 
         # Relative error
         err = abs((gamma_f-gamma_t))/gamma_t
