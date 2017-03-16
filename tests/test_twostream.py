@@ -47,8 +47,8 @@ def test_twostream(plot=False, fitplot=False):
         # Uniform distribution of particle positions (quiet start)
         sqrt_npc = int(np.sqrt(npc//2))
         assert (sqrt_npc)**2*2 == npc
-        x1 = (np.arange(manifold.nx*sqrt_npc))*manifold.dx/sqrt_npc
-        y1 = (np.arange(manifold.ny*sqrt_npc))*manifold.dy/sqrt_npc
+        x1 = (np.arange(manifold.nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc
+        y1 = (np.arange(manifold.ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc
         x, y = [xy.flatten() for xy in np.meshgrid(x1, y1)]
     else:
         x = nx*np.random.uniform(size=N).astype(Float)
