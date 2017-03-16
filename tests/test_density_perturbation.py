@@ -1,6 +1,6 @@
 from skeletor.manifolds.second_order import Manifold
 from skeletor.particles import Particles
-from skeletor.initial_condition import InitialCondition, DensityPertubation
+from skeletor.initial_condition import DensityPertubation
 from skeletor.sources import Sources
 from mpi4py.MPI import COMM_WORLD as comm, SUM
 import numpy as np
@@ -8,7 +8,7 @@ import numpy as np
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 32, 8
+nx, ny = 128, 8
 # Grid size in x- and y-direction (square cells!)
 Lx = 4
 Ly = 1
@@ -43,17 +43,16 @@ Nmax = int(1.5*N/comm.size)
 # Create particle array
 ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
-# Create a uniform density field
-init = InitialCondition(npc, quiet=quiet)
-perturbation = DensityPertubation(npc, ikx, iky, ampl)
-# init(manifold, ions)
-perturbation(manifold, ions)
-
 # Initialize sources
 sources = Sources(manifold)
 
 
-def test_density_perturbation(plot=False):
+def perturb_and_deposit(quiet, plot, num):
+
+    # Create a uniform density field
+    perturbation = DensityPertubation(npc, ikx, iky, ampl, quiet=quiet)
+    # init(manifold, ions)
+    perturbation(manifold, ions)
 
     # Deposit sources
     sources.deposit(ions)
@@ -69,15 +68,29 @@ def test_density_perturbation(plot=False):
     rho = np.concatenate(comm.allgather(sources.rho.trim())).mean(axis=0)
     rho_exact = ions.n0*ions.charge*(1 + ampl*np.cos(kx*manifold.x))
 
-    assert np.sqrt(np.mean((rho - rho_exact)**2)) < 1e-3
+    if quiet:
+        assert np.sqrt(np.mean((rho - rho_exact)**2)) < 0.005*ampl
+    else:
+        ampl_fft = 2*abs(np.fft.rfft(rho)[1])/manifold.nx
+        assert abs(ampl_fft - ampl) < 0.1*ampl
 
     if plot and comm.rank == 0:
         import matplotlib.pyplot as plt
-        plt.figure(1)
+        plt.figure(num)
         plt.clf()
         plt.plot(rho, 'k', rho_exact, 'r--')
-        plt.draw()
-        plt.show()
+
+
+def test_density_perturbation_quiet(plot=False):
+    quiet = True
+    num = 1
+    perturb_and_deposit(quiet, plot, num)
+
+
+def test_density_perturbation_noisy(plot=False):
+    quiet = False
+    num = 2
+    perturb_and_deposit(quiet, plot, num)
 
 
 if __name__ == "__main__":
@@ -87,4 +100,10 @@ if __name__ == "__main__":
     parser.add_argument('--plot', '-p', action='store_true')
     args = parser.parse_args()
 
-    test_density_perturbation(plot=args.plot)
+    test_density_perturbation_quiet(plot=args.plot)
+    test_density_perturbation_noisy(plot=args.plot)
+
+    if args.plot and comm.rank == 0:
+        import matplotlib.pyplot as plt
+        plt.draw()
+        plt.show()
