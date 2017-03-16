@@ -2,6 +2,7 @@ from skeletor import Float3, Field, Particles
 from skeletor import Ohm, InitialCondition, State
 from skeletor.manifolds.second_order import Manifold
 from skeletor.time_steppers.predictor_corrector import PredictorCorrector
+from skeletor.time_steppers.horowitz import Horowitz
 import numpy
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -30,7 +31,7 @@ iky = 1
 # CFL number
 cfl = 0.1
 # Number of periods to run for
-nperiods = 1.0
+nperiods = 2.0
 
 # Sound speed
 cs = numpy.sqrt(Te/mass)
@@ -123,7 +124,8 @@ ohm = Ohm(manifold, temperature=Te, charge=charge)
 state = State(ions, B)
 
 # Initialize timestepper
-e = PredictorCorrector(state, ohm, manifold)
+# e = PredictorCorrector(state, ohm, manifold)
+e = Horowitz(state, ohm, manifold)
 
 # Deposit charges and calculate initial electric field
 e.prepare(dt)
