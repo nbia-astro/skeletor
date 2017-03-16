@@ -128,7 +128,7 @@ def test_gyromotion(plot=False):
         t += dt
         # True if particle is in this domain
         ind = np.logical_and(ions['y'][0] >= manifold.edges[0],
-                                ions['y'][0] < manifold.edges[1])
+                             ions['y'][0] < manifold.edges[1])
         if ind:
             diff_x = abs(ions['x'][0]*manifold.dx - x_an(t))
             diff_y = abs(ions['y'][0]*manifold.dy - y_an(t))

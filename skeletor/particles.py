@@ -64,7 +64,7 @@ class Particles(np.ndarray):
         from warnings import warn
 
         ind = np.logical_and(y >= self.manifold.edges[0]*self.manifold.dy,
-                          y < self.manifold.edges[1]*self.manifold.dy)
+                             y < self.manifold.edges[1]*self.manifold.dy)
 
         # Number of particles in subdomain
         self.N = np.sum(ind)

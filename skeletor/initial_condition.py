@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class InitialCondition():
 
     def __init__(self, npc, quiet=False, vt=0.0):
