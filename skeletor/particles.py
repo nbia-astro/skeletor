@@ -82,8 +82,6 @@ class Particles(np.ndarray):
         self["vy"][:self.N] = vy[ind]
         self["vz"][:self.N] = vz[ind]
 
-        self.units = True
-
     def move(self):
         """Uses ppic2's cppmove2 routine for moving particles
            between processors."""

@@ -44,8 +44,6 @@ class InitialCondition():
 
         ions.N = N
 
-        ions.units = True
-
 
 class DensityPertubation(InitialCondition):
 
@@ -122,8 +120,6 @@ class DensityPertubation(InitialCondition):
         ions['vz'][:N] = self.vt*np.random.normal(size=N)
 
         ions.N = N
-
-        ions.units = True
 
     def find_cdf(self, phase=0.0):
         """
