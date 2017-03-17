@@ -32,7 +32,6 @@ class Horowitz:
         self.E3 = Field(manifold, comm, dtype=Float3)
         self.B2 = Field(manifold, comm, dtype=Float3)
         self.B3 = Field(manifold, comm, dtype=Float3)
-        self.B4 = Field(manifold, comm, dtype=Float3)
         self.E4 = Field(manifold, comm, dtype=Float3)
         self.E2.copy_guards()
         self.E3.copy_guards()
@@ -73,7 +72,6 @@ class Horowitz:
         for it in range(maxiter):
 
             self.E4[:] = self.E3
-            self.B4[:] = self.B3
 
             # Average electric field to estimate it at n + 1/2
             for dim in ('x', 'y', 'z'):
@@ -94,11 +92,10 @@ class Horowitz:
             for dim in ('x', 'y', 'z'):
                 self.E3[dim][...] = -self.E[dim] + 2.0*self.E2[dim]
 
-            diff1 = self.calculate_diff(self.E3, self.E4)
-            diff2 = self.calculate_diff(self.B3, self.B4)
+            diff = self.calculate_diff(self.E3, self.E4)
 
             # Update E and B if difference is sufficiently small
-            if (diff1 < tol and diff2 < tol):
+            if (diff < tol):
                 self.E[:] = self.E3[:]
                 self.B[:] = self.B3[:]
                 self.t += dt
