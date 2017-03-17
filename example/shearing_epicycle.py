@@ -125,6 +125,43 @@ E.fill((0.0, 0.0, 0.0))
 B = Field(manifold, comm, dtype=Float3)
 B.fill((0.0, 0.0, 0.0))
 
+
+class ParticleOrbit():
+    """This small class is used as the analytic solution"""
+    def __init__(self, t):
+        self.__call__(t)
+
+    def __call__(self, t):
+        self.x = x_an(t)
+        self.y = y_an(t)
+        self.vx = vx_an(t)
+        self.vy = vy_an(t)
+
+        self.shear_periodic_y(t)
+        self.periodic_x()
+
+    def periodic_x(self):
+        while self.x < 0:
+            self.x += manifold.Lx
+
+        while self.x >= manifold.Lx:
+            self.x -= manifold.Lx
+
+    def shear_periodic_y(self, t):
+        while self.y < 0:
+            self.y += manifold.Ly
+            self.x -= manifold.Ly*S*t
+            self.vx -= manifold.Ly*S
+
+        while self.y >= manifold.Ly:
+            self.y -= manifold.Ly
+            self.x += manifold.Ly*S*t
+            self.vx += manifold.Ly*S
+
+
+pa = ParticleOrbit(0)
+
+
 # Make initial figure
 if plot:
     import matplotlib.pyplot as plt
@@ -135,10 +172,12 @@ if plot:
     plt.figure(1)
     plt.clf()
     fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
-    lines1 = ax1.plot(ions['y'][0], ions['y'][0], 'b.',)
-    lines2 = ax2.plot(ions['vx'][0], ions['vy'][0], 'b.')
-    ax1.set_xlim(-1, ny+1)
-    ax1.set_ylim(-1, nx+1)
+    lines1 = ax1.plot(ions['y'][0]*manifold.dy,
+                      ions['y'][0]*manifold.dx, 'b.',
+                      pa.y, pa.x, 'rx')
+    lines2 = ax2.plot(ions['vx'][0], ions['vy'][0], 'b.', pa.vx, pa.vy, 'rx')
+    ax1.set_xlim(0, manifold.Ly)
+    ax1.set_ylim(0, manifold.Lx)
     ax2.set_ylim(-1.1*og*ampl, 1.1*og*ampl)
     ax2.set_xlim(-Sz*ampl - S*y0, Sz*ampl - S*y0)
     ax1.set_xlabel('y')
@@ -163,16 +202,29 @@ for it in range(nt):
     # Update time
     t += dt
 
+    # Update analytic solution
+    pa(t)
+
     # Make figures
     if plot:
         if (it % 100 == 0):
             if ind:
-                lines1[0].set_data(ions['y'][0], ions['x'][0])
+                lines1[0].set_data(ions['y'][0]*manifold.dy,
+                                   ions['x'][0]*manifold.dx)
+                lines1[1].set_data(pa.y, pa.x)
                 lines2[0].set_data(ions['vx'][0], ions['vy'][0])
+                lines2[1].set_data(pa.vx, pa.vy)
                 with warnings.catch_warnings():
                     warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
                     plt.pause(1e-7)
 
-# Check if test has passed
-# This test is only a visual test at the moment...
+            diff_x = abs(ions['x'][0]*manifold.dx - pa.x)
+            diff_y = abs(ions['y'][0]*manifold.dy - pa.y)
+            # Round off errrors giving trouble when comparing
+
+            err = np.max([diff_x, diff_y])/ampl
+            if err > 1.0:
+                err = 0.
+            # Check if test has passed
+            assert err < 2.0e-2
