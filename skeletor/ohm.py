@@ -41,6 +41,12 @@ class Ohm:
 
         # Ampere's law to calculate total current
         self.curl(B, self.Je)
+        # Apply boundary condition to Je
+        self.Je.copy_guards()
+        # NOTE: This is only done to prevent warnings about doing arithmetic
+        # with invalid values in the guard layers. Altenatively (and ideally)
+        # we could carry out the computation of Je and the cross product of Je
+        # with B only in the active layers.
 
         for dim in ('x', 'y', 'z'):
             # Subtract ion current to get electron current
