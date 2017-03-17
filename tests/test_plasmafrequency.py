@@ -1,7 +1,7 @@
-from skeletor import Float, Float3, Field, Particles, Sources
+from skeletor import Float3, Field, Particles, Sources
 from skeletor.manifolds.mpifft4py import Manifold
 from skeletor import Poisson, InitialCondition
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -31,52 +31,52 @@ def test_plasmafrequency(plot=False):
     nperiods = 1
 
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     # Epsilon 0
     eps0 = 1
 
     # Plasma frequency
-    omega = numpy.sqrt(charge**2*n0/(mass*eps0))
+    omega = np.sqrt(charge**2*n0/(mass*eps0))
 
     # Time step
     dt = 0.1
 
     # Simulation time
-    tend = 2*numpy.pi*nperiods/omega
+    tend = 2*np.pi*nperiods/omega
 
     # Number of time steps
     nt = int(tend/dt)
 
     def rho_an(x, y, t):
         """Analytic density as function of x, y and t"""
-        return charge*(n0 + A*numpy.cos(kx*x+ky*y)*numpy.sin(omega*t))
+        return charge*(n0 + A*np.cos(kx*x+ky*y)*np.sin(omega*t))
 
     def ux_an(x, y, t):
         """Analytic x-velocity as function of x, y and t"""
-        return -omega*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*kx/k**2
+        return -omega*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*kx/k**2
 
     def uy_an(x, y, t):
         """Analytic y-velocity as function of x, y and t"""
-        return -omega*A*numpy.sin(kx*x+ky*y)*numpy.cos(omega*t)*ky/k**2
+        return -omega*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*ky/k**2
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     manifold = Manifold(nx, ny, comm)
 
     # Wave vector and its modulus
-    kx = 2*numpy.pi*ikx/manifold.Lx
-    ky = 2*numpy.pi*iky/manifold.Ly
-    k = numpy.sqrt(kx*kx + ky*ky)
+    kx = 2*np.pi*ikx/manifold.Lx
+    ky = 2*np.pi*iky/manifold.Ly
+    k = np.sqrt(kx*kx + ky*ky)
 
-        # x- and y-grid
-    xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+    # x- and y-grid
+    xg, yg = np.meshgrid(manifold.x, manifold.y)
 
     # Maximum number of electrons in each partition
-    npmax = int(1.5*np/comm.size)
+    Nmax = int(1.5*N/comm.size)
 
     # Create particle array
-    electrons = Particles(manifold, npmax, charge=charge, mass=mass)
+    electrons = Particles(manifold, Nmax, charge=charge, mass=mass)
 
     # Create a uniform density field
     init = InitialCondition(npc, quiet=quiet)
@@ -92,7 +92,7 @@ def test_plasmafrequency(plot=False):
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
-    assert comm.allreduce(electrons.np, op=MPI.SUM) == np
+    assert comm.allreduce(electrons.N, op=MPI.SUM) == N
 
     # Set the electric field to zero
     E = Field(manifold, dtype=Float3)
@@ -114,10 +114,10 @@ def test_plasmafrequency(plot=False):
     sources.deposit(electrons)
     # Adjust density (we should do this somewhere else)
     # sources.rho /= npc
-    # assert numpy.isclose(sources.rho.sum(), electrons.np*charge/npc)
+    # assert np.isclose(sources.rho.sum(), electrons.N*charge/npc)
     sources.current.add_guards()
-    # assert numpy.isclose(comm.allreduce(
-    # sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+    # assert np.isclose(comm.allreduce(
+    # sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
     # Solve Gauss' law
     poisson(sources.rho, E)
@@ -127,7 +127,7 @@ def test_plasmafrequency(plot=False):
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
     def concatenate(arr):
-        return numpy.concatenate(comm.allgather(arr))
+        return np.concatenate(comm.allgather(arr))
 
     # Make initial figure
     if plot:
@@ -165,12 +165,12 @@ def test_plasmafrequency(plot=False):
         sources.deposit(electrons)
         # Adjust density (TODO: we should do this somewhere else)
         # sources.rho /= npc
-        # assert numpy.isclose(sources.rho.sum(),electrons.np*charge/npc)
+        # assert np.isclose(sources.rho.sum(),electrons.N*charge/npc)
         # Boundary calls
         sources.current.add_guards()
 
-        # assert numpy.isclose(comm.allreduce(
-        #     sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+        # assert np.isclose(comm.allreduce(
+        #     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
         # Solve Gauss' law
         poisson(sources.rho, E)
@@ -198,7 +198,7 @@ def test_plasmafrequency(plot=False):
     global_rho_an = concatenate(sources.rho.trim())
     if comm.rank == 0:
         tol = 1e-4
-        err = numpy.max(numpy.abs(global_rho_an - global_rho))
+        err = np.max(np.abs(global_rho_an - global_rho))
         assert (err < tol)
 
 

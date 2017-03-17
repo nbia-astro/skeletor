@@ -1,4 +1,5 @@
 from .cython.types import grid_t
+import numpy as np
 
 
 class Grid(grid_t):
@@ -63,18 +64,15 @@ class Grid(grid_t):
     @property
     def x(self):
         "One-dimensional x-coordinate array"
-        from numpy import arange
-        return (arange(self.nx) + 0.5)*self.dx
+        return (np.arange(self.nx) + 0.5)*self.dx
 
     @property
     def y(self):
         "One-dimensional y-coordinate array"
-        from numpy import arange
-        return (arange(self.noff, self.noff + self.nyp) + 0.5)*self.dy
+        return (np.arange(self.noff, self.noff + self.nyp) + 0.5)*self.dy
 
     @property
     def yg(self):
         "One-dimensional y-coordinate array including ghost"
-        from numpy import arange
-        return (arange(self.noff - self.lby, self.noff + self.nyp + self.lby)
-                + 0.5)*self.dy
+        return (np.arange(self.noff - self.lby,
+                          self.noff + self.nyp + self.lby) + 0.5)*self.dy

@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float3, Field, Particles
-import numpy
+import numpy as np
 from skeletor.manifolds.second_order import ShearingManifold
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -9,7 +9,7 @@ plot = True
 dt = 0.5e-3
 
 # Simulation time
-tend = 2*numpy.pi
+tend = 2*np.pi
 
 # Number of time steps
 nt = int(tend/dt)
@@ -39,10 +39,10 @@ bz_star = bz + 2.0*mass/charge*Omega
 Sz = ocbz + 2.0*Omega
 
 # Gyration frequency
-og = numpy.sqrt(Sz*(Sz + S))
+og = np.sqrt(Sz*(Sz + S))
 
 # Phase
-phi = numpy.pi/2
+phi = np.pi/2
 
 # Number of grid points in x- and y-direction
 nx, ny = 64, 32
@@ -55,30 +55,30 @@ Ly = 1
 ampl = Lx/3
 
 # Total number of particles in simulation
-np = 1
+N = 1
 
 y0 = Ly/2
 x0 = Lx/2
 
-x0 = numpy.array(x0)
-y0 = numpy.array(y0)
+x0 = np.array(x0)
+y0 = np.array(y0)
 
 
 def y_an(t):
-    return ampl*numpy.cos(og*t + phi)*numpy.ones(np) + y0
+    return ampl*np.cos(og*t + phi)*np.ones(N) + y0
 
 
 def x_an(t):
-    x = +(Sz/og)*ampl*numpy.sin(og*t+phi)*numpy.ones(np) + x0 - S*t*y0
+    x = +(Sz/og)*ampl*np.sin(og*t+phi)*np.ones(N) + x0 - S*t*y0
     return x
 
 
 def vy_an(t):
-    return -og*ampl*numpy.sin(og*t + phi)*numpy.ones(np)
+    return -og*ampl*np.sin(og*t + phi)*np.ones(N)
 
 
 def vx_an(t):
-    return (Sz*ampl*numpy.cos(og*t + phi) - S*y0)*numpy.ones(np)
+    return (Sz*ampl*np.cos(og*t + phi) - S*y0)*np.ones(N)
 
 
 # Particle position at t = -dt/2
@@ -88,7 +88,7 @@ y = y_an(-dt/2)
 # Particle velocity at t = 0
 vx = vx_an(t=0)
 vy = vy_an(t=0)
-vz = numpy.zeros_like(vy)
+vz = np.zeros_like(vy)
 
 # Drift forward by dt/2
 x += vx*dt/2
@@ -103,21 +103,21 @@ idproc, nvp = cppinit(comm)
 manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega, Lx=Lx, Ly=Ly)
 
 # x- and y-grid
-xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+xg, yg = np.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
-npmax = np
+Nmax = N
 
 # Create particle array
-ions = Particles(manifold, npmax, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-assert comm.allreduce(ions.np, op=MPI.SUM) == np
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 E = Field(manifold, comm, dtype=Float3)
 E.fill((0.0, 0.0, 0.0))
@@ -157,8 +157,8 @@ for it in range(nt):
     ions.push_modified(E, B, dt)
 
     # True if particle is in this domain
-    ind = numpy.logical_and(ions['y'][0] >= manifold.edges[0],
-                            ions['y'][0] < manifold.edges[1])
+    ind = np.logical_and(ions['y'][0] >= manifold.edges[0],
+                         ions['y'][0] < manifold.edges[1])
 
     # Update time
     t += dt

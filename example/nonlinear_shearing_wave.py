@@ -1,7 +1,7 @@
 from skeletor import cppinit, Float, Float3, Particles, Sources
 from skeletor import ShearField
 from skeletor.manifolds.second_order import ShearingManifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -18,7 +18,7 @@ dt = 0.5e-3
 t = 0
 
 # Simulation time
-tend = numpy.pi/2
+tend = np.pi/2
 
 # Number of time steps
 nt = int((tend-t)/dt)
@@ -34,7 +34,7 @@ Omega = 1
 S = -3/2
 
 # Epicyclic frequency
-kappa = numpy.sqrt(2*Omega*(2*Omega+S))
+kappa = np.sqrt(2*Omega*(2*Omega+S))
 
 # Amplitude of perturbation
 ampl = 2.
@@ -46,48 +46,48 @@ nx, ny = 64, 64
 npc = 16
 
 # Wave numbers
-kx = 2*numpy.pi/nx
+kx = 2*np.pi/nx
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 if quiet:
     # Uniform distribution of particle positions (quiet start)
-    sqrt_npc = int(numpy.sqrt(npc))
+    sqrt_npc = int(np.sqrt(npc))
     assert sqrt_npc**2 == npc
     dx = dy = 1/sqrt_npc
-    a, b = numpy.meshgrid(
-            numpy.arange(dx/2, nx+dx/2, dx),
-            numpy.arange(dy/2, ny+dy/2, dy))
+    a, b = np.meshgrid(
+            np.arange(dx/2, nx+dx/2, dx),
+            np.arange(dy/2, ny+dy/2, dy))
     a = a.flatten()
     b = b.flatten()
 else:
-    a = nx*numpy.random.uniform(size=np).astype(Float)
-    b = ny*numpy.random.uniform(size=np).astype(Float)
+    a = nx*np.random.uniform(size=N).astype(Float)
+    b = ny*np.random.uniform(size=N).astype(Float)
 
 
 def x_an(ap, bp, t):
     phi = kx*ap
-    x = 2*Omega/kappa*ampl*(numpy.sin(kappa*t + phi) - numpy.sin(phi)) + ap \
-        - S*t*(bp - ampl*numpy.cos(phi))
+    x = 2*Omega/kappa*ampl*(np.sin(kappa*t + phi) - np.sin(phi)) + ap \
+        - S*t*(bp - ampl*np.cos(phi))
     return x
 
 
 def y_an(ap, bp, t):
     phi = kx*ap
-    y = ampl*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) + bp
+    y = ampl*(np.cos(kappa*t + phi) - np.cos(phi)) + bp
     return y
 
 
 def vx_an(ap, bp, t):
     phi = kx*ap
-    vx = 2*Omega*ampl*numpy.cos(kappa*t + phi) - S*(bp - ampl*numpy.cos(phi))
+    vx = 2*Omega*ampl*np.cos(kappa*t + phi) - S*(bp - ampl*np.cos(phi))
     return vx
 
 
 def vy_an(ap, bp, t):
     phi = kx*ap
-    vy = -ampl*kappa*numpy.sin(kappa*t + phi)
+    vy = -ampl*kappa*np.sin(kappa*t + phi)
     return vy
 
 
@@ -97,16 +97,16 @@ def euler(ap, bp, t):
 
 def euler_prime(a, t):
     phi = kx*a
-    dxda = 2*Omega/kappa*ampl*kx*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) \
-        + 1 - S*t*ampl*kx*numpy.sin(phi)
-    dyda = -ampl*kx*(numpy.sin(kappa*t + phi) - numpy.sin(phi))
+    dxda = 2*Omega/kappa*ampl*kx*(np.cos(kappa*t + phi) - np.cos(phi)) \
+        + 1 - S*t*ampl*kx*np.sin(phi)
+    dyda = -ampl*kx*(np.sin(kappa*t + phi) - np.sin(phi))
 
     return dxda + S*t*dyda
 
 
 def mean(f, axis=None):
     """Compute mean of an array across processors."""
-    result = numpy.mean(f, axis=axis)
+    result = np.mean(f, axis=axis)
     if axis is None or axis == 0:
         # If the mean is to be taken over *all* axes or just the y-axis,
         # then we need to communicate
@@ -116,7 +116,7 @@ def mean(f, axis=None):
 
 def rms(f):
     """Compute root-mean-square of an array across processors."""
-    return numpy.sqrt(mean(f**2))
+    return np.sqrt(mean(f**2))
 
 
 def lagrange(xp, t, tol=1.48e-8, maxiter=50):
@@ -173,25 +173,25 @@ idproc, nvp = cppinit(comm)
 manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
 
 # x- and y-grid
-xx, yy = numpy.meshgrid(manifold.x, manifold.y)
+xx, yy = np.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
-npmax = int(1.25*np/nvp)
+Nmax = int(1.25*N/nvp)
 
 # Create particle array
-ions = Particles(manifold, npmax, time=dt/2, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, time=dt/2, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy)
 
 # Make sure particles actually reside in the local subdomain
-assert all(ions["y"][:ions.np] >= manifold.edges[0])
-assert all(ions["y"][:ions.np] < manifold.edges[1])
+assert all(ions["y"][:ions.N] >= manifold.edges[0])
+assert all(ions["y"][:ions.N] < manifold.edges[1])
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-assert comm.allreduce(ions.np, op=MPI.SUM) == np
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(manifold)
@@ -202,10 +202,10 @@ Jy_periodic = ShearField(manifold, time=0, dtype=Float3)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+assert np.isclose(sources.rho.sum(), ions.N*charge)
 sources.current.add_guards()
-assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+assert np.isclose(comm.allreduce(
+    sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 sources.current.copy_guards()
 
 # Copy density into a shear field
@@ -221,7 +221,7 @@ E.fill((0.0, 0.0))
 def concatenate(arr):
     """Concatenate local arrays to obtain global arrays
     The result is available on all processors."""
-    return numpy.concatenate(comm.allgather(arr))
+    return np.concatenate(comm.allgather(arr))
 
 
 # Make initial figure
@@ -339,7 +339,7 @@ for it in range(nt):
                                  mean(axis=0))
                 xp_par = euler(ag, 0, t)
                 xp_par %= nx
-                ind = numpy.argsort(xp_par)
+                ind = np.argsort(xp_par)
                 im4[1].set_data(xp_par[ind], rho_an(ag, t)[ind])
                 im5[1].set_data(xp_par[ind], vx_an(ag, 0, t)[ind]
                                 + S*y_an(ag, 0, t)[ind])

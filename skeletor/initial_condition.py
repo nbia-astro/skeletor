@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class InitialCondition():
 
     def __init__(self, npc, quiet=False, vt=0.0):
@@ -13,50 +16,41 @@ class InitialCondition():
 
     def __call__(self, manifold, ions):
 
-        from numpy import sqrt, arange, meshgrid
-        from numpy.random import uniform, normal
-
         # Total number particles in one MPI domain
-        np = manifold.nx*manifold.nyp*self.npc
+        N = manifold.nx*manifold.nyp*self.npc
 
         if self.quiet:
             # Uniform distribution of particle positions (quiet start)
-            sqrt_npc = int(sqrt(self.npc))
+            sqrt_npc = int(np.sqrt(self.npc))
             assert sqrt_npc**2 == self.npc
             npx = manifold.nx*sqrt_npc
             npy = manifold.nyp*sqrt_npc
-            x1 = manifold.Lx*(arange(npx) + 0.5)/npx
-            y1 = manifold.edges[0]*manifold.dy + \
-                manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
-            x, y = meshgrid(x1, y1)
-            x = x.flatten()
-            y = y.flatten()
+            x1 = (np.arange(npx) + 0.5)/sqrt_npc
+            y1 = (np.arange(npy) + 0.5)/sqrt_npc + manifold.edges[0]
+            x, y = [xy.flatten() for xy in np.meshgrid(x1, y1)]
         else:
-            x = manifold.Lx*uniform(size=np)
-            y = manifold.edges[0]*manifold.dy + \
-                manifold.Ly/manifold.comm.size*uniform(size=np)
+            x = manifold.nx*np.random.uniform(size=N)
+            y = manifold.nyp*np.random.uniform(size=N) + manifold.edges[0]
 
         # Set initial position
-        ions['x'][:np] = x/manifold.dx
-        ions['y'][:np] = y/manifold.dy
+        ions['x'][:N] = x
+        ions['y'][:N] = y
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
-        ions['vx'][:np] = self.vt*normal(size=np)
-        ions['vy'][:np] = self.vt*normal(size=np)
-        ions['vz'][:np] = self.vt*normal(size=np)
+        ions['vx'][:N] = self.vt*np.random.normal(size=N)
+        ions['vy'][:N] = self.vt*np.random.normal(size=N)
+        ions['vz'][:N] = self.vt*np.random.normal(size=N)
 
-        ions.np = np
-
-        ions.units = True
+        ions.N = N
 
 
 class DensityPertubation(InitialCondition):
 
-    def __init__(self, npc, ikx, iky, ampl, vt=0):
+    def __init__(self, npc, ikx, iky, ampl, **kwds):
 
-        # Particles per cell
-        self.npc = npc
+        # kwds['quiet'] = True
+        super().__init__(npc, **kwds)
 
         # Wavenumber mode numbers
         self.ikx = ikx
@@ -64,9 +58,6 @@ class DensityPertubation(InitialCondition):
 
         # Amplitude of perturbation
         self.ampl = ampl
-
-        # Ion thermal velocity
-        self.vt = vt
 
         if self.ikx == 0:
             msg = """This class unfortunately cannot currently handle density
@@ -77,89 +68,57 @@ class DensityPertubation(InitialCondition):
             raise RuntimeError(msg)
 
     def __call__(self, manifold, ions):
+        # TODO: Add more documentation
 
         from scipy.optimize import newton
-        from numpy import pi, sqrt, arange, empty, empty_like
-        from numpy.random import normal
+
+        # This initialize uniformly distributed particle positions
+        # and normally distributed particle velocities
+        super().__call__(manifold, ions)
 
         self.Lx = manifold.Lx
         self.Ly = manifold.Ly
 
-        self.kx = self.ikx*2*pi/self.Lx
-        self.ky = self.iky*2*pi/self.Ly
+        self.kx = self.ikx*2*np.pi/self.Lx
+        self.ky = self.iky*2*np.pi/self.Ly
 
-        sqrt_npc = int(sqrt(self.npc))
-        assert sqrt_npc**2 == self.npc
-        npx = manifold.nx*sqrt_npc
-        npy = manifold.nyp*sqrt_npc
-        # Uniformly distributed numbers from 0 to 1
-        U = (arange(npx) + 0.5)/npx
-        # Particle y positions
-        y1 = manifold.edges[0]*manifold.dy + \
-            manifold.Ly/manifold.comm.size*(arange(npy) + 0.5)/npy
-
-        self.X = empty_like(U)
+        # x-coordinate in units of the box size
+        x = ions['x'][:ions.N]/manifold.nx
+        # y-coordinate in "physical" units
+        y = ions['y'][:ions.N]*manifold.dy
 
         # Find cdf
-        self.find_cdf()
+        cdf = self.find_cdf()
 
-        # Store newton solver for easy access
-        self.newton = newton
-        self.npx = npx
-        self.npy = npy
-
-        np = npx*npy
-        x = empty(np)
-        y = empty(np)
-
-        # Calculate particle x-positions
-        for k in range(0, self.npy):
-            self.find_X(U, y1[k])
-            x[k*npx:(k+1)*npx] = self.X
-            y[k*npx:(k+1)*npx] = y1[k]
+        for ip in range(ions.N):
+            # This guess is exact if the self.ampl is zero and it's presumably
+            # still a decent guess if self.ampl is small compared to unity.
+            guess = x[ip]*manifold.Lx
+            x[ip] = newton(lambda X: cdf(X, y[ip]) - x[ip], guess)
 
         # Set initial positions
-        ions['x'][:np] = x/manifold.dx
-        ions['y'][:np] = y/manifold.dy
-
-        # Draw particle velocities from a normal distribution
-        # with zero mean and width 'vt'
-        ions['vx'][:np] = self.vt*normal(size=np)
-        ions['vy'][:np] = self.vt*normal(size=np)
-        ions['vz'][:np] = self.vt*normal(size=np)
-
-        ions.np = np
-
-        ions.units = True
+        ions['x'][:ions.N] = x/manifold.dx
+        ions['y'][:ions.N] = y/manifold.dy
 
     def find_cdf(self, phase=0.0):
         """
         This function symbolically calculates the cdf for the density
         distribution.
         """
-        import sympy as sym
+        import sympy
 
         # Define symbols
-        x, y = sym.symbols("x, y")
+        x, y = sympy.symbols("x, y")
 
         # Density distribution
-        n = 1 + self.ampl*sym.cos(self.kx*x + self.ky*y + phase)
+        n = 1 + self.ampl*sympy.cos(self.kx*x + self.ky*y + phase)
 
         # Analytic density distribution as numpy function
-        self.f = sym.lambdify((x, y), n, "numpy")
+        self.f = sympy.lambdify((x, y), n, "numpy")
 
         # Symbolic pdf and cdf
-        pdf_sym = n/sym.integrate(n, (x, 0, self.Lx))
-        cdf_sym = sym.integrate(pdf_sym, (x, 0, x))
+        pdf_sym = n/sympy.integrate(n, (x, 0, self.Lx))
+        cdf_sym = sympy.integrate(pdf_sym, (x, 0, x))
 
         # Turn sympy function into numpy function
-        self.cdf = sym.lambdify((x, y), cdf_sym, "numpy")
-
-    def find_X(self, U, y):
-        """
-        Find a row of y-values for each value of x.
-        """
-        self.X[0] = self.newton(lambda x: self.cdf(x, y) - U[0], 0)
-        for i in range(1, self.npx):
-            self.X[i] = self.newton(lambda x: self.cdf(x, y) - U[i],
-                                    self.X[i-1])
+        return sympy.lambdify((x, y), cdf_sym, "numpy")

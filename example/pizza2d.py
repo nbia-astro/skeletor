@@ -1,7 +1,7 @@
 from skeletor import cppinit, Float, Float3, Particles, Sources
 from skeletor import ShearField
 from skeletor.manifolds.second_order import ShearingManifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ Omega = 1
 S = -3/2
 
 # Epicyclic frequency
-kappa = numpy.sqrt(2*Omega*(2*Omega+S))
+kappa = np.sqrt(2*Omega*(2*Omega+S))
 
 # Amplitude of perturbation
 ampl = 2.
@@ -30,52 +30,52 @@ nx, ny = 64, 64
 npc = 64
 
 # Wave numbers
-kx = 2*numpy.pi/nx
+kx = 2*np.pi/nx
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 # Uniform distribution of particle positions (quiet start)
-sqrt_npc = int(numpy.sqrt(npc))
+sqrt_npc = int(np.sqrt(npc))
 assert sqrt_npc**2 == npc
 dx = dy = 1/sqrt_npc
-a, b = numpy.meshgrid(
-        numpy.arange(dx/2, nx+dx/2, dx),
-        numpy.arange(dy/2, ny+dy/2, dy))
+a, b = np.meshgrid(
+        np.arange(dx/2, nx+dx/2, dx),
+        np.arange(dy/2, ny+dy/2, dy))
 a = a.flatten()
 b = b.flatten()
 
 
 def x_an(ap, bp, t):
     phi = kx*ap
-    x = 2*Omega/kappa*ampl*(numpy.sin(kappa*t + phi) - numpy.sin(phi)) + ap \
-        - S*t*(bp - ampl*numpy.cos(phi))
+    x = 2*Omega/kappa*ampl*(np.sin(kappa*t + phi) - np.sin(phi)) + ap \
+        - S*t*(bp - ampl*np.cos(phi))
     return x
 
 
 def y_an(ap, bp, t):
     phi = kx*ap
-    y = ampl*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) + bp
+    y = ampl*(np.cos(kappa*t + phi) - np.cos(phi)) + bp
     return y
 
 
 def vx_an(ap, bp, t):
     phi = kx*ap
-    vx = 2*Omega*ampl*numpy.cos(kappa*t + phi) - S*(bp - ampl*numpy.cos(phi))
+    vx = 2*Omega*ampl*np.cos(kappa*t + phi) - S*(bp - ampl*np.cos(phi))
     return vx
 
 
 def vy_an(ap, bp, t):
     phi = kx*ap
-    vy = -ampl*kappa*numpy.sin(kappa*t + phi)
+    vy = -ampl*kappa*np.sin(kappa*t + phi)
     return vy
 
 
 def alpha_particle(ap, t):
     phi = kx*ap
-    dxda = 2*Omega/kappa*ampl*kx*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) \
-        + 1 - S*t*ampl*kx*numpy.sin(phi)
-    dyda = -ampl*kx*(numpy.sin(kappa*t + phi) - numpy.sin(phi))
+    dxda = 2*Omega/kappa*ampl*kx*(np.cos(kappa*t + phi) - np.cos(phi)) \
+        + 1 - S*t*ampl*kx*np.sin(phi)
+    dyda = -ampl*kx*(np.sin(kappa*t + phi) - np.sin(phi))
 
     return dxda + S*t*dyda
 
@@ -91,8 +91,8 @@ phi = kx*a
 x = a
 y = b
 
-vx = numpy.zeros_like(x)
-vy = numpy.zeros_like(y)
+vx = np.zeros_like(x)
+vy = np.zeros_like(y)
 
 # Start parallel processing
 idproc, nvp = cppinit(comm)
@@ -102,25 +102,25 @@ idproc, nvp = cppinit(comm)
 manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
 
 # x- and y-grid
-xx, yy = numpy.meshgrid(manifold.x, manifold.y)
+xx, yy = np.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
-npmax = int(5*np/nvp)
+Nmax = int(5*N/nvp)
 
 # Create particle array
-ions = Particles(manifold, npmax, time=0, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, time=0, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy)
 
 # Make sure particles actually reside in the local subdomain
-assert all(ions["y"][:ions.np] >= manifold.edges[0])
-assert all(ions["y"][:ions.np] < manifold.edges[1])
+assert all(ions["y"][:ions.N] >= manifold.edges[0])
+assert all(ions["y"][:ions.N] < manifold.edges[1])
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-assert comm.allreduce(ions.np, op=MPI.SUM) == np
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(manifold)
@@ -131,25 +131,25 @@ Jy_periodic = ShearField(manifold, time=0, dtype=Float3)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+assert np.isclose(sources.rho.sum(), ions.N*charge)
 sources.current.add_guards()
-assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+assert np.isclose(comm.allreduce(
+    sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 sources.current.copy_guards()
 
 
 def concatenate(arr):
     """Concatenate local arrays to obtain global arrays
     The result is available on all processors."""
-    return numpy.concatenate(comm.allgather(arr))
+    return np.concatenate(comm.allgather(arr))
 
 
 def update(t):
 
-    ions['x'][:np] = x_an(a, b, t)
-    ions['y'][:np] = y_an(a, b, t)
-    ions['vx'][:np] = vx_an(a, b, t)
-    ions['vy'][:np] = vy_an(a, b, t)
+    ions['x'][:N] = x_an(a, b, t)
+    ions['y'][:N] = y_an(a, b, t)
+    ions['vx'][:N] = vx_an(a, b, t)
+    ions['vy'][:N] = vy_an(a, b, t)
     ions.time = t
     ions.shear_periodic_y()
     ions.periodic_x()
@@ -158,15 +158,15 @@ def update(t):
     sources.deposit(ions)
     sources.current.time = t
 
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+    assert np.isclose(sources.rho.sum(), ions.N*charge)
     sources.current.add_guards()
 
-    assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+    assert np.isclose(comm.allreduce(
+        sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 
     sources.current.copy_guards()
 
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
+    assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
@@ -209,7 +209,7 @@ def update(t):
                          mean(axis=0))
         xp_par = x_an(manifold.x, 0, t) + S*y_an(manifold.x, 0, t)*t
         xp_par %= nx
-        ind = numpy.argsort(xp_par)
+        ind = np.argsort(xp_par)
         im4[1].set_data(xp_par[ind], rho_an_particle(manifold.x, t)[ind])
         im6[1].set_data(xp_par[ind], vy_an(manifold.x, 0, t)[ind])
         im5[1].set_data(xp_par[ind], vx_an(manifold.x, 0, t)[ind]+S*y_an
@@ -236,7 +236,7 @@ if comm.rank == 0:
     im1c = axes[2, 0].imshow(global_Jy/global_rho)
     im2c = axes[2, 1].imshow(global_Jy_periodic/global_rho_periodic)
     axtime1 = plt.axes([0.125, 0.1, 0.775, 0.03])
-    stime1 = mw.Slider(axtime1, 'Time', -numpy.pi, numpy.pi/2, 0)
+    stime1 = mw.Slider(axtime1, 'Time', -np.pi, np.pi/2, 0)
     stime1.on_changed(update)
 
     plt.figure(2)
@@ -252,11 +252,11 @@ if comm.rank == 0:
     ax1.set_title(r'$\rho/\rho_0$')
     # Create slider widget for changing time
     axtime2 = plt.axes([0.125, 0.1, 0.775, 0.03])
-    stime2 = mw.Slider(axtime2, 'Time', -numpy.pi, numpy.pi/2, 0)
+    stime2 = mw.Slider(axtime2, 'Time', -np.pi, np.pi/2, 0)
     stime2.on_changed(update)
     xp_par = x_an(a, b, 0) + S*y_an(a, b, 0)*0
     xp_par %= nx
-    xp_par = numpy.sort(xp_par)
+    xp_par = np.sort(xp_par)
     im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
                    'b',
                    manifold.x, (global_rho_periodic.mean(axis=0))/npc,

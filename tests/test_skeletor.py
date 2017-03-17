@@ -1,7 +1,7 @@
 from skeletor import Float, Float3
 from skeletor import Field, Particles, Ohm, Sources
 from skeletor.manifolds.second_order import Manifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 
 
@@ -9,8 +9,7 @@ def allclose_sorted(a, b, **kwargs):
     """This function first sorts the input arrays 'a' and 'b' (out of place)
     and returns true if the sorted arrays are almost equal to each other
     (element by element)."""
-    from numpy import allclose, sort
-    return allclose(sort(a), sort(b), **kwargs)
+    return np.allclose(np.sort(a), np.sort(b), **kwargs)
 
 
 def test_skeletor():
@@ -38,18 +37,18 @@ def test_skeletor():
     nt = 10
 
     # Synchronize random number generator across ALL processes
-    numpy.random.set_state(MPI.COMM_WORLD.bcast(numpy.random.get_state()))
+    np.random.set_state(MPI.COMM_WORLD.bcast(np.random.get_state()))
 
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     # Uniform distribution of particle positions
-    x = Lx*numpy.random.uniform(size=np).astype(Float)
-    y = Ly*numpy.random.uniform(size=np).astype(Float)
+    x = Lx*np.random.uniform(size=N).astype(Float)
+    y = Ly*np.random.uniform(size=N).astype(Float)
     # Normal distribution of particle velocities
-    vx = vdx + vtx*numpy.random.normal(size=np).astype(Float)
-    vy = vdy + vty*numpy.random.normal(size=np).astype(Float)
-    vz = vdz + vtz*numpy.random.normal(size=np).astype(Float)
+    vx = vdx + vtx*np.random.normal(size=N).astype(Float)
+    vy = vdy + vty*np.random.normal(size=N).astype(Float)
+    vz = vdz + vtz*np.random.normal(size=N).astype(Float)
 
     global_ions = []
     global_rho = []
@@ -61,17 +60,17 @@ def test_skeletor():
         manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
 
         # Maximum number of ions in each partition
-        npmax = int(2.0*np/comm.size)
+        Nmax = int(2.0*N/comm.size)
 
         # Create particle array
-        ions = Particles(manifold, npmax, charge=charge, mass=mass)
+        ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
         # Assign particles to subdomains
         ions.initialize(x, y, vx, vy, vz)
 
         # Make sure the numbers of particles in each subdomain add up to the
         # total number of particles
-        assert comm.allreduce(ions.np, op=MPI.SUM) == np
+        assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
         #######################
         # Test particle drift #
@@ -94,8 +93,7 @@ def test_skeletor():
             ions.push(E, B, dt)
 
         # Combine particles from all processes into a single array
-        global_ions.append(
-                numpy.concatenate(comm.allgather(ions[:ions.np])))
+        global_ions.append(np.concatenate(comm.allgather(ions[:ions.N])))
 
         ##########################
         # Test charge deposition #
@@ -107,7 +105,7 @@ def test_skeletor():
 
         # Make sure the charge deposited into *all* cells (active plus guard)
         # equals the number of particles times the particle charge
-        assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+        assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
 
         # Add charge from guard cells to corresponding active cells.
         # Afterwards erases charge in guard cells.
@@ -115,13 +113,13 @@ def test_skeletor():
 
         # Make sure the charge deposited into *active* cells (no guard cells)
         # equals the number of particles times the particle charge
-        assert numpy.isclose(comm.allreduce(
-            sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+        assert np.isclose(comm.allreduce(
+            sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
         sources.current.copy_guards()
 
         # Combine charge density from all processes into a single array
-        global_rho += [numpy.concatenate(comm.allgather(sources.rho.trim()))]
+        global_rho += [np.concatenate(comm.allgather(sources.rho.trim()))]
 
         ##########################
         # Compute electric field #
@@ -149,7 +147,7 @@ def test_skeletor():
             global_ions[1][component])
 
     # The same should be true for the charge density
-    assert numpy.allclose(global_rho[0], global_rho[1])
+    assert np.allclose(global_rho[0], global_rho[1])
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 from skeletor import Float, Float3, Particles, Sources
 from skeletor import ShearField
 from skeletor.manifolds.second_order import ShearingManifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -15,10 +15,10 @@ def test_sheared_disturbance(plot=False):
     dt = 0.5e-2
 
     # Initial time of particle positions
-    t = -numpy.pi/2
+    t = -np.pi/2
 
     # Simulation time
-    tend = numpy.pi/2
+    tend = np.pi/2
 
     # Number of time steps
     nt = int((tend-t)/dt)
@@ -34,7 +34,7 @@ def test_sheared_disturbance(plot=False):
     S = -3/2
 
     # Epicyclic frequency
-    kappa = numpy.sqrt(2*Omega*(2*Omega+S))
+    kappa = np.sqrt(2*Omega*(2*Omega+S))
 
     # Amplitude of perturbation
     ampl = 0.03125
@@ -46,28 +46,28 @@ def test_sheared_disturbance(plot=False):
     npc = 16
 
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     def x_an(ap, bp, t):
         phi = kx*ap
-        x = 2*Omega/kappa*ampl*(numpy.sin(kappa*t + phi) - numpy.sin(phi)) + \
-            ap - S*t*(bp - ampl*numpy.cos(phi))
+        x = 2*Omega/kappa*ampl*(np.sin(kappa*t + phi) - np.sin(phi)) + \
+            ap - S*t*(bp - ampl*np.cos(phi))
         return x
 
     def y_an(ap, bp, t):
         phi = kx*ap
-        y = ampl*(numpy.cos(kappa*t + phi) - numpy.cos(phi)) + bp
+        y = ampl*(np.cos(kappa*t + phi) - np.cos(phi)) + bp
         return y
 
     def vx_an(ap, bp, t):
         phi = kx*ap
-        vx = 2*Omega*ampl*numpy.cos(kappa*t + phi) \
-            - S*(bp - ampl*numpy.cos(phi))
+        vx = 2*Omega*ampl*np.cos(kappa*t + phi) \
+            - S*(bp - ampl*np.cos(phi))
         return vx
 
     def vy_an(ap, bp, t):
         phi = kx*ap
-        vy = -ampl*kappa*numpy.sin(kappa*t + phi)
+        vy = -ampl*kappa*np.sin(kappa*t + phi)
         return vy
 
     def euler(ap, bp, t):
@@ -76,15 +76,15 @@ def test_sheared_disturbance(plot=False):
     def euler_prime(a, t):
         phi = kx*a
         dxda = 2*Omega/kappa*ampl*kx*(
-             numpy.cos(kappa*t + phi) - numpy.cos(phi)) \
-            + 1 - S*t*ampl*kx*numpy.sin(phi)
-        dyda = -ampl*kx*(numpy.sin(kappa*t + phi) - numpy.sin(phi))
+             np.cos(kappa*t + phi) - np.cos(phi)) \
+            + 1 - S*t*ampl*kx*np.sin(phi)
+        dyda = -ampl*kx*(np.sin(kappa*t + phi) - np.sin(phi))
 
         return dxda + S*t*dyda
 
     def mean(f, axis=None):
         """Compute mean of an array across processors."""
-        result = numpy.mean(f, axis=axis)
+        result = np.mean(f, axis=axis)
         if axis is None or axis == 0:
             # If the mean is to be taken over *all* axes or just the y-axis,
             # then we need to communicate
@@ -93,7 +93,7 @@ def test_sheared_disturbance(plot=False):
 
     def rms(f):
         """Compute root-mean-square of an array across processors."""
-        return numpy.sqrt(mean(f**2))
+        return np.sqrt(mean(f**2))
 
     def lagrange(xp, t, tol=1.48e-8, maxiter=50):
         """
@@ -132,53 +132,53 @@ def test_sheared_disturbance(plot=False):
     manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
 
     # x- and y-grid
-    xx, yy = numpy.meshgrid(manifold.x, manifold.y)
+    xx, yy = np.meshgrid(manifold.x, manifold.y)
 
     # Wave numbers
-    kx = 2*numpy.pi/manifold.Lx
+    kx = 2*np.pi/manifold.Lx
 
     # Maximum number of ions in each partition
     # Set to big number to make sure particles can move between grids
-    npmax = int(2*np/comm.size)
+    Nmax = int(2*N/comm.size)
 
     # Create particle array
-    ions = Particles(manifold, npmax, time=dt/2, charge=charge, mass=mass)
+    ions = Particles(manifold, Nmax, time=dt/2, charge=charge, mass=mass)
 
     if quiet:
         # Uniform distribution of particle positions (quiet start)
-        sqrt_npc = int(numpy.sqrt(npc))
+        sqrt_npc = int(np.sqrt(npc))
         assert sqrt_npc**2 == npc, "'npc' must be a square of an integer."
-        a, b = [ab.flatten().astype(Float) for ab in numpy.meshgrid(
-            (numpy.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
-            (numpy.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
+        a, b = [ab.flatten().astype(Float) for ab in np.meshgrid(
+            (np.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
+            (np.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
     else:
-        a = manifold.Lx*numpy.random.uniform(size=np).astype(Float)
-        b = manifold.Ly*numpy.random.uniform(size=np).astype(Float)
+        a = manifold.Lx*np.random.uniform(size=N).astype(Float)
+        b = manifold.Ly*np.random.uniform(size=N).astype(Float)
 
     # Assign particles to subdomains
     ions.initialize(a, b, a*0, b*0, b*0)
 
     # Set initial condition for particles
     # Position and velocities for this subdomain only
-    x_sub = ions['x'][:ions.np]*manifold.dx
-    y_sub = ions['y'][:ions.np]*manifold.dy
+    x_sub = ions['x'][:ions.N]*manifold.dx
+    y_sub = ions['y'][:ions.N]*manifold.dy
     # Particle positions at time=t
-    ions['x'][:ions.np] = x_an(x_sub, y_sub, t)/manifold.dx
-    ions['y'][:ions.np] = y_an(x_sub, y_sub, t)/manifold.dy
+    ions['x'][:ions.N] = x_an(x_sub, y_sub, t)/manifold.dx
+    ions['y'][:ions.N] = y_an(x_sub, y_sub, t)/manifold.dy
     # Particle velocities at time = t-dt/2
-    ions['vx'][:ions.np] = vx_an(x_sub, y_sub, t-dt/2)
-    ions['vy'][:ions.np] = vy_an(x_sub, y_sub, t-dt/2)
+    ions['vx'][:ions.N] = vx_an(x_sub, y_sub, t-dt/2)
+    ions['vy'][:ions.N] = vy_an(x_sub, y_sub, t-dt/2)
     ions.time = t
     ions.shear_periodic_y()
     ions.periodic_x()
 
     # Make sure particles actually reside in the local subdomain
-    assert all(ions["y"][:ions.np] >= manifold.edges[0])
-    assert all(ions["y"][:ions.np] < manifold.edges[1])
+    assert all(ions["y"][:ions.N] >= manifold.edges[0])
+    assert all(ions["y"][:ions.N] < manifold.edges[1])
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
+    assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
     # Initialize sources
     sources = Sources(manifold)
@@ -188,10 +188,10 @@ def test_sheared_disturbance(plot=False):
 
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+    assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
-    assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+    assert np.isclose(comm.allreduce(
+        sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
     sources.current.copy_guards()
 
     # Copy density into a shear field
@@ -213,7 +213,7 @@ def test_sheared_disturbance(plot=False):
     def concatenate(arr):
         """Concatenate local arrays to obtain global arrays
         The result is available on all processors."""
-        return numpy.concatenate(comm.allgather(arr))
+        return np.concatenate(comm.allgather(arr))
 
     # Make initial figure
     if plot:
@@ -295,8 +295,8 @@ def test_sheared_disturbance(plot=False):
         # Make figures
         if (it % 60 == 0):
             # Calculate rms of numerical solution wrt to analytical solution
-            a_2d = find_a(xx, yy, t)
-            err = rms(sources.rho.trim() - rho_an(a_2d, t))
+            # a_2d = find_a(xx, yy, t)
+            # err = rms(sources.rho.trim() - rho_an(a_2d, t))
             # Check if test is passed
             # assert err < 1e-2, err
             if plot:
@@ -327,7 +327,7 @@ def test_sheared_disturbance(plot=False):
                     im6[0].set_ydata(vy.mean(axis=0))
                     xp_par = euler(ag, 0, t)
                     xp_par %= manifold.Lx
-                    ind = numpy.argsort(xp_par)
+                    ind = np.argsort(xp_par)
                     im4[1].set_data(xp_par[ind], rho_an(ag, t)[ind])
                     im5[1].set_data(xp_par[ind], vx_an(ag, 0, t)[ind]
                                     + S*y_an(ag, 0, t)[ind])
@@ -337,6 +337,8 @@ def test_sheared_disturbance(plot=False):
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
                         plt.pause(1e-7)
+
+
 if __name__ == "__main__":
     import argparse
 

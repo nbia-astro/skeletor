@@ -2,11 +2,10 @@ from skeletor import Float, Float3, Field, Particles, Sources
 from skeletor import Ohm, Faraday, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 from skeletor.predictor_corrector import Experiment
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 from dispersion_solvers import HallDispersion
-from numpy import cos, sin, pi, arctan
 from scipy.special import erfinv
 
 plot = False
@@ -36,23 +35,23 @@ cfl = 0.8
 nperiods = 2
 
 # Sound speed
-cs = numpy.sqrt(Te/mass)
+cs = np.sqrt(Te/mass)
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 # Wave vector and its modulus
-kx = 2*numpy.pi*ikx/Lx
-ky = 2*numpy.pi*iky/Ly
-k = numpy.sqrt(kx*kx + ky*ky)
+kx = 2*np.pi*ikx/Lx
+ky = 2*np.pi*iky/Ly
+k = np.sqrt(kx*kx + ky*ky)
 
 # Angle of k-vector with respect to x-axis
-theta = arctan(iky/ikx) if ikx != 0 else pi/2
+theta = np.arctan(iky/ikx) if ikx != 0 else np.pi/2
 
 # Magnetic field strength
 B0 = 1
 
-(Bx, By, Bz) = (B0*cos(theta), B0*sin(theta), 0)
+(Bx, By, Bz) = (B0*np.cos(theta), B0*np.sin(theta), 0)
 B2 = Bx**2 + By**2 + Bz**2
 
 rho0 = 1.0
@@ -64,7 +63,7 @@ eta = 0
 
 beta = 20
 
-vt = numpy.sqrt(va**2*beta/2)
+vt = np.sqrt(va**2*beta/2)
 vtx, vty, vtz = vt, vt, vt
 
 # Cyclotron frequency
@@ -83,16 +82,14 @@ omega = -0.14922889208545562+0.095051744736327104j
 
 def frequency (kzva):
     hel = 1
-    from numpy import sqrt
-    return kzva*(sqrt (1.0 + (0.5*kzva/oc)**2) + 0.5*kzva/(hel*oc))
+    return kzva*(np.sqrt (1.0 + (0.5*kzva/oc)**2) + 0.5*kzva/(hel*oc))
 
 def get_dt(kzva):
-    from numpy import pi, floor, log2
     dt = cfl/frequency (kzva)
-    dt = 2.0**(floor (log2 (dt)))
+    dt = 2.0**(np.floor (np.log2 (dt)))
     return dt
 
-kmax = numpy.pi
+kmax = np.pi
 
 vph = omega.real/kmax
 
@@ -100,7 +97,7 @@ vph = omega.real/kmax
 tend = 20.
 
 # Phase factor
-phase = lambda x, y, t: A*numpy.exp(1j*(omega*t - kx*x - ky*y))
+phase = lambda x, y, t: A*np.exp(1j*(omega*t - kx*x - ky*y))
 
 # Linear solutions in real space
 rho_an = lambda x, y, t: rho0 + rho0*(di.vec[m]['drho']*phase(x, y, t)).real
@@ -112,20 +109,20 @@ Uy_an = lambda x, y, t:         (di.vec[m]['vy']*phase(x, y, t)).real
 Uz_an = lambda x, y, t:         (di.vec[m]['vz']*phase(x, y, t)).real
 
 # Uniform distribution of particle positions (quiet start)
-sqrt_npc = int(numpy.sqrt(npc))
+sqrt_npc = int(np.sqrt(npc))
 assert sqrt_npc**2 == npc
-a = (numpy.arange(sqrt_npc) + 0.5)/sqrt_npc
-x_cell, y_cell = numpy.meshgrid(a, a)
+a = (np.arange(sqrt_npc) + 0.5)/sqrt_npc
+x_cell, y_cell = np.meshgrid(a, a)
 x_cell = x_cell.flatten()
 y_cell = y_cell.flatten()
 
-R = (numpy.arange(npc) + 0.5)/npc
-vx_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtx
-vy_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vty
-vz_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtz
-numpy.random.shuffle(vx_cell)
-numpy.random.shuffle(vy_cell)
-numpy.random.shuffle(vz_cell)
+R = (np.arange(npc) + 0.5)/npc
+vx_cell = erfinv(2*R - 1)*np.sqrt(2)*vtx
+vy_cell = erfinv(2*R - 1)*np.sqrt(2)*vty
+vz_cell = erfinv(2*R - 1)*np.sqrt(2)*vtz
+np.random.shuffle(vx_cell)
+np.random.shuffle(vy_cell)
+np.random.shuffle(vz_cell)
 for i in range(nx):
     for j in range(ny):
         if i == 0 and j == 0:
@@ -135,11 +132,11 @@ for i in range(nx):
             vy = vy_cell
             vz = vz_cell
         else:
-            x = numpy.concatenate((x, x_cell + i))
-            y = numpy.concatenate((y, y_cell + j))
-            vx = numpy.concatenate((vx, vx_cell))
-            vy = numpy.concatenate((vy, vy_cell))
-            vz = numpy.concatenate((vz, vz_cell))
+            x = np.concatenate((x, x_cell + i))
+            y = np.concatenate((y, y_cell + j))
+            vx = np.concatenate((vx, vx_cell))
+            vy = np.concatenate((vy, vy_cell))
+            vz = np.concatenate((vz, vz_cell))
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
@@ -155,19 +152,19 @@ nt = int(tend/dt)
 faraday = Faraday(manifold)
 
 # x- and y-grid
-xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+xg, yg = np.meshgrid(manifold.x, manifold.y)
 
 # Pair of Fourier basis functions with the specified wave numbers.
 # The basis functions are normalized so that the Fourier amplitude can be
 # computed by summing rather than averaging.
-S = numpy.sin(kx*xg + ky*yg)/(nx*ny)
-C = numpy.cos(kx*xg + ky*yg)/(nx*ny)
+S = np.sin(kx*xg + ky*yg)/(nx*ny)
+C = np.cos(kx*xg + ky*yg)/(nx*ny)
 
 # Maximum number of electrons in each partition
-npmax = int(1.5*np/comm.size)
+Nmax = int(1.5*N/comm.size)
 
 # Create particle array
-ions = Particles(manifold, npmax, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
@@ -223,7 +220,7 @@ e.prepare(dt)
 # Concatenate local arrays to obtain global arrays
 # The result is available on all processors.
 def concatenate(arr):
-    return numpy.concatenate(comm.allgather(arr))
+    return np.concatenate(comm.allgather(arr))
 
 # Make initial figure
 if plot:
@@ -280,16 +277,16 @@ for it in range(nt):
                             "ignore", category=mplDeprecation)
                     plt.pause(1e-7)
 # Sum squared amplitude over processor, then take the square root
-ampl = numpy.sqrt(comm.allreduce(ampl2, op=MPI.SUM))
+ampl = np.sqrt(comm.allreduce(ampl2, op=MPI.SUM))
 # Convert list of times into NumPy array
-time = numpy.array(time)
+time = np.array(time)
 
 # Test if growth rate is correct
 if comm.rank == 0:
     from scipy.signal import argrelextrema
 
     # Find first local maximum
-    # index = argrelextrema(ampl, numpy.greater)
+    # index = argrelextrema(ampl, np.greater)
     tmax = time[0]
     ymax = ampl[0]
 
@@ -302,7 +299,7 @@ if comm.rank == 0:
         plt.figure(2)
         plt.clf()
         plt.semilogy(time, ampl, 'b')
-        plt.semilogy(time, ymax*numpy.exp(gamma_t*(time - tmax)), 'k-')
+        plt.semilogy(time, ymax*np.exp(gamma_t*(time - tmax)), 'k-')
 
         plt.title(r'$|\hat{\rho}(ikx=%d, iky=%d)|$' % (ikx, iky))
         plt.xlabel("time")

@@ -11,47 +11,47 @@ class IO:
 
         if comm.rank == 0:
             import subprocess
-            from os import path
             import pickle
             from datetime import datetime
             from numpy import float64
 
             # Create datafolder
-            if data_folder[-1] != '/': data_folder += '/'
+            if data_folder[-1] != '/':
+                data_folder += '/'
             subprocess.call('mkdir ' + data_folder, shell=True)
 
             # Copy the experiment to the data folder
             # experiment = path.basename(experiment)
-            subprocess.call('cp ' + experiment +' '+ data_folder+ \
+            subprocess.call('cp ' + experiment + ' ' + data_folder +
                             'experiment.py', shell=True)
-            info = {'experiment' : experiment}
+            info = {'experiment': experiment}
 
             # Save git commit number
             git_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
             git_commit = git_commit.strip().decode('utf-8')
-            info.update({'git_commit' : git_commit})
+            info.update({'git_commit': git_commit})
 
             # Save the hostname
             hostname = subprocess.check_output(['hostname'])
             hostname = hostname.strip().decode('utf-8')
-            info.update({'hostname' : hostname})
+            info.update({'hostname': hostname})
 
             # Save the time at the start of simulation
             i = datetime.now()
             simulation_start = i.strftime('%d/%m/%Y at %H:%M:%S')
-            info.update({'simulation_start' : simulation_start})
+            info.update({'simulation_start': simulation_start})
 
             # Add tag which can be used to group simulations together
-            info.update({'tag' : tag})
+            info.update({'tag': tag})
 
             # Collect all variables in local namespace that are int, float or
             # float64. These will in general be the values set by us.
             for key in local_vars.keys():
                 if type(local_vars[key]) in (float, float64, int):
-                    info.update({key : local_vars[key]})
+                    info.update({key: local_vars[key]})
 
             # Save the number of MPI processes used
-            info.update({'MPI' : comm.size})
+            info.update({'MPI': comm.size})
 
             # Delete idproc which is not useful information
             del info['idproc']
@@ -62,7 +62,7 @@ class IO:
             # Start a log file
             f = open('skeletor.log', 'w')
             # Write start date and time
-            f.write('Simulation started on ' + simulation_start +'\n\n')
+            f.write('Simulation started on ' + simulation_start + '\n\n')
             # Write the contents of info.p for convenience
             f.write('Contents of info.p is printed below \n')
             for key in info.keys():
@@ -96,13 +96,13 @@ class IO:
 
         # Combine data from all processors
         global_rho = self.concatenate(sources.rho.trim())
-        global_E   = self.concatenate(E.trim())
+        global_E = self.concatenate(E.trim())
 
         # Let processor 0 write to file
         if comm.rank == 0:
-            savez(self.data_folder + 'fields.{:04d}.npz'.format(self.snap),\
-                  rho=global_rho, Ex=global_E['x'], Ey=global_E['y'], \
-                  x=grid.x, y=grid.y, t = t)
+            savez(self.data_folder + 'fields.{:04d}.npz'.format(self.snap),
+                  rho=global_rho, Ex=global_E['x'], Ey=global_E['y'],
+                  x=grid.x, y=grid.y, t=t)
 
         # Update snap shot number on all processors
         self.snap += 1
@@ -127,7 +127,7 @@ class IO:
 
             # Add run time to info.p
             info = pickle.load(open(self.data_folder+'info.p', 'rb'))
-            info.update({'seconds' : seconds})
+            info.update({'seconds': seconds})
             pickle.dump(info, open(self.data_folder+'info.p', 'wb'))
 
             # Time at end of simulation
@@ -140,9 +140,8 @@ class IO:
             h, m = divmod(m, 60)
             d, h = divmod(h, 24)
 
-            f.write('Time elapsed was {} days {} hours {} minutes {} seconds'\
-                     .format(d, h, m, s))
+            msg = 'Time elapsed was {} days {} hours {} minutes {} seconds'
+            f.write(msg.format(d, h, m, s))
             f.close()
 
-            subprocess.call('mv skeletor.log '+ self.data_folder, shell=True)
-
+            subprocess.call('mv skeletor.log ' + self.data_folder, shell=True)

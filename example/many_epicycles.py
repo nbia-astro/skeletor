@@ -1,5 +1,5 @@
 from skeletor import cppinit, Float, Float3, Grid, Field, Particles, Sources
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -16,7 +16,7 @@ perturb = True
 dt = 0.5e-3
 
 # Simulation time
-tend = 2*numpy.pi
+tend = 2*np.pi
 
 # Number of time steps
 nt = int(tend/dt)
@@ -43,13 +43,13 @@ ocbz = charge/mass*bz
 Sz = ocbz + 2.0*Omega
 
 # Gyration frequency
-og = numpy.sqrt(Sz*(Sz + S))
+og = np.sqrt(Sz*(Sz + S))
 
 # Phase
-phi = numpy.pi/2
+phi = np.pi/2
 
 # Amplitude of perturbation
-ampl = numpy.pi*5
+ampl = np.pi*5
 
 # Number of grid points in x- and y-direction
 nx, ny = 32, 64
@@ -61,40 +61,40 @@ npc = 64
 Te = 1.0
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 if quiet:
     # Uniform distribution of particle positions (quiet start)
-    sqrt_npc = int(numpy.sqrt(npc))
+    sqrt_npc = int(np.sqrt(npc))
     assert sqrt_npc**2 == npc
     dx = dy = 1/sqrt_npc
-    x, y = numpy.meshgrid(
-            numpy.arange(dx/2, nx+dx/2, dx),
-            numpy.arange(dy/2, ny+dy/2, dy))
+    x, y = np.meshgrid(
+            np.arange(dx/2, nx+dx/2, dx),
+            np.arange(dy/2, ny+dy/2, dy))
     x0 = x.flatten()
     y0 = y.flatten()
 else:
-    x0 = nx*numpy.random.uniform(size=np).astype(Float)
-    y0 = ny*numpy.random.uniform(size=np).astype(Float)
+    x0 = nx*np.random.uniform(size=N).astype(Float)
+    y0 = ny*np.random.uniform(size=N).astype(Float)
 
 
 def y_an(t):
-    y = ampl*numpy.cos(og*t + phi) + y0
+    y = ampl*np.cos(og*t + phi) + y0
     return y.astype(Float)
 
 
 def x_an(t):
-    x = +(Sz/og)*ampl*numpy.sin(og*t + phi) + x0 - S*t*(y0-ny/2)
+    x = +(Sz/og)*ampl*np.sin(og*t + phi) + x0 - S*t*(y0-ny/2)
     return x.astype(Float)
 
 
 def vy_an(t):
-    vy = -og*ampl*numpy.sin(og*t + phi)*numpy.ones(np)
+    vy = -og*ampl*np.sin(og*t + phi)*np.ones(N)
     return vy.astype(Float)
 
 
 def vx_an(t):
-    vx = Sz*ampl*numpy.cos(og*t + phi) - S*(y0-ny/2)
+    vx = Sz*ampl*np.cos(og*t + phi) - S*(y0-ny/2)
     return vx.astype(Float)
 
 # Particle position at t = -dt/2
@@ -139,9 +139,9 @@ def shear_periodic(x, y, vx, vy, t, Lx, Ly):
 
 # Add perturbation
 if perturb:
-    kx = 2*numpy.pi/nx
-    ky = 2*numpy.pi/ny
-    vx += numpy.sin(kx*x + ky*y)
+    kx = 2*np.pi/nx
+    ky = 2*np.pi/ny
+    vx += np.sin(kx*x + ky*y)
 
 # Start parallel processing
 idproc, nvp = cppinit(comm)
@@ -151,35 +151,35 @@ idproc, nvp = cppinit(comm)
 grid = Grid(nx, ny, comm)
 
 # x- and y-grid
-xg, yg = numpy.meshgrid(grid.x, grid.y)
+xg, yg = np.meshgrid(grid.x, grid.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
-npmax = int(1.25*np/nvp)
+Nmax = int(1.25*N/nvp)
 
 # Create particle array
-ions = Particles(npmax, charge, mass, Omega=Omega, S=S)
+ions = Particles(Nmax, charge, mass, Omega=Omega, S=S)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, grid)
 
 # Make sure particles actually reside in the local subdomain
-assert all(ions["y"][:ions.np] >= grid.edges[0])
-assert all(ions["y"][:ions.np] < grid.edges[1])
+assert all(ions["y"][:ions.N] >= grid.edges[0])
+assert all(ions["y"][:ions.N] < grid.edges[1])
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-assert comm.allreduce(ions.np, op=MPI.SUM) == np
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(grid, comm, dtype=Float)
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+assert np.isclose(sources.rho.sum(), ions.N*charge)
 sources.current.add_guards_ppic2()
-assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+assert np.isclose(comm.allreduce(
+    sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 
 # Electric field in y-direction
 E_star = Field(grid, comm, dtype=Float3)
@@ -192,7 +192,7 @@ for i in range(nx+2):
 def concatenate(arr):
     """Concatenate local arrays to obtain global arrays
     The result is available on all processors."""
-    return numpy.concatenate(comm.allgather(arr))
+    return np.concatenate(comm.allgather(arr))
 
 # Make initial figure
 if plot:
@@ -207,8 +207,8 @@ if plot:
         plt.figure(1)
         plt.clf()
         fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
-        lines1 = ax1.plot(ions['y'][:np], ions['y'][:np], 'b.')
-        lines2 = ax2.plot(ions['vx'][:np], ions['vy'][:np], 'b.')
+        lines1 = ax1.plot(ions['y'][:N], ions['y'][:N], 'b.')
+        lines2 = ax2.plot(ions['vx'][:N], ions['vy'][:N], 'b.')
         ax1.set_xlim(-1, ny+1)
         ax1.set_ylim(-1, nx+1)
         ax1.set_xlabel('y')
@@ -229,16 +229,16 @@ k = 0
 for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
-    assert numpy.isclose(sources.rho.sum(), ions.np*charge)
+    assert np.isclose(sources.rho.sum(), ions.N*charge)
     sources.current.add_guards_ppic2()
-    assert numpy.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), np*charge)
+    assert np.isclose(comm.allreduce(
+        sources.rho.trim().sum(), op=MPI.SUM), N*charge)
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
     ions.push(E_star, dt, t=t)
 
-    assert comm.allreduce(ions.np, op=MPI.SUM) == np
+    assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
     # Update time
     t += dt
@@ -248,9 +248,9 @@ for it in range(nt):
         if (it % 100 == 0):
             global_rho = concatenate(sources.rho.trim())
             if comm.rank == 0:
-                lines1[0].set_data(ions['y'][:np], ions['x'][:np])
-                # lines1[1].set_data(numpy.mod(y_an(t), ny), x_an(t))
-                lines2[0].set_data(ions['vx'][:np], ions['vy'][:np])
+                lines1[0].set_data(ions['y'][:N], ions['x'][:N])
+                # lines1[1].set_data(np.mod(y_an(t), ny), x_an(t))
+                lines2[0].set_data(ions['vx'][:N], ions['vy'][:N])
                 im1.set_data(global_rho)
                 im1.autoscale()
                 # lines2[1].set_data(vx_an(t), vy_an(t))

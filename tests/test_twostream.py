@@ -1,7 +1,7 @@
 from skeletor import Float, Float3, Field, Particles, Sources
 from skeletor.manifolds.mpifft4py import Manifold
 from skeletor import Poisson
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
@@ -27,11 +27,8 @@ def test_twostream(plot=False, fitplot=False):
     # Timestep
     dt = 0.05
 
-    # wavenumber
-    kx = 2*numpy.pi/nx
-
     # Total number of particles in simulation
-    np = npc*nx*ny
+    N = npc*nx*ny
 
     # Mean velocity of electrons in x-direction
     vdx, vdy = 1/10, 0.
@@ -39,62 +36,59 @@ def test_twostream(plot=False, fitplot=False):
     # Thermal velocity of electrons in x- and y-direction
     vtx, vty = 0., 0.
 
-    if quiet:
-        # Uniform distribution of particle positions (quiet start)
-        sqrt_npc = int(numpy.sqrt(npc//2))
-        assert (sqrt_npc)**2*2 == npc
-        dx = dy = 1/sqrt_npc
-        x, y = numpy.meshgrid(
-                numpy.arange(0, nx, dx),
-                numpy.arange(0, ny, dy))
-        x = x.flatten()
-        y = y.flatten()
-    else:
-        x = nx*numpy.random.uniform(size=np).astype(Float)
-        y = ny*numpy.random.uniform(size=np).astype(Float)
-
-    vx = vdx*numpy.ones_like(x)
-    vy = vdy*numpy.ones_like(y)
-
-    # Have two particles at position
-    x = numpy.concatenate([x,x])
-    y = numpy.concatenate([y,y])
-
-    x += 1e-4*numpy.cos(kx*x)
-
-    # Make counterpropagating in x
-    vx = numpy.concatenate([vx, -vx])
-    vy = numpy.concatenate([vy, vy])
-
-    # Add thermal component
-    vx += vtx*numpy.random.normal(size=np).astype(Float)
-    vy += vty*numpy.random.normal(size=np).astype(Float)
-    vz = numpy.zeros_like(vx)
-
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
     manifold = Manifold(nx, ny, comm)
 
+    # wavenumber
+    kx = 2*np.pi/manifold.Lx
+
+    if quiet:
+        # Uniform distribution of particle positions (quiet start)
+        sqrt_npc = int(np.sqrt(npc//2))
+        assert (sqrt_npc)**2*2 == npc
+        x1 = (np.arange(manifold.nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc
+        y1 = (np.arange(manifold.ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc
+        x, y = [xy.flatten() for xy in np.meshgrid(x1, y1)]
+    else:
+        x = nx*np.random.uniform(size=N).astype(Float)
+        y = ny*np.random.uniform(size=N).astype(Float)
+
+    vx = vdx*np.ones_like(x)
+    vy = vdy*np.ones_like(y)
+
+    # Have two particles at position
+    x = np.concatenate([x, x])
+    y = np.concatenate([y, y])
+
+    # Small perturbation to get the instability going
+    x += 1e-4*manifold.dx*np.cos(kx*x)
+
+    # Make counterpropagating in x
+    vx = np.concatenate([vx, -vx])
+    vy = np.concatenate([vy, vy])
+
+    # Add thermal component
+    vx += vtx*np.random.normal(size=N).astype(Float)
+    vy += vty*np.random.normal(size=N).astype(Float)
+    vz = np.zeros_like(vx)
+
     # Maximum number of electrons in each partition
-    npmax = int(1.5*np/comm.size)
+    Nmax = int(1.5*N/comm.size)
 
     # Create particle array
-    electrons = Particles(manifold, npmax, charge=charge, mass=mass)
-
-    x *= manifold.dx
-    y *= manifold.dy
+    electrons = Particles(manifold, Nmax, charge=charge, mass=mass)
 
     # Assign particles to subdomains
     electrons.initialize(x, y, vx, vy, vz)
 
     # Make sure the numbers of particles in each subdomain add up to the
     # total number of particles
-    # assert comm.allreduce(electrons.np, op=MPI.SUM) == np
+    # assert comm.allreduce(electrons.N, op=MPI.SUM) == N
 
     # Set the electric field to zero
     E = Field(manifold, comm, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
-
 
     B = Field(manifold, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
@@ -120,13 +114,13 @@ def test_twostream(plot=False, fitplot=False):
     # Concatenate local arrays to obtain global arrays
     # The result is available on all processors.
     def concatenate(arr):
-        return numpy.concatenate(comm.allgather(arr))
+        return np.concatenate(comm.allgather(arr))
 
     global_E = concatenate(E.trim())
 
     #
-    E_pot = numpy.ones(nt)*1e-16
-    time = numpy.arange(0, dt*nt, dt)
+    E_pot = np.ones(nt)*1e-16
+    time = np.arange(0, dt*nt, dt)
 
     # Make initial figure
     if plot:
@@ -142,7 +136,7 @@ def test_twostream(plot=False, fitplot=False):
             fig, (ax1, ax2, ax3) = plt.subplots(num=1, nrows=3)
             im1 = ax1.imshow(global_rho)
             im2 = ax2.imshow(global_E['x'])
-            im3 = ax3.plot(electrons['x'][:np], electrons['vx'][:np], 'o',
+            im3 = ax3.plot(electrons['x'][:N], electrons['vx'][:N], 'o',
                            fillstyle='full', ms=1)
             ax1.set_title(r'$\rho$')
             ax2.set_title(r'$E_x$')
@@ -179,7 +173,7 @@ def test_twostream(plot=False, fitplot=False):
         E.copy_guards()
 
         # sum(|E|) on each processor
-        E_pot_id = (numpy.sqrt(E['x']**2 + E['y']**2)).sum()
+        E_pot_id = (np.sqrt(E['x']**2 + E['y']**2)).sum()
 
         # Add contribution from each processor
         E_pot[it] = comm.allreduce(E_pot_id, op=MPI.SUM)
@@ -192,7 +186,7 @@ def test_twostream(plot=False, fitplot=False):
                 if comm.rank == 0:
                     im1.set_data(global_rho)
                     im2.set_data(global_E['x'])
-                    im3[0].set_data(electrons['x'][:np], electrons['vx'][:np])
+                    im3[0].set_data(electrons['x'][:N], electrons['vx'][:N])
                     im1.autoscale()
                     im2.autoscale()
                     plt.draw()
@@ -207,7 +201,7 @@ def test_twostream(plot=False, fitplot=False):
 
         # Exponential growth function
         def func(x, a, b):
-            return a*numpy.exp(b*x)
+            return a*np.exp(b*x)
 
         def lin_func(x, a, b):
             return a + b*x
@@ -217,13 +211,30 @@ def test_twostream(plot=False, fitplot=False):
         first = int(0.34*nt)
         last = int(0.6*nt)
         popt, pcov = curve_fit(lin_func, time[first:last],
-                               numpy.log(E_pot[first:last]))
-
-        # Theoretical gamma (TODO: Solve dispersion relation here)
-        gamma_t = 0.3532818590
+                               np.log(E_pot[first:last]))
 
         # Gamma from the fit
         gamma_f = popt[1]
+
+        # Plasma frequency (squared) of each beam
+        # Note the factor of 1/2, which is due to the fact that electrons.n0 is
+        # the *total* number density of the two beams combined.
+        # Note also that we're working in units where the vacuum permittivity
+        # ε0 has been scaled out.
+        wp2 = charge*charge*0.5*electrons.n0/mass
+        # Doppler frequency (squared)
+        kv2 = kx*kx*vdx*vdx
+        # The dispersion relation of the two stream instability with two
+        # counter-propagating beams with velocities v and -v and having equal
+        # number densities is
+        #   (ω² - k²v²)² - 2(k²v² + ω²) ωp² = 0,
+        # where
+        #   ωp² = e²n/m
+        # is the plasma frequency of each beam. The above dispersion relation
+        # is a quadratic equation in ω². The unstable root is
+        w2 = kv2 + wp2 - np.sqrt(wp2*(4*kv2 + wp2))
+        # The corresponding growth rate is
+        gamma_t = np.sqrt(-w2)
 
         # Relative error
         err = abs((gamma_f-gamma_t))/gamma_t
@@ -241,7 +252,7 @@ def test_twostream(plot=False, fitplot=False):
             plt.clf()
             plt.semilogy(time, E_pot, 'b')
             plt.semilogy(time[first:last], func(time[first:last],
-                         numpy.exp(popt[0]), popt[1]), 'r--',
+                         np.exp(popt[0]), popt[1]), 'r--',
                          label=r"Fit: $\gamma = %.5f$" % popt[1])
             plt.semilogy(time, func(time, 1, gamma_t), 'k-',
                          label=r"Theory: $\gamma = %.5f$" % gamma_t)
@@ -249,6 +260,7 @@ def test_twostream(plot=False, fitplot=False):
             plt.ylabel(r"$E^2$")
             plt.legend(loc=2)
             plt.show()
+
 
 if __name__ == "__main__":
     import argparse

@@ -2,10 +2,9 @@ from skeletor import Float3, Field, Particles
 from skeletor import Ohm, Faraday, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 from skeletor.predictor_corrector import Experiment
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
-from numpy import cos, sin, pi, arctan
 from scipy.special import erfinv
 
 plot = True
@@ -36,44 +35,44 @@ B0 = 1
 va = B0
 beta_para = 2000
 beta_perp = 500
-vtx = numpy.sqrt(va**2*beta_para/2)
-vty = numpy.sqrt(va**2*beta_perp/2)
+vtx = np.sqrt(va**2*beta_para/2)
+vty = np.sqrt(va**2*beta_perp/2)
 vtz = vty
 
 # Sound speed
-cs = numpy.sqrt(Te/mass)
+cs = np.sqrt(Te/mass)
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 # Wave vector and its modulus
-kx = 2*numpy.pi*ikx/Lx
-ky = 2*numpy.pi*iky/Ly
-k = numpy.sqrt(kx*kx + ky*ky)
+kx = 2*np.pi*ikx/Lx
+ky = 2*np.pi*iky/Ly
+k = np.sqrt(kx*kx + ky*ky)
 
 # Angle of k-vector with respect to x-axis
-theta = arctan(iky/ikx) if ikx != 0 else pi/2
+theta = np.arctan(iky/ikx) if ikx != 0 else np.pi/2
 
-(Bx, By, Bz) = (B0*cos(theta), B0*sin(theta), 0)
+(Bx, By, Bz) = (B0*np.cos(theta), B0*np.sin(theta), 0)
 
 # Simulation time
 tend = 10
 
 # Uniform distribution of particle positions (quiet start)
-sqrt_npc = int(numpy.sqrt(npc))
+sqrt_npc = int(np.sqrt(npc))
 assert sqrt_npc**2 == npc
-a = (numpy.arange(sqrt_npc) + 0.5)/sqrt_npc
-x_cell, y_cell = numpy.meshgrid(a, a)
+a = (np.arange(sqrt_npc) + 0.5)/sqrt_npc
+x_cell, y_cell = np.meshgrid(a, a)
 x_cell = x_cell.flatten()
 y_cell = y_cell.flatten()
 
-R = (numpy.arange(npc) + 0.5)/npc
-vx_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtx
-vy_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vty
-vz_cell = erfinv(2*R - 1)*numpy.sqrt(2)*vtz
-numpy.random.shuffle(vx_cell)
-numpy.random.shuffle(vy_cell)
-numpy.random.shuffle(vz_cell)
+R = (np.arange(npc) + 0.5)/npc
+vx_cell = erfinv(2*R - 1)*np.sqrt(2)*vtx
+vy_cell = erfinv(2*R - 1)*np.sqrt(2)*vty
+vz_cell = erfinv(2*R - 1)*np.sqrt(2)*vtz
+np.random.shuffle(vx_cell)
+np.random.shuffle(vy_cell)
+np.random.shuffle(vz_cell)
 for i in range(nx):
     for j in range(ny):
         if i == 0 and j == 0:
@@ -83,11 +82,11 @@ for i in range(nx):
             vy = vy_cell
             vz = vz_cell
         else:
-            x = numpy.concatenate((x, x_cell + i))
-            y = numpy.concatenate((y, y_cell + j))
-            vx = numpy.concatenate((vx, vx_cell))
-            vy = numpy.concatenate((vy, vy_cell))
-            vz = numpy.concatenate((vz, vz_cell))
+            x = np.concatenate((x, x_cell + i))
+            y = np.concatenate((y, y_cell + j))
+            vx = np.concatenate((vx, vx_cell))
+            vy = np.concatenate((vy, vy_cell))
+            vz = np.concatenate((vz, vz_cell))
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
@@ -102,13 +101,13 @@ nt = int(tend/dt)
 faraday = Faraday(manifold)
 
 # x- and y-grid
-xg, yg = numpy.meshgrid(manifold.x, manifold.y)
+xg, yg = np.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of electrons in each partition
-npmax = int(1.5*np/comm.size)
+Nmax = int(1.5*N/comm.size)
 
 # Create particle array
-ions = Particles(manifold, npmax, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, charge=charge, mass=mass)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
@@ -118,10 +117,10 @@ ions.initialize(x, y, vx, vy, vz)
 # init(manifold, ions)
 
 # Perturbation to particle velocities
-from numpy.random import normal
-# ions['vx'][:ions.np] = vtx*normal(size=ions.np)
-# ions['vy'][:ions.np] = vty*normal(size=ions.np)
-# ions['vz'][:ions.np] = vtz*normal(size=ions.np)
+from np.random import normal
+# ions['vx'][:ions.N] = vtx*normal(size=ions.N)
+# ions['vy'][:ions.N] = vty*normal(size=ions.N)
+# ions['vz'][:ions.N] = vtz*normal(size=ions.N)
 
 # Add background magnetic field
 B = Field(manifold, dtype=Float3)
@@ -144,7 +143,7 @@ e.prepare(dt)
 # Concatenate local arrays to obtain global arrays
 # The result is available on all processors.
 def concatenate(arr):
-    return numpy.concatenate(comm.allgather(arr))
+    return np.concatenate(comm.allgather(arr))
 
 # Make initial figure
 if plot:
@@ -200,10 +199,10 @@ for it in range(nt):
                     plt.pause(1e-7)
 if comm.rank == 0:
     if plot:
-        Bx_mag = numpy.array(Bx_mag)
-        By_mag = numpy.array(By_mag)
-        By_mag = numpy.array(By_mag)
-        time = numpy.array(time)
+        Bx_mag = np.array(Bx_mag)
+        By_mag = np.array(By_mag)
+        By_mag = np.array(By_mag)
+        time = np.array(time)
         plt.figure(2)
         plt.semilogy(time, Bx_mag, label=r"$(\delta B_x)^2$")
         plt.semilogy(time, By_mag, label=r"$(\delta B_y)^2$")

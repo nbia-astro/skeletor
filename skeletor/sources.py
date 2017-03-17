@@ -46,7 +46,7 @@ class Sources:
         else:
             S = grid.S
 
-        cython_deposit(particles[:particles.np], self.current, grid, S)
+        cython_deposit(particles[:particles.N], self.current, grid, S)
 
         self.current.boundaries_set = False
 
@@ -64,7 +64,7 @@ class Sources:
 
         grid = self.current.grid
 
-        N = grid.comm.allreduce(particles.np, op=SUM)
+        N = grid.comm.allreduce(particles.N, op=SUM)
 
         fac = particles.charge*particles.n0*grid.nx*grid.ny/N
         for dim in self.current.dtype.names:

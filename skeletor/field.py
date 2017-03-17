@@ -1,8 +1,8 @@
-from numpy import ndarray, asarray, zeros, dtype
 from .cython.types import Float
+import numpy as np
 
 
-class Field(ndarray):
+class Field(np.ndarray):
 
     def __new__(cls, grid, time=0.0, **kwds):
 
@@ -17,7 +17,7 @@ class Field(ndarray):
         obj.below = (grid.comm.rank - 1) % grid.comm.size
 
         # Scratch array needed for PPIC2's "add_guards" routine
-        obj.scr = zeros((2, grid.nx + 2), Float)
+        obj.scr = np.zeros((2, grid.nx + 2), Float)
 
         # Boolean indicating whether boundaries are set
         obj.boundaries_set = False
@@ -48,13 +48,13 @@ class Field(ndarray):
                 sendbuf, dest=self.below, source=self.above)
 
     def trim(self):
-        return asarray(self[self.grid.lby:self.grid.uby,
-                            self.grid.lbx:self.grid.ubx])
+        return np.asarray(self[self.grid.lby:self.grid.uby,
+                               self.grid.lbx:self.grid.ubx])
 
     @property
     def active(self):
-        return asarray(self[self.grid.lby:self.grid.uby,
-                            self.grid.lbx:self.grid.ubx])
+        return np.asarray(self[self.grid.lby:self.grid.uby,
+                               self.grid.lbx:self.grid.ubx])
 
     @active.setter
     def active(self, rhs):
@@ -69,18 +69,18 @@ class Field(ndarray):
         # calling this multiple times doesn't really cause any harm.
         assert not self.boundaries_set, 'Boundaries are already set!'
 
-        lbx = self.grid.lbx
-        lby = self.grid.lby
-        ubx = self.grid.ubx
-        uby = self.grid.uby
+        # Short hand
+        g = self.grid
 
         # x-boundaries
-        self[uby:, lbx:ubx] = self.send_down(self[lby:lby+lby, lbx:ubx])
-        self[:lby, lbx:ubx] = self.send_up(self[uby-lby:uby, lbx:ubx])
+        self[g.uby:, g.lbx:g.ubx] = \
+            self.send_down(self[g.lby:g.lby+g.lby, g.lbx:g.ubx])
+        self[:g.lby, g.lbx:g.ubx] = \
+            self.send_up(self[g.uby-g.lby:g.uby, g.lbx:g.ubx])
 
         # y-boundaries
-        self[:, ubx:] = self[:, lbx:lbx+lbx]
-        self[:, :lbx] = self[:, ubx-lbx:ubx]
+        self[:, g.ubx:] = self[:, g.lbx:g.lbx+g.lbx]
+        self[:, :g.lbx] = self[:, g.ubx-g.lbx:g.ubx]
 
         self.boundaries_set = True
 
@@ -92,37 +92,37 @@ class Field(ndarray):
         # if it fails because calling this method multiple times actually does
         # cause harm.
 
-        lbx = self.grid.lbx
-        lby = self.grid.lby
-        ubx = self.grid.ubx
-        uby = self.grid.uby
+        # Short hand
+        g = self.grid
 
         if self.dtype.names is None:
             # x-boundaries
-            self[:, lbx:lbx+lbx] += self[:, ubx:]
-            self[:, ubx-lbx:ubx] += self[:, :lbx]
+            self[:, g.lbx:g.lbx+g.lbx] += self[:, g.ubx:]
+            self[:, g.ubx-g.lbx:g.ubx] += self[:, :g.lbx]
             # y-boundaries
-            self[lby:lby+lby, :] += self.send_up(self[uby:, :])
-            self[uby-lby:uby, :] += self.send_down(self[:lby, :])
+            self[g.lby:g.lby+g.lby, :] += self.send_up(self[g.uby:, :])
+            self[g.uby-g.lby:g.uby, :] += self.send_down(self[:g.lby, :])
         else:
             for dim in self.dtype.names:
                 # x-boundaries
-                self[:, lbx:lbx+lbx][dim] += self[:, ubx:][dim]
-                self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
+                self[:, g.lbx:g.lbx+g.lbx][dim] += self[:, g.ubx:][dim]
+                self[:, g.ubx-g.lbx:g.ubx][dim] += self[:, :g.lbx][dim]
                 # y-boundaries
                 # TODO: reduce number of communications. Separate
                 # communications for each vector field component can't be good
                 # for performance.
-                self[lby:lby+lby, :][dim] += self.send_up(self[uby:, :][dim])
-                self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
+                self[g.lby:g.lby+g.lby, :][dim] += \
+                    self.send_up(self[g.uby:, :][dim])
+                self[g.uby-g.lby:g.uby, :][dim] += \
+                    self.send_down(self[:g.lby, :][dim])
 
         # Erase guard cells
         # TODO: I suggest we get rid of this. The guard layes will be
         # overwritten anyway by `copy_guards()`.
-        self[:lby, :] = 0.0
-        self[uby:, :] = 0.0
-        self[:, ubx:] = 0.0
-        self[:, :lbx] = 0.0
+        self[:g.lby, :] = 0.0
+        self[g.uby:, :] = 0.0
+        self[:, g.ubx:] = 0.0
+        self[:, :g.lbx] = 0.0
 
 
 class ShearField(Field):
@@ -132,16 +132,13 @@ class ShearField(Field):
 
     def __new__(cls, grid, time=0.0, **kwds):
 
-        from numpy.fft import rfftfreq
-        from numpy import outer, pi
-
         obj = super().__new__(cls, grid, time=time, **kwds)
 
         # Wave numbers for real-to-complex transforms
-        obj.kx = 2*pi*rfftfreq(grid.nx)/grid.dx
+        obj.kx = 2*np.pi*np.fft.rfftfreq(grid.nx)/grid.dx
 
         # Outer product of y and kx
-        obj.y_kx = outer(grid.y, obj.kx)
+        obj.y_kx = np.outer(grid.y, obj.kx)
 
         return obj
 
@@ -156,132 +153,125 @@ class ShearField(Field):
         self.y_kx = getattr(obj, "y_kx", None)
 
     def _translate_boundary(self, trans, iy):
-
         "Translation using FFTs"
-        from numpy.fft import rfft, irfft
-        from numpy import exp
 
-        lbx = self.grid.lbx
-        ubx = self.grid.ubx
+        # Short hand
+        g = self.grid
 
         # Translate in real space by phase shifting in spectral space
-        phase = -1j*self.kx*trans
+        fac = np.exp(-1j*self.kx*trans)
         if self.dtype.names is None:
-            self[iy, self.grid.lbx:self.grid.ubx] = \
-                irfft(exp(phase)*rfft(self[iy, self.grid.lbx:self.grid.ubx]))
+            self[iy, g.lbx:g.ubx] = np.fft.irfft(
+                    fac*np.fft.rfft(self[iy, g.lbx:g.ubx]))
         else:
             for dim in self.dtype.names:
-                self[iy, self.grid.lbx:self.grid.ubx][dim] = \
-                    irfft(exp(phase) *
-                          rfft(self[iy, self.grid.lbx:self.grid.ubx][dim]))
+                self[iy, g.lbx:g.ubx][dim] = np.fft.irfft(
+                        fac*np.fft.rfft(self[iy, g.lbx:g.ubx][dim]))
 
         # Update x-boundaries
-        self[iy, ubx:] = self[iy, lbx:lbx+lbx]
-        self[iy, :lbx] = self[iy, ubx-lbx:ubx]
+        self[iy, g.ubx:] = self[iy, g.lbx:g.lbx+g.lbx]
+        self[iy, :g.lbx] = self[iy, g.ubx-g.lbx:g.ubx]
 
     def add_guards(self):
 
-        lbx = self.grid.lbx
-        lby = self.grid.lby
-        ubx = self.grid.ubx
-        uby = self.grid.uby
+        # Short hand
+        g = self.grid
 
         # Add data from guard cells to corresponding active cells
         if self.dtype.names is None:
-            self[:, lbx:lbx+lbx] += self[:, ubx:]
-            self[:, ubx-lbx:ubx] += self[:, :lbx]
+            self[:, g.lbx:g.lbx+g.lbx] += self[:, g.ubx:]
+            self[:, g.ubx-g.lbx:g.ubx] += self[:, :g.lbx]
         else:
             for dim in self.dtype.names:
-                self[:, lbx:lbx+lbx][dim] += self[:, ubx:][dim]
-                self[:, ubx-lbx:ubx][dim] += self[:, :lbx][dim]
+                self[:, g.lbx:g.lbx+g.lbx][dim] += self[:, g.ubx:][dim]
+                self[:, g.ubx-g.lbx:g.ubx][dim] += self[:, :g.lbx][dim]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = self.grid.Ly*self.grid.S*self.time
-            for iy in range(uby, uby + lby):
+            for iy in range(g.uby, g.uby + g.lby):
                 self._translate_boundary(trans, iy)
         if self.grid.comm.rank == 0:
             trans = -self.grid.Ly*self.grid.S*self.time
-            for iy in range(0, lby):
+            for iy in range(0, g.lby):
                 self._translate_boundary(trans, iy)
 
         # Add data from guard cells to corresponding active cells in y
         if self.dtype.names is None:
-            self[lby:lby+lby, :] += self.send_up(self[uby:, :])
-            self[uby-lby:uby, :] += self.send_down(self[:lby, :])
+            self[g.lby:g.lby+g.lby, :] += self.send_up(self[g.uby:, :])
+            self[g.uby-g.lby:g.uby, :] += self.send_down(self[:g.lby, :])
         else:
             for dim in self.dtype.names:
-                self[lby:lby+lby, :][dim] += self.send_up(self[uby:, :][dim])
-                self[uby-lby:uby, :][dim] += self.send_down(self[:lby, :][dim])
+                self[g.lby:g.lby+g.lby, :][dim] += \
+                    self.send_up(self[g.uby:, :][dim])
+                self[g.uby-g.lby:g.uby, :][dim] += \
+                    self.send_down(self[:g.lby, :][dim])
 
         # Erase guard cells
-        self[:lby, :] = 0.0
-        self[uby:, :] = 0.0
-        self[:, ubx:] = 0.0
-        self[:, :lbx] = 0.0
+        self[:g.lby, :] = 0.0
+        self[g.uby:, :] = 0.0
+        self[:, g.ubx:] = 0.0
+        self[:, :g.lbx] = 0.0
 
     def copy_guards(self):
 
         msg = 'Boundaries are already set!'
         assert not self.boundaries_set, msg
 
-        lbx = self.grid.lbx
-        lby = self.grid.lby
-        ubx = self.grid.ubx
-        uby = self.grid.uby
+        # Short hand
+        g = self.grid
 
         # lower active cells to upper guard layers
-        self[uby:, lbx:ubx] = self.send_down(self[lby:lby+lby, lbx:ubx])
+        self[g.uby:, g.lbx:g.ubx] = \
+            self.send_down(self[g.lby:g.lby+g.lby, g.lbx:g.ubx])
         # upper active cells to lower guard layers
-        self[:lby, lbx:ubx] = self.send_up(self[uby-lby:uby, lbx:ubx])
+        self[:g.lby, g.lbx:g.ubx] = \
+            self.send_up(self[g.uby-g.lby:g.uby, g.lbx:g.ubx])
         # lower active cells to upper guard layers
-        self[:, ubx:] = self[:, lbx:lbx+lbx]
+        self[:, g.ubx:] = self[:, g.lbx:g.lbx+g.lbx]
         # upper active cells to lower guard layers
-        self[:, :lbx] = self[:, ubx-lbx:ubx]
+        self[:, :g.lbx] = self[:, g.ubx-g.lbx:g.ubx]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
             trans = -self.grid.Ly*self.grid.S*self.time
-            for iy in range(uby, uby + lby):
+            for iy in range(g.uby, g.uby + g.lby):
                 self._translate_boundary(trans, iy)
         if self.grid.comm.rank == 0:
             trans = +self.grid.Ly*self.grid.S*self.time
-            for iy in range(0, lby):
+            for iy in range(0, g.lby):
                 self._translate_boundary(trans, iy)
 
         self.boundaries_set = True
 
     def translate(self, time):
         """Translation using numpy's fft."""
-        from numpy.fft import rfft, irfft
-        from numpy import exp
 
         # Fourier transform along x
-        fx_hat = rfft(self.trim(), axis=1)
+        fx_hat = np.fft.rfft(self.trim(), axis=1)
 
         # Translate along x by an amount -S*t*y
-        fx_hat *= exp(1j*self.grid.S*time*self.y_kx)
+        fx_hat *= np.exp(1j*self.grid.S*time*self.y_kx)
 
         # Inverse Fourier transform along x
-        self.active = irfft(fx_hat, axis=1)
+        self.active = np.fft.irfft(fx_hat, axis=1)
 
         # Set boundary condition?
         self.boundaries_set = False
 
     def translate_vector(self, time):
         """Translation using numpy's fft."""
-        from numpy.fft import rfft, irfft
-        from numpy import exp
+        # TODO: Combine this with `translate()`
 
         for dim in ('x', 'y', 'z'):
             # Fourier transform along x
-            fx_hat = rfft(self.trim()[dim], axis=1)
+            fx_hat = np.fft.rfft(self.trim()[dim], axis=1)
 
             # Translate along x by an amount -S*t*y
-            fx_hat *= exp(1j*self.grid.S*time*self.y_kx)
+            fx_hat *= np.exp(1j*self.grid.S*time*self.y_kx)
 
             # Inverse Fourier transform along x
-            self.active[dim] = irfft(fx_hat, axis=1)
+            self.active[dim] = np.fft.irfft(fx_hat, axis=1)
 
         # Set boundary condition?
         self.boundaries_set = False

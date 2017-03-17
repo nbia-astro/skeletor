@@ -4,4 +4,5 @@ matplotlib
 mpi4py
 numpy
 scipy
+sympy
 git+https://github.com/tberlok/mpiFFT4py.git

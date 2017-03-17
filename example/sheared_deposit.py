@@ -1,12 +1,12 @@
 from skeletor import Float, Particles, Sources
 from skeletor.manifolds.second_order import ShearingManifold
-import numpy
+import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 import matplotlib.pyplot as plt
 
 # Initial time of particle positions
-t = -numpy.pi/3
+t = -np.pi/3
 
 # Particle charge and mass
 charge = 1
@@ -28,38 +28,38 @@ nx, ny = 32, 32
 npc = 16
 
 # Total number of particles in simulation
-np = npc*nx*ny
+N = npc*nx*ny
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
 manifold = ShearingManifold(nx, ny, comm, Lx=nx, Ly=ny, S=S, Omega=Omega)
 
 # x- and y-grid
-xx, yy = numpy.meshgrid(manifold.x, manifold.y)
+xx, yy = np.meshgrid(manifold.x, manifold.y)
 
 # Maximum number of ions in each partition
 # Set to big number to make sure particles can move between grids
-npmax = int(5*np/comm.size)
+Nmax = int(5*N/comm.size)
 
 # Create particle array
-ions = Particles(manifold, npmax, time=t, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, time=t, charge=charge, mass=mass)
 
 # Lagrangian/labeling coordinates
 # Uniform distribution of particle positions (quiet start)
-sqrt_npc = int(numpy.sqrt(npc))
+sqrt_npc = int(np.sqrt(npc))
 assert sqrt_npc**2 == npc, "'npc' must be a square of an integer."
-ax, ay = [ab.flatten().astype(Float) for ab in numpy.meshgrid(
-    manifold.dx*(numpy.arange(nx*sqrt_npc) + 0.5)/sqrt_npc,
-    manifold.dy*(numpy.arange(ny*sqrt_npc) + 0.5)/sqrt_npc
+ax, ay = [ab.flatten().astype(Float) for ab in np.meshgrid(
+    manifold.dx*(np.arange(nx*sqrt_npc) + 0.5)/sqrt_npc,
+    manifold.dy*(np.arange(ny*sqrt_npc) + 0.5)/sqrt_npc
     )]
 
 # x-component of wave vector
-kx = 2*numpy.pi/nx
+kx = 2*np.pi/nx
 
 
 def velocity(a):
     """Particle velocity in Lagrangian coordinates."""
-    return ampl*numpy.sin(kx*a)
+    return ampl*np.sin(kx*a)
 
 
 def vx_an(a, b, t):
@@ -77,8 +77,8 @@ def x_an(a, b, t):
 x = x_an(ax, ay, t)
 y = ay
 vx = vx_an(ax, ay, t)
-vy = numpy.zeros_like(vx)
-vz = numpy.zeros_like(vx)
+vy = np.zeros_like(vx)
+vz = np.zeros_like(vx)
 
 # Assign particles to subdomains (zero velocity and uniform distribution)
 ions.initialize(x, y, vx, vy, vz)
@@ -88,12 +88,12 @@ ions.shear_periodic_y()
 ions.periodic_x()
 
 # Make sure particles actually reside in the local subdomain
-assert all(ions["y"][:ions.np] >= manifold.edges[0])
-assert all(ions["y"][:ions.np] < manifold.edges[1])
+assert all(ions["y"][:ions.N] >= manifold.edges[0])
+assert all(ions["y"][:ions.N] < manifold.edges[1])
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-assert comm.allreduce(ions.np, op=MPI.SUM) == np
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(manifold)
@@ -101,17 +101,17 @@ sources.current.time = t
 
 # Deposit sources
 sources.deposit(ions)
-assert numpy.isclose(sources.rho.sum(), ions.np*charge/npc)
+assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
 sources.current.add_guards()
-assert numpy.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), np*charge/npc)
+assert np.isclose(comm.allreduce(
+    sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 sources.current.copy_guards()
 
 
 def concatenate(arr):
     """Concatenate local arrays to obtain global arrays
     The result is available on all processors."""
-    return numpy.concatenate(comm.allgather(arr))
+    return np.concatenate(comm.allgather(arr))
 
 
 global_rho = concatenate(sources.rho.trim())
