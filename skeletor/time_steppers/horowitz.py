@@ -44,7 +44,7 @@ class Horowitz:
         self.t = 0.0
 
     def prepare(self, dt):
-        """TODO: Figure out to set the initial condition"""
+        """TODO: Set the initial condition correctly"""
         # Deposit sources
         self.sources.deposit(self.ions, set_boundaries=True)
 
@@ -61,7 +61,7 @@ class Horowitz:
 
         return diff
 
-    def iterate(self, dt, tol=1.48e-4, maxiter=100):
+    def iterate(self, dt, tol=1.48e-8, maxiter=100):
         """Update fields and particles using Horowitz method"""
         from mpi4py.MPI import COMM_WORLD as comm
 
@@ -70,7 +70,6 @@ class Horowitz:
 
         # Start iteration by assuming E^(n+1) = E^n
         self.E3[:] = self.E[:]
-        self.B3[:] = self.B[:]
 
         for it in range(maxiter):
 
@@ -82,6 +81,7 @@ class Horowitz:
                 self.E2[dim][...] = 0.5*(self.E3[dim] + self.E[dim])
 
             # Estimate magnetic field at n+1
+            self.B3[:] = self.B[:]
             self.faraday(self.E2, self.B3, dt, set_boundaries=True)
 
             # Estimate magnetic field at n+1/2
