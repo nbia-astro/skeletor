@@ -1,7 +1,7 @@
 from skeletor import Float, Float3, Field, Particles
-from skeletor import Ohm, InitialCondition
+from skeletor import Ohm, InitialCondition, State
 from skeletor.manifolds.second_order import Manifold
-from skeletor.predictor_corrector import Experiment
+from skeletor.time_steppers.horowitz import Horowitz
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -178,8 +178,12 @@ def test_circular(plot=False):
     # Initialize Ohm's law solver
     ohm = Ohm(manifold, temperature=Te, charge=charge, eta=eta)
 
-    # Initialize experiment
-    e = Experiment(manifold, ions, ohm, B, npc, io=None)
+    # Initialize state
+    state = State(ions, B)
+
+    # Initialize timestepper
+    # e = PredictorCorrector(state, ohm, manifold)
+    e = Horowitz(state, ohm, manifold)
 
     # Deposit charges and calculate initial electric field
     e.prepare(dt)
