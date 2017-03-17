@@ -61,9 +61,8 @@ class Horowitz:
 
         return diff
 
-    def iterate(self, dt, tol=1.48e-8, maxiter=100):
+    def iterate(self, dt, tol=1.48e-8, maxiter=12):
         """Update fields and particles using Horowitz method"""
-        from mpi4py.MPI import COMM_WORLD as comm
 
         # Push and deposit the particles, depositing the sources at n+1/2
         self.ions.push_and_deposit(self.E, self.B, dt, self.sources, True)
@@ -97,13 +96,9 @@ class Horowitz:
 
             diff1 = self.calculate_diff(self.E3, self.E4)
             diff2 = self.calculate_diff(self.B3, self.B4)
-            if comm.rank == 0:
-                print("Difference to previous iteration: {}".format(diff1))
 
             # Update E and B if difference is sufficiently small
             if (diff1 < tol and diff2 < tol):
-                if comm.rank == 0:
-                    print("Number of iterations used: {}".format(it))
                 self.E[:] = self.E3[:]
                 self.B[:] = self.B3[:]
                 self.t += dt
