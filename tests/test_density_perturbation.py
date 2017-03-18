@@ -49,8 +49,14 @@ sources = Sources(manifold)
 
 def perturb_and_deposit(quiet, plot, num):
 
+    # Make random number generation predictable
+    # We do this so that the last assertion test below never fails
+    if not quiet:
+        np.random.seed(0)
+
     # Create a uniform density field
-    perturbation = DensityPertubation(npc, ikx, iky, ampl, quiet=quiet)
+    perturbation = DensityPertubation(npc, ikx, iky, ampl,
+                                      quiet=quiet, global_init=True)
     # init(manifold, ions)
     perturbation(manifold, ions)
 
@@ -72,7 +78,7 @@ def perturb_and_deposit(quiet, plot, num):
         assert np.sqrt(np.mean((rho - rho_exact)**2)) < 0.005*ampl
     else:
         ampl_fft = 2*abs(np.fft.rfft(rho)[1])/manifold.nx
-        assert abs(ampl_fft - ampl) < 0.1*ampl
+        assert abs(ampl_fft - ampl) < 0.02*ampl
 
     if plot and comm.rank == 0:
         import matplotlib.pyplot as plt
