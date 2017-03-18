@@ -3,7 +3,7 @@ import numpy as np
 
 class InitialCondition():
 
-    def __init__(self, npc, quiet=False, vt=0.0):
+    def __init__(self, npc, quiet=False, vt=0.0, global_init=False):
 
         # Quiet start?
         self.quiet = quiet
@@ -14,35 +14,52 @@ class InitialCondition():
         # Ion thermal velocity
         self.vt = vt
 
+        # Initialize particles "globally" on each processor?
+        self.global_init = global_init
+
     def __call__(self, manifold, ions):
 
-        # Total number particles in one MPI domain
-        N = manifold.nx*manifold.nyp*self.npc
+        nx = manifold.nx
+        ny = manifold.ny if self.global_init else manifold.nyp
 
+        # Number of particles on all (one) processor(s)
+        # if global_init is True (False)
+        N = nx*ny*self.npc
+
+        # Uniform distribution of particle positions
         if self.quiet:
-            # Uniform distribution of particle positions (quiet start)
+            # Particles are placed on a regular grid (quiet start)
             sqrt_npc = int(np.sqrt(self.npc))
             assert sqrt_npc**2 == self.npc
-            npx = manifold.nx*sqrt_npc
-            npy = manifold.nyp*sqrt_npc
-            x1 = (np.arange(npx) + 0.5)/sqrt_npc
-            y1 = (np.arange(npy) + 0.5)/sqrt_npc + manifold.edges[0]
+            x1 = (np.arange(nx*sqrt_npc) + 0.5)/sqrt_npc
+            y1 = (np.arange(ny*sqrt_npc) + 0.5)/sqrt_npc
             x, y = [xy.flatten() for xy in np.meshgrid(x1, y1)]
         else:
-            x = manifold.nx*np.random.uniform(size=N)
-            y = manifold.nyp*np.random.uniform(size=N) + manifold.edges[0]
-
-        # Set initial position
-        ions['x'][:N] = x
-        ions['y'][:N] = y
+            # Particles are placed randomly (noisy start)
+            x = nx*np.random.uniform(size=N)
+            y = ny*np.random.uniform(size=N)
 
         # Draw particle velocities from a normal distribution
         # with zero mean and width 'vt'
-        ions['vx'][:N] = self.vt*np.random.normal(size=N)
-        ions['vy'][:N] = self.vt*np.random.normal(size=N)
-        ions['vz'][:N] = self.vt*np.random.normal(size=N)
+        vx = self.vt*np.random.normal(size=N)
+        vy = self.vt*np.random.normal(size=N)
+        vz = self.vt*np.random.normal(size=N)
 
-        ions.N = N
+        if self.global_init:
+            # Distributed particles across subdomains
+            x *= manifold.dx
+            y *= manifold.dy
+            ions.initialize(x, y, vx, vy, vz)
+        else:
+            # Set initial position
+            ions['x'][:N] = x
+            ions['y'][:N] = y + manifold.edges[0]
+
+            ions['vx'][:N] = vx
+            ions['vy'][:N] = vy
+            ions['vz'][:N] = vz
+
+            ions.N = N
 
 
 class DensityPertubation(InitialCondition):
