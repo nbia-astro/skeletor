@@ -1,5 +1,5 @@
 from skeletor import Float3, Field, Particles, Sources
-from skeletor.manifolds.mpifft4py import Manifold
+from skeletor.manifolds.ppic2 import Manifold
 from skeletor import Poisson, InitialCondition
 import numpy as np
 from mpi4py import MPI
