@@ -1,5 +1,5 @@
 from types cimport complex_t, complex2_t, real_t, real3_t
-from libc.math cimport M_PI
+from libc.math cimport M_PI, exp, pow
 cimport cython
 
 cdef extern from "complex.h":
@@ -7,6 +7,45 @@ cdef extern from "complex.h":
     float cimagf(float complex) nogil
     float complex conjf(float complex) nogil
     float complex _Complex_I
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+cpdef void calc_form_factors(
+        complex_t[:,:] qt, complex_t[:,:] ffc,
+        real_t ax, real_t ay, real_t affp,
+        int nx, int ny, int kstrt) nogil:
+
+    cdef int kxp = qt.shape[0]
+
+    cdef int nxh, nyh, ks, joff, kxps, j, k
+    cdef real_t dnx, dny, dkx, dky, at1, at2, at3, at4
+
+    nxh = nx/2
+    nyh = 1 if 1 > ny/2 else ny/2
+    ks = kstrt - 1
+    joff = kxp*ks
+    kxps = nxh - joff
+    kxps = 0 if 0 > kxps else kxps
+    kxps = kxp if kxp < kxps else kxps
+    dnx = 2.0*M_PI/<real_t> nx
+    dny = 2.0*M_PI/<real_t> ny
+
+    if kstrt > nxh:
+        return
+
+    # Prepare form factor array
+    for j in range(kxps):
+        dkx = dnx*<real_t> (j + joff)
+        at1 = dkx*dkx;
+        at2 = pow((dkx*ax),2)
+        for k in range(nyh):
+            dky = dny*<real_t> k
+            at3 = dky*dky + at1;
+            at4 = exp(-.5*(pow((dky*ay),2) + at2))
+            if at3 == 0.0:
+                ffc[j, k] = affp + 1.0*_Complex_I;
+            else:
+                ffc[j, k] = (affp*at4/at3) + at4*_Complex_I;
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
