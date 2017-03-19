@@ -59,8 +59,10 @@ class Manifold(Grid):
         if custom_cppois22:
             kstrt = self.comm.rank + 1
             calc_form_factors(self.qt, self.ffc,
-                              ax, ay, self.affp, nx, ny, kstrt)
+                              ax, ay, self.affp, self, kstrt)
         else:
+            msg = "Using PPIC2's Poisson solver requires dx=dy"
+            assert np.isclose(self.dx, self.dy), msg
             isign = 0
             cppois22(self.qt, self.fxyt, isign, self.ffc,
                      self.ax, self.ay, self.affp, self)
@@ -138,12 +140,15 @@ class Manifold(Grid):
         if self.custom_cppois22:
             kstrt = self.comm.rank + 1
             we = grad_inv_del(
-                    self.qt, self.fxyt, self.ffc, self.nx, self.ny, kstrt)
+                    self.qt, self.fxyt, self.ffc, self, kstrt)
         else:
             isign = -1
             we = cppois22(
                     self.qt, self.fxyt, isign, self.ffc,
                     self.ax, self.ay, self.affp, self)
+            # Scale with dx and dy (this is not done by ppic2s FFT)
+            self.fxyt['x'] *= self.dx
+            self.fxyt['y'] *= self.dy
 
         # Transform force to real space with standard procedure:
         # updates fxye, modifies fxyt
@@ -156,10 +161,6 @@ class Manifold(Grid):
         fxye['x'].active = self.fxye['x'][:-1, :-2]
         fxye['y'].active = self.fxye['y'][:-1, :-2]
         fxye['z'].active = 0.0
-
-        # Scale with dx and dy (this is not done by ppic2s FFT)
-        fxye['x'] *= fxye.grid.dx
-        fxye['y'] *= fxye.grid.dy
 
         fxye.boundaries_set = False
 

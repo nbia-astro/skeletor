@@ -1,4 +1,4 @@
-from types cimport complex_t, complex2_t, real_t, real3_t
+from types cimport complex_t, complex2_t, real_t, real3_t, grid_t
 from libc.math cimport M_PI, exp, pow
 cimport cython
 
@@ -13,8 +13,12 @@ cdef extern from "complex.h":
 cpdef void calc_form_factors(
         complex_t[:,:] qt, complex_t[:,:] ffc,
         real_t ax, real_t ay, real_t affp,
-        int nx, int ny, int kstrt) nogil:
+        grid_t grid, int kstrt) nogil:
 
+    cdef int nx = grid.nx
+    cdef int ny = grid.ny
+    cdef real_t Lx = grid.dx*<real_t> nx
+    cdef real_t Ly = grid.dy*<real_t> ny
     cdef int kxp = qt.shape[0]
 
     cdef int nxh, nyh, ks, joff, kxps, j, k
@@ -27,8 +31,8 @@ cpdef void calc_form_factors(
     kxps = nxh - joff
     kxps = 0 if 0 > kxps else kxps
     kxps = kxp if kxp < kxps else kxps
-    dnx = 2.0*M_PI/<real_t> nx
-    dny = 2.0*M_PI/<real_t> ny
+    dnx = 2.0*M_PI/Lx
+    dny = 2.0*M_PI/Ly
 
     if kstrt > nxh:
         return
@@ -51,7 +55,7 @@ cpdef void calc_form_factors(
 @cython.boundscheck(False)
 cpdef real_t grad_inv_del(
         complex_t[:,:] qt, complex2_t[:,:] fxyt, complex_t[:,:] ffc,
-        int nx, int ny, int kstrt) nogil:
+        grid_t grid, int kstrt) nogil:
     """
     This function computes E=∇(∇⁻²ρ), where ∇⁻² is the inverse Laplacian.
     E thus satisfies Gauss' law ∇·E=ρ.
@@ -62,6 +66,10 @@ cpdef real_t grad_inv_del(
     ppic2_wrapper.pyx). That's why the "energy" is also computed and returned.
     """
 
+    cdef int nx = grid.nx
+    cdef int ny = grid.ny
+    cdef real_t Lx = grid.dx*<real_t> nx
+    cdef real_t Ly = grid.dy*<real_t> ny
     cdef int kxp = qt.shape[0]
     cdef double wp = 0.0
 
@@ -76,8 +84,8 @@ cpdef real_t grad_inv_del(
     kxps = nxh - joff
     kxps = 0 if 0 > kxps else kxps
     kxps = kxp if kxp < kxps else kxps
-    dnx = 2.0*M_PI/<real_t> nx
-    dny = 2.0*M_PI/<real_t> ny
+    dnx = 2.0*M_PI/Lx
+    dny = 2.0*M_PI/Ly
     zero = 0.0
 
     if kstrt > nxh:
