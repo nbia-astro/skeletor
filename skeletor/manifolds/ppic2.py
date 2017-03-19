@@ -87,7 +87,13 @@ class Manifold(Grid):
 
         # Copy electric field into an array with arbitrary number
         # of guard layers
-        fxye.active = self.fxye[:-1, :-2]
+        fxye['x'].active = self.fxye['x'][:-1, :-2]
+        fxye['y'].active = self.fxye['y'][:-1, :-2]
+        fxye['z'].active = 0.0
+
+        # Scale with dx and dy (this is not done by ppic2s FFT)
+        fxye['x'] /= fxye.grid.dx
+        fxye['y'] /= fxye.grid.dy
 
         fxye.boundaries_set = False
 
