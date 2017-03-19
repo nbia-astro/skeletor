@@ -4,10 +4,12 @@ import numpy as np
 
 class Manifold(Grid):
 
-    def __init__(self, nx, ny, comm, ax=0.0, ay=0.0, **grid_kwds):
+    def __init__(self, nx, ny, comm,
+                 ax=0.0, ay=0.0, custom_cppois22=False, **grid_kwds):
 
-        from ..cython.types import Complex, Complex2, Float, Float3, Int
+        from ..cython.types import Complex, Complex2, Float, Float2, Int
         from ..cython.ppic2_wrapper import cwpfft2rinit, cppois22
+        from ..cython.operators import calc_form_factors
         from math import log2
 
         super().__init__(nx, ny, comm, **grid_kwds)
@@ -24,6 +26,10 @@ class Manifold(Grid):
 
         # Normalization constant
         self.affp = 1.0
+
+        # Use PPIC2's cppois22() routine for solving Poisson's equation?
+        # This restricts the grid to be isotropic (i.e. dx = dy)
+        self.custom_cppois22 = custom_cppois22
 
         nxh = nx//2
         nyh = (1 if 1 > ny//2 else ny//2)
@@ -44,16 +50,22 @@ class Manifold(Grid):
         # Declare charge and electric fields with fixed number of guard layers.
         # This is necessary for interfacing with PPIC2's C-routines.
         self.qe = np.zeros((self.nyp+1, nx+2), dtype=Float)
-        self.fxye = np.zeros((self.nyp+1, nx+2), dtype=Float3)
+        self.fxye = np.zeros((self.nyp+1, nx+2), dtype=Float2)
 
         # Prepare fft tables
         cwpfft2rinit(self.mixup, self.sct, self.indx, self.indy)
 
         # Calculate form factors
-        isign = 0
-        cppois22(
-                self.qt, self.fxyt, isign, self.ffc,
-                self.ax, self.ay, self.affp, self)
+        if custom_cppois22:
+            kstrt = self.comm.rank + 1
+            calc_form_factors(self.qt, self.ffc,
+                              ax, ay, self.affp, self, kstrt)
+        else:
+            msg = "Using PPIC2's Poisson solver requires dx=dy"
+            assert np.isclose(self.dx, self.dy), msg
+            isign = 0
+            cppois22(self.qt, self.fxyt, isign, self.ffc,
+                     self.ax, self.ay, self.affp, self)
 
         # Rotation and shear is always false for this manifold
         self.shear = False
@@ -87,7 +99,13 @@ class Manifold(Grid):
 
         # Copy electric field into an array with arbitrary number
         # of guard layers
-        fxye.active = self.fxye[:-1, :-2]
+        fxye['x'].active = self.fxye['x'][:-1, :-2]
+        fxye['y'].active = self.fxye['y'][:-1, :-2]
+        fxye['z'].active = 0.0
+
+        # Scale with dx and dy (this is not done by ppic2s FFT)
+        fxye['x'] /= fxye.grid.dx
+        fxye['y'] /= fxye.grid.dy
 
         fxye.boundaries_set = False
 
@@ -102,7 +120,7 @@ class Manifold(Grid):
         g.boundaries_set = False
         return g
 
-    def grad_inv_del(self, qe, fxye, custom_cppois22=False):
+    def grad_inv_del(self, qe, fxye):
 
         from ..cython.ppic2_wrapper import cppois22, cwppfft2r, cwppfft2r2
         from ..cython.operators import grad_inv_del
@@ -119,15 +137,18 @@ class Manifold(Grid):
 
         # Calculate force/charge in fourier space with standard procedure:
         # updates fxyt, we
-        if custom_cppois22:
+        if self.custom_cppois22:
             kstrt = self.comm.rank + 1
             we = grad_inv_del(
-                    self.qt, self.fxyt, self.ffc, self.nx, self.ny, kstrt)
+                    self.qt, self.fxyt, self.ffc, self, kstrt)
         else:
             isign = -1
             we = cppois22(
                     self.qt, self.fxyt, isign, self.ffc,
                     self.ax, self.ay, self.affp, self)
+            # Scale with dx and dy (this is not done by ppic2s FFT)
+            self.fxyt['x'] *= self.dx
+            self.fxyt['y'] *= self.dy
 
         # Transform force to real space with standard procedure:
         # updates fxye, modifies fxyt
@@ -137,7 +158,9 @@ class Manifold(Grid):
 
         # Copy electric field into an array with arbitrary number
         # of guard layers
-        fxye.active = self.fxye[:-1, :-2]
+        fxye['x'].active = self.fxye['x'][:-1, :-2]
+        fxye['y'].active = self.fxye['y'][:-1, :-2]
+        fxye['z'].active = 0.0
 
         fxye.boundaries_set = False
 

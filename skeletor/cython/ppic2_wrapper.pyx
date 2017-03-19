@@ -1,6 +1,6 @@
 # distutils: sources = picksc/ppic2/pplib2.c picksc/ppic2/ppush2.c
 
-from types cimport complex_t, complex2_t, real_t, real3_t, particle_t, grid_t
+from types cimport complex_t, complex2_t, real_t, real2_t, particle_t, grid_t
 from types import Float, Int
 cimport pplib2, ppush2
 from numpy cimport ndarray
@@ -116,7 +116,7 @@ def cppois22(
     return we
 
 def cwppfft2r2(
-        real3_t[:,:] fxye, complex2_t[:,:] fxyt,
+        real2_t[:,:] fxye, complex2_t[:,:] fxyt,
         complex2_t[:,:] bs, complex2_t[:,:] br,
         int isign, int[:] mixup, complex_t[:] sct,
         int indx, int indy, grid_t grid):
