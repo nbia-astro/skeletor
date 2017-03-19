@@ -141,6 +141,10 @@ class Manifold(Grid):
         fxye['y'].active = self.fxye['y'][:-1, :-2]
         fxye['z'].active = 0.0
 
+        # Scale with dx and dy (this is not done by ppic2s FFT)
+        fxye['x'] *= fxye.grid.dx
+        fxye['y'] *= fxye.grid.dy
+
         fxye.boundaries_set = False
 
         return ttp, we
