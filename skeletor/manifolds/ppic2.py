@@ -6,7 +6,7 @@ class Manifold(Grid):
 
     def __init__(self, nx, ny, comm, ax=0.0, ay=0.0, **grid_kwds):
 
-        from ..cython.types import Complex, Complex2, Float, Float3, Int
+        from ..cython.types import Complex, Complex2, Float, Float2, Int
         from ..cython.ppic2_wrapper import cwpfft2rinit, cppois22
         from math import log2
 
@@ -44,7 +44,7 @@ class Manifold(Grid):
         # Declare charge and electric fields with fixed number of guard layers.
         # This is necessary for interfacing with PPIC2's C-routines.
         self.qe = np.zeros((self.nyp+1, nx+2), dtype=Float)
-        self.fxye = np.zeros((self.nyp+1, nx+2), dtype=Float3)
+        self.fxye = np.zeros((self.nyp+1, nx+2), dtype=Float2)
 
         # Prepare fft tables
         cwpfft2rinit(self.mixup, self.sct, self.indx, self.indy)
@@ -137,7 +137,9 @@ class Manifold(Grid):
 
         # Copy electric field into an array with arbitrary number
         # of guard layers
-        fxye.active = self.fxye[:-1, :-2]
+        fxye['x'].active = self.fxye['x'][:-1, :-2]
+        fxye['y'].active = self.fxye['y'][:-1, :-2]
+        fxye['z'].active = 0.0
 
         fxye.boundaries_set = False
 
