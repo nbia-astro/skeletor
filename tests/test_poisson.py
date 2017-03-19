@@ -2,7 +2,6 @@ from skeletor import Float3, Field, Sources
 from skeletor.manifolds.ppic2 import Manifold
 import numpy as np
 from mpi4py.MPI import COMM_WORLD as comm
-import matplotlib.pyplot as plt
 
 
 # Concatenate local arrays to obtain global arrays
@@ -59,6 +58,8 @@ def test_poisson():
 
 
 if __name__ == "__main__":
+
+    import matplotlib.pyplot as plt
 
     test_poisson()
 
