@@ -170,6 +170,9 @@ class PoissonSolver:
                      self.ax, self.ay, self.affp, grid)
 
     def __call__(self, rho, E):
+        """This method computes
+          E = ∇∇⁻²ρ
+        where ∇⁻² is the inverse Laplacian."""
 
         from ..cython.ppic2_wrapper import cppois22
         from ..cython.ppic2_wrapper import cwppfft2r, cwppfft2r2
