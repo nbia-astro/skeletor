@@ -1,5 +1,5 @@
 from skeletor import Float3, Field, Particles, Sources
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.second_order import Manifold
 from skeletor import Poisson, InitialCondition
 import numpy as np
 from mpi4py import MPI
@@ -62,7 +62,7 @@ def test_plasmafrequency(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm)
+    manifold = Manifold(nx, ny, comm, custom_cppois22=True)
 
     # Wave vector and its modulus
     kx = 2*np.pi*ikx/manifold.Lx
