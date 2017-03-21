@@ -24,12 +24,14 @@ Omega = 0
 S = -3/2
 
 # Amplitude of perturbation
-ampl = 2.
+ampl = 0.2
 
 # Number of grid points in x- and y-direction
-nx, ny = 64, 64
+nx, ny = 64, 128
 
-Lx, Ly = nx, ny
+Lx, Ly = 1, 2
+
+dx, dy = Lx/nx, Ly/ny
 
 # Average number of particles per cell
 npc = 64
@@ -43,13 +45,15 @@ N = npc*nx*ny
 # Uniform distribution of particle positions (quiet start)
 sqrt_npc = int(np.sqrt(npc))
 assert sqrt_npc**2 == npc
-dx = dy = 1/sqrt_npc
+dx1 = dy1 = 1/sqrt_npc
 a, b = np.meshgrid(
-        np.arange(dx/2, nx+dx/2, dx),
-        np.arange(dy/2, ny+dy/2, dy))
+        np.arange(dx1/2, nx+dx1/2, dx1),
+        np.arange(dy1/2, ny+dy1/2, dy1))
 a = a.flatten()
 b = b.flatten()
 
+a *= dx
+b *= dy
 
 def mean(f, axis=None):
     """Compute mean of an array across processors."""
@@ -216,7 +220,7 @@ def update(t):
     1 along y.
     """
 
-    ions['x'][:N] = x_an(a, b, t)*manifold.dx
+    ions['x'][:N] = x_an(a, b, t)/manifold.dx
     ions['vx'][:N] = vx_an(a, b, t)
     ions.time = t
     ions.shear_periodic_y()
@@ -294,7 +298,7 @@ if comm.rank == 0:
     im1b = axes[1, 0].imshow(global_Jx/global_rho)
     im2b = axes[1, 1].imshow(global_Jx_periodic/global_rho_periodic)
     axtime1 = plt.axes([0.125, 0.05, 0.775, 0.03])
-    stime1 = mw.Slider(axtime1, 'Time', -np.pi, np.pi/2, 0)
+    stime1 = mw.Slider(axtime1, 'Time', -np.pi/4, np.pi/8, 0)
     stime1.on_changed(update)
 
     plt.figure(2)
@@ -304,12 +308,12 @@ if comm.rank == 0:
     ax1.set_ylim(0, 2)
     ax2.set_ylim(-1*ampl, 1*ampl)
     for ax in (ax1, ax2):
-        ax.set_xlim(0, nx)
+        ax.set_xlim(0, Lx)
     ax2.set_xlabel(r"$x'$")
     ax1.set_title(r'$\rho/\rho_0$')
     # Create slider widget for changing time
     axtime2 = plt.axes([0.125, 0.05, 0.775, 0.03])
-    stime2 = mw.Slider(axtime2, 'Time', -np.pi, np.pi/2, 0)
+    stime2 = mw.Slider(axtime2, 'Time', -np.pi/4, np.pi/8, 0)
     stime2.on_changed(update)
     xp = euler(manifold.x, 0)
     xp = np.sort(xp)
