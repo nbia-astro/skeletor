@@ -1,7 +1,7 @@
 from skeletor import Float3, Field, Particles
-from skeletor import Ohm, InitialCondition
+from skeletor import Ohm, InitialCondition, State
 from skeletor.manifolds.second_order import Manifold
-from skeletor.predictor_corrector import Experiment
+from skeletor.time_steppers.predictor_corrector import TimeStepper
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -120,8 +120,11 @@ def test_fastwave(plot=False):
     # Initialize Ohm's law solver
     ohm = Ohm(manifold, temperature=Te, charge=charge)
 
+    # Initialize state
+    state = State(ions, B)
+
     # Initialize experiment
-    e = Experiment(manifold, ions, ohm, B, npc, io=None)
+    e = TimeStepper(state, ohm, manifold)
 
     # Deposit charges and calculate initial electric field
     e.prepare(dt)

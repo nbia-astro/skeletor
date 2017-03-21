@@ -1,7 +1,7 @@
 from skeletor import Float3, Field, Particles
 from skeletor import Ohm, InitialCondition, State
 from skeletor.manifolds.second_order import Manifold
-from skeletor.time_steppers.horowitz import Horowitz
+from skeletor.time_steppers.horowitz import TimeStepper
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -128,8 +128,7 @@ ohm = Ohm(manifold, temperature=Te, charge=charge)
 state = State(ions, B)
 
 # Initialize timestepper
-# e = PredictorCorrector(state, ohm, manifold)
-e = Horowitz(state, ohm, manifold)
+e = TimeStepper(state, ohm, manifold)
 
 # Deposit charges and calculate initial electric field
 e.prepare(dt)

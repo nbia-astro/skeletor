@@ -1,4 +1,4 @@
-class Horowitz:
+class TimeStepper:
 
     def __init__(self, state, ohm, manifold):
 
