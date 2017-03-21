@@ -42,13 +42,64 @@ class TimeStepper:
 
         self.t = state.t
 
-    def prepare(self, dt):
-        """TODO: Set the initial condition correctly"""
+    def prepare(self, dt, tol=1.48e-8, maxiter=100):
+
+        from mpi4py.MPI import COMM_WORLD as comm
+
         # Deposit sources
         self.sources.deposit(self.ions, set_boundaries=True)
 
         # Calculate electric field (Solve Ohm's law)
         self.ohm(self.sources, self.B, self.E, set_boundaries=True)
+
+        # Drift particle positions by a half time step
+        self.ions.drift(dt/2)
+
+        # Iterate to find true electric field at time 0
+        for it in range(maxiter):
+
+            # Compute electric field at time 1/2
+            self.step(dt, update=False)
+
+            # Average to get electric field at time 0
+            for dim in ('x', 'y', 'z'):
+                self.E3[dim][...] = 0.5*(self.E[dim] + self.E2[dim])
+
+            # Compute difference to previous iteration
+            diff = self.calculate_diff(self.E3, self.E)
+            if comm.rank == 0:
+                print("Difference to previous iteration: {}".format(diff))
+
+            # Update electric field
+            self.E[...] = self.E3
+
+            # Return if difference is sufficiently small
+            if diff < tol:
+                # Evolve magnetic field by a half step to t=t0
+                self.faraday(self.E, self.B, dt/2, set_boundaries=True)
+                return
+
+        raise RuntimeError("Exceeded maxiter={} iterations!".format(maxiter))
+
+    def step(self, dt, update=False):
+        """Step method from predictor-corrector but update is always false"""
+        # Copy magnetic and electric field and ions from previous step
+        self.B2[:] = self.B
+        self.E2[:] = self.E
+
+        # Evolve magnetic field by a half step to n (n+1)
+        self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
+
+        # Push particle positions to n+1 (n+2) and kick velocities to n+1/2
+        # (n+3/2). Deposit charge and current at n+1/2 (n+3/2) and only update
+        # particle positions if update=True
+        self.ions.push_and_deposit(self.E2, self.B2, dt, self.sources, False)
+
+        # Evolve magnetic field by a half step to n+1/2 (n+3/2)
+        self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
+
+        # Electric field at n+1/2 (n+3/2)
+        self.ohm(self.sources, self.B2, self.E2, set_boundaries=True)
 
     def calculate_diff(self, f, g):
         from numpy import sqrt
