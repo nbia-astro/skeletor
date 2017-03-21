@@ -18,7 +18,7 @@ dt = 0.5e-3
 t = 0
 
 # Simulation time
-tend = np.pi/2
+tend = np.pi/4
 
 # Number of time steps
 nt = int((tend-t)/dt)
@@ -37,16 +37,20 @@ S = -3/2
 kappa = np.sqrt(2*Omega*(2*Omega+S))
 
 # Amplitude of perturbation
-ampl = 2.
+ampl = 0.2
 
 # Number of grid points in x- and y-direction
 nx, ny = 64, 64
+
+Lx, Ly = 1, 1
+
+dx, dy = Lx/nx, Ly/ny
 
 # Average number of particles per cell
 npc = 16
 
 # Wave numbers
-kx = 2*np.pi/nx
+kx = 2*np.pi/Lx
 
 # Total number of particles in simulation
 N = npc*nx*ny
@@ -55,16 +59,18 @@ if quiet:
     # Uniform distribution of particle positions (quiet start)
     sqrt_npc = int(np.sqrt(npc))
     assert sqrt_npc**2 == npc
-    dx = dy = 1/sqrt_npc
+    dx1 = dy1 = 1/sqrt_npc
     a, b = np.meshgrid(
-            np.arange(dx/2, nx+dx/2, dx),
-            np.arange(dy/2, ny+dy/2, dy))
+            np.arange(dx1/2, nx+dx1/2, dx1),
+            np.arange(dy1/2, ny+dy1/2, dy1))
     a = a.flatten()
     b = b.flatten()
 else:
-    a = nx*np.random.uniform(size=N).astype(Float)
-    b = ny*np.random.uniform(size=N).astype(Float)
+    a = Lx*np.random.uniform(size=N).astype(Float)
+    b = Ly*np.random.uniform(size=N).astype(Float)
 
+a *= dx
+b *= dy
 
 def x_an(ap, bp, t):
     phi = kx*ap
@@ -160,6 +166,7 @@ phi = kx*a
 # Particle velocities at time = t-dt/2
 vx = vx_an(a, b, t-dt/2)
 vy = vy_an(a, b, t-dt/2)
+vz = np.zeros_like(vx)
 
 # Particle positions at time=t
 x = x_an(a, b, t)
@@ -170,7 +177,7 @@ idproc, nvp = cppinit(comm)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
+manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega, Lx=Lx, Ly=Ly)
 
 # x- and y-grid
 xx, yy = np.meshgrid(manifold.x, manifold.y)
@@ -183,7 +190,7 @@ Nmax = int(1.25*N/nvp)
 ions = Particles(manifold, Nmax, time=dt/2, charge=charge, mass=mass)
 
 # Assign particles to subdomains
-ions.initialize(x, y, vx, vy)
+ions.initialize(x, y, vx, vy, vz)
 
 # Make sure particles actually reside in the local subdomain
 assert all(ions["y"][:ions.N] >= manifold.edges[0])
@@ -195,27 +202,30 @@ assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(manifold)
-sources.rho = ShearField(manifold, time=t, dtype=Float)
-rho_periodic = ShearField(manifold, time=0, dtype=Float)
-Jx_periodic = ShearField(manifold, time=0, dtype=Float3)
-Jy_periodic = ShearField(manifold, time=0, dtype=Float3)
+sources_periodic = Sources(manifold, time=0)
 
 # Deposit sources
 sources.deposit(ions)
-assert np.isclose(sources.rho.sum(), ions.N*charge)
+assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
 sources.current.add_guards()
 assert np.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), N*charge)
+    sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 sources.current.copy_guards()
 
 # Copy density into a shear field
-rho_periodic.active = sources.rho.trim()
+sources_periodic.rho.active = sources.rho.trim()
+sources_periodic.Jx.active = sources.Jx.trim()
+sources_periodic.Jy.active = sources.Jy.trim()
 
 ag = manifold.x
 
 # Electric field
 E = ShearField(manifold, dtype=Float3)
-E.fill((0.0, 0.0))
+E.fill((0.0, 0.0, 0.0))
+
+# Magnetic field
+B = ShearField(manifold, dtype=Float3)
+B.fill((0.0, 0.0, 0.0))
 
 
 def concatenate(arr):
@@ -231,11 +241,11 @@ if plot:
     import warnings
 
     global_rho = concatenate(sources.rho.trim())
-    global_rho_periodic = concatenate(rho_periodic.trim())
+    global_rho_periodic = concatenate(sources_periodic.rho.trim())
     global_Jx = concatenate(sources.Jx.trim())
-    global_Jx_periodic = concatenate(Jx_periodic.trim())
+    global_Jx_periodic = concatenate(sources_periodic.Jx.trim())
     global_Jy = concatenate(sources.Jy.trim())
-    global_Jy_periodic = concatenate(Jy_periodic.trim())
+    global_Jy_periodic = concatenate(sources_periodic.Jy.trim())
 
     if comm.rank == 0:
         plt.rc('image', origin='upper', interpolation='nearest',
@@ -252,9 +262,9 @@ if plot:
         plt.figure(2)
         plt.clf()
         fig2, (ax1, ax2, ax3) = plt.subplots(num=2, nrows=3)
-        im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+        im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0)),
                        'b',
-                       manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+                       manifold.x, (global_rho_periodic.mean(axis=0)),
                        'r--')
         im5 = ax2.plot(manifold.x, (global_Jx_periodic/global_rho_periodic)
                        .mean(axis=0), 'b',
@@ -268,7 +278,7 @@ if plot:
         ax2.set_ylim(-1*ampl, 1*ampl)
         ax3.set_ylim(-2*ampl, 2*ampl)
         for ax in (ax1, ax2, ax3):
-            ax.set_xlim(0, nx)
+            ax.set_xlim(0, Lx)
 
 ##########################################################################
 # Main loop over time                                                    #
@@ -284,40 +294,40 @@ for it in range(nt):
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
-    ions.push_modified(E, dt)
+    ions.push_modified(E, B, dt)
 
     # Update time
     t += dt
 
     # Copy density into a shear field
-    rho_periodic.active = sources.rho.trim()
-    Jx_periodic.active = sources.Jx.trim()
-    Jy_periodic.active = sources.Jy.trim()
+    sources_periodic.rho.active = sources.rho.trim()
+    sources_periodic.Jx.active = sources.Jx.trim()
+    sources_periodic.Jy.active = sources.Jy.trim()
 
     # Translate the density to be periodic in y
-    rho_periodic.translate(-t)
-    rho_periodic.copy_guards()
+    sources_periodic.rho.translate(-t)
+    sources_periodic.rho.copy_guards()
 
-    Jx_periodic.translate(-t)
-    Jx_periodic.copy_guards()
+    sources_periodic.Jx.translate(-t)
+    sources_periodic.Jx.copy_guards()
 
-    Jy_periodic.translate(-t)
-    Jy_periodic.copy_guards()
+    sources_periodic.Jy.translate(-t)
+    sources_periodic.Jy.copy_guards()
 
     # Make figures
     if (it % 60 == 0):
         # Calculate rms of numerical solution wrt to the analytical solution
         a_2d = find_a(xx, yy, t)
-        err = rms(sources.rho.trim()/npc - rho_an(a_2d, t))
+        err = rms(sources.rho.trim() - rho_an(a_2d, t))
         # Check if test is passed
         assert err < 1e-2, err
         if plot:
             global_rho = concatenate(sources.rho.trim())
-            global_rho_periodic = concatenate(rho_periodic.trim())
+            global_rho_periodic = concatenate(sources_periodic.rho.trim())
             global_Jx = concatenate(sources.Jx.trim())
-            global_Jx_periodic = concatenate(Jx_periodic.trim())
+            global_Jx_periodic = concatenate(sources_periodic.Jx.trim())
             global_Jy = concatenate(sources.Jy.trim())
-            global_Jy_periodic = concatenate(Jy_periodic.trim())
+            global_Jy_periodic = concatenate(sources_periodic.Jy.trim())
 
             if comm.rank == 0:
                 im1a.set_data(global_rho)
@@ -332,13 +342,13 @@ for it in range(nt):
                 im2b.autoscale()
                 im1c.autoscale()
                 im2c.autoscale()
-                im4[0].set_ydata(global_rho_periodic.mean(axis=0)/npc)
+                im4[0].set_ydata(global_rho_periodic.mean(axis=0))
                 im5[0].set_ydata((global_Jx_periodic/global_rho_periodic).
                                  mean(axis=0))
                 im6[0].set_ydata((global_Jy_periodic/global_rho_periodic).
                                  mean(axis=0))
                 xp_par = euler(ag, 0, t)
-                xp_par %= nx
+                xp_par %= Lx
                 ind = np.argsort(xp_par)
                 im4[1].set_data(xp_par[ind], rho_an(ag, t)[ind])
                 im5[1].set_data(xp_par[ind], vx_an(ag, 0, t)[ind]
