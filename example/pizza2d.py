@@ -26,6 +26,8 @@ ampl = 2.
 # Number of grid points in x- and y-direction
 nx, ny = 64, 64
 
+Lx, Ly = nx, ny
+
 # Average number of particles per cell
 npc = 64
 
@@ -93,13 +95,14 @@ y = b
 
 vx = np.zeros_like(x)
 vy = np.zeros_like(y)
+vz = np.zeros_like(y)
 
 # Start parallel processing
 idproc, nvp = cppinit(comm)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
+manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega, Lx=nx, Ly=ny)
 
 # x- and y-grid
 xx, yy = np.meshgrid(manifold.x, manifold.y)
@@ -112,7 +115,7 @@ Nmax = int(5*N/nvp)
 ions = Particles(manifold, Nmax, time=0, charge=charge, mass=mass)
 
 # Assign particles to subdomains
-ions.initialize(x, y, vx, vy)
+ions.initialize(x, y, vx, vy, vz)
 
 # Make sure particles actually reside in the local subdomain
 assert all(ions["y"][:ions.N] >= manifold.edges[0])
@@ -124,19 +127,20 @@ assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(manifold)
-sources.rho = ShearField(manifold, time=0, dtype=Float)
-rho_periodic = ShearField(manifold, time=0, dtype=Float)
-Jx_periodic = ShearField(manifold, time=0, dtype=Float3)
-Jy_periodic = ShearField(manifold, time=0, dtype=Float3)
+sources_periodic = Sources(manifold, time=0)
 
 # Deposit sources
 sources.deposit(ions)
-assert np.isclose(sources.rho.sum(), ions.N*charge)
+assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
 sources.current.add_guards()
 assert np.isclose(comm.allreduce(
-    sources.rho.trim().sum(), op=MPI.SUM), N*charge)
+    sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 sources.current.copy_guards()
 
+# Copy density into a shear field
+sources_periodic.rho.active = sources.rho.trim()
+sources_periodic.Jx.active = sources.Jx.trim()
+sources_periodic.Jy.active = sources.Jy.trim()
 
 def concatenate(arr):
     """Concatenate local arrays to obtain global arrays
@@ -158,37 +162,37 @@ def update(t):
     sources.deposit(ions)
     sources.current.time = t
 
-    assert np.isclose(sources.rho.sum(), ions.N*charge)
+    assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
     sources.current.add_guards()
 
     assert np.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=MPI.SUM), N*charge)
+        sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
     sources.current.copy_guards()
 
     assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
     # Copy density into a shear field
-    rho_periodic.active = sources.rho.trim()
-    Jx_periodic.active = sources.Jx.trim()
-    Jy_periodic.active = sources.Jy.trim()
+    sources_periodic.rho.active = sources.rho.trim()
+    sources_periodic.Jx.active = sources.Jx.trim()
+    sources_periodic.Jy.active = sources.Jy.trim()
 
     # Translate the density to be periodic in y
-    rho_periodic.translate(-t)
-    rho_periodic.copy_guards()
+    sources_periodic.rho.translate(-t)
+    sources_periodic.rho.copy_guards()
 
-    Jx_periodic.translate(-t)
-    Jx_periodic.copy_guards()
+    sources_periodic.Jx.translate(-t)
+    sources_periodic.Jx.copy_guards()
 
-    Jy_periodic.translate(-t)
-    Jy_periodic.copy_guards()
+    sources_periodic.Jy.translate(-t)
+    sources_periodic.Jy.copy_guards()
 
     global_rho = concatenate(sources.rho.trim())
-    global_rho_periodic = concatenate(rho_periodic.trim())
+    global_rho_periodic = concatenate(sources_periodic.rho.trim())
     global_Jx = concatenate(sources.Jx.trim())
-    global_Jx_periodic = concatenate(Jx_periodic.trim())
+    global_Jx_periodic = concatenate(sources_periodic.Jx.trim())
     global_Jy = concatenate(sources.Jy.trim())
-    global_Jy_periodic = concatenate(Jy_periodic.trim())
+    global_Jy_periodic = concatenate(sources_periodic.Jy.trim())
     if comm.rank == 0:
         im1a.set_data(global_rho)
         im2a.set_data(global_rho_periodic)
@@ -202,7 +206,7 @@ def update(t):
         im2b.autoscale()
         im1c.autoscale()
         im2c.autoscale()
-        im4[0].set_ydata(global_rho_periodic.mean(axis=0)/npc)
+        im4[0].set_ydata(global_rho_periodic.mean(axis=0))
         im5[0].set_ydata((global_Jx_periodic/global_rho_periodic).
                          mean(axis=0))
         im6[0].set_ydata((global_Jy_periodic/global_rho_periodic).
@@ -218,11 +222,11 @@ def update(t):
 
 if comm.rank == 0:
     global_rho = concatenate(sources.rho.trim())
-    global_rho_periodic = concatenate(rho_periodic.trim())
+    global_rho_periodic = concatenate(sources_periodic.rho.trim())
     global_Jx = concatenate(sources.Jx.trim())
-    global_Jx_periodic = concatenate(Jx_periodic.trim())
+    global_Jx_periodic = concatenate(sources_periodic.Jx.trim())
     global_Jy = concatenate(sources.Jy.trim())
-    global_Jy_periodic = concatenate(Jy_periodic.trim())
+    global_Jy_periodic = concatenate(sources_periodic.Jy.trim())
 
     plt.rc('image', origin='upper', interpolation='nearest',
            cmap='coolwarm')
@@ -257,9 +261,9 @@ if comm.rank == 0:
     xp_par = x_an(a, b, 0) + S*y_an(a, b, 0)*0
     xp_par %= nx
     xp_par = np.sort(xp_par)
-    im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+    im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0)),
                    'b',
-                   manifold.x, (global_rho_periodic.mean(axis=0))/npc,
+                   manifold.x, (global_rho_periodic.mean(axis=0)),
                    'r--')
     im5 = ax2.plot(manifold.x, (global_Jx_periodic/global_rho_periodic)
                    .mean(axis=0), 'b',
