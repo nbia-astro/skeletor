@@ -1,9 +1,10 @@
 class PredictorCorrector:
 
-    def __init__ (self, state, ohm, manifold):
+    def __init__(self, state, ohm, manifold):
 
-        from skeletor import Float3, Field, Sources, Faraday, Particles
-        from mpi4py.MPI import COMM_WORLD as comm
+        from skeletor import Float3, Field, Sources, Faraday
+
+        self.state = state
 
         # Numerical grid with differential operators
         self.manifold = manifold
@@ -21,21 +22,21 @@ class PredictorCorrector:
         self.sources = Sources(manifold)
 
         # Set the electric field to zero
-        self.E = Field(manifold, comm, dtype=Float3)
+        self.E = Field(manifold, dtype=Float3)
         self.E.fill((0.0, 0.0, 0.0))
         self.E.copy_guards()
 
         self.B = state.B
 
         # Crate extra arrays (Get rid of some of them later)
-        self.E2 = Field(manifold, comm, dtype=Float3)
-        self.E3 = Field(manifold, comm, dtype=Float3)
-        self.B2 = Field(manifold, comm, dtype=Float3)
+        self.E2 = Field(manifold, dtype=Float3)
+        self.E3 = Field(manifold, dtype=Float3)
+        self.B2 = Field(manifold, dtype=Float3)
         self.E2.copy_guards()
         self.B2[:] = state.B
 
         # Initial time
-        self.t = 0.0
+        self.t = state.t
 
     def prepare(self, dt, tol=1.48e-8, maxiter=100):
 
@@ -52,10 +53,10 @@ class PredictorCorrector:
         self.ions.drift(dt/2)
 
         # Iterate to find true electric field at time 0
-        for it in range (maxiter):
+        for it in range(maxiter):
 
             # Compute electric field at time 1/2
-            self.step (dt, update=False)
+            self.step(dt, update=False)
 
             # Average to get electric field at time 0
             for dim in ('x', 'y', 'z'):
@@ -64,18 +65,19 @@ class PredictorCorrector:
             # Compute difference to previous iteration
             diff2 = 0.0
             for dim in ('x', 'y', 'z'):
-                diff2 += ((self.E3[dim] - self.E[dim]).trim ()**2).mean()
+                diff2 += ((self.E3[dim] - self.E[dim]).trim()**2).mean()
             diff = sqrt(comm.allreduce(diff2, op=SUM)/comm.size)
             if comm.rank == 0:
-                print ("Difference to previous iteration: {}".format (diff))
+                print("Difference to previous iteration: {}".format(diff))
 
             # Update electric field
             self.E[...] = self.E3
 
             # Return if difference is sufficiently small
-            if diff < tol: return
+            if diff < tol:
+                return
 
-        raise RuntimeError ("Exceeded maxiter={} iterations!".format (maxiter))
+        raise RuntimeError("Exceeded maxiter={} iterations!".format(maxiter))
 
     def step(self, dt, update):
 
@@ -101,12 +103,13 @@ class PredictorCorrector:
             self.B[:] = self.B2
             self.E[:] = self.E2
             self.t += dt
+            self.state.t = self.t
 
     def iterate(self, dt):
 
         # Predictor step
         # Get electric field at n+1/2
-        self.step (dt, update=True)
+        self.step(dt, update=True)
         self.E3[...] = self.E2
 
         # Predict electric field at n+1
@@ -115,7 +118,7 @@ class PredictorCorrector:
 
         # Corrector step
         # Get electric field at n+3/2
-        self.step (dt, update=False)
+        self.step(dt, update=False)
 
         # Predict electric field at n+1
         for dim in ('x', 'y', 'z'):

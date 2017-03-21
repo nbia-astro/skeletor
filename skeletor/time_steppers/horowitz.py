@@ -3,7 +3,8 @@ class Horowitz:
     def __init__(self, state, ohm, manifold):
 
         from skeletor import Float3, Field, Sources, Faraday
-        from mpi4py.MPI import COMM_WORLD as comm
+
+        self.state = state
 
         # Numerical grid with differential operators
         self.manifold = manifold
@@ -21,26 +22,25 @@ class Horowitz:
         self.sources = Sources(manifold)
 
         # Set the electric field to zero
-        self.E = Field(manifold, comm, dtype=Float3)
+        self.E = Field(manifold, dtype=Float3)
         self.E.fill((0.0, 0.0, 0.0))
         self.E.copy_guards()
 
         self.B = state.B
 
         # Crate extra arrays (Get rid of some of them later)
-        self.E2 = Field(manifold, comm, dtype=Float3)
-        self.E3 = Field(manifold, comm, dtype=Float3)
-        self.B2 = Field(manifold, comm, dtype=Float3)
-        self.B3 = Field(manifold, comm, dtype=Float3)
-        self.E4 = Field(manifold, comm, dtype=Float3)
+        self.E2 = Field(manifold, dtype=Float3)
+        self.E3 = Field(manifold, dtype=Float3)
+        self.B2 = Field(manifold, dtype=Float3)
+        self.B3 = Field(manifold, dtype=Float3)
+        self.E4 = Field(manifold, dtype=Float3)
         self.E2.copy_guards()
         self.E3.copy_guards()
         self.B2.copy_guards()
         self.B3.copy_guards()
         self.B2[:] = state.B
 
-        # Initial time
-        self.t = 0.0
+        self.t = state.t
 
     def prepare(self, dt):
         """TODO: Set the initial condition correctly"""
@@ -99,6 +99,7 @@ class Horowitz:
                 self.E[:] = self.E3[:]
                 self.B[:] = self.B3[:]
                 self.t += dt
+                self.state.t = self.t
                 return
 
         raise RuntimeError("Exceeded maxiter={} iterations!".format(maxiter))
