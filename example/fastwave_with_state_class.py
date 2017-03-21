@@ -2,11 +2,13 @@ from skeletor import Float3, Field, Particles
 from skeletor import Ohm, InitialCondition, State
 from skeletor.manifolds.second_order import Manifold
 from skeletor.time_steppers.horowitz import TimeStepper
+from skeletor import Diagnostics
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
-plot = True
+
+plot = False
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
@@ -127,6 +129,14 @@ ohm = Ohm(manifold, temperature=Te, charge=charge)
 # Initialize state
 state = State(ions, B)
 
+
+def Emag(state):
+    """Magnetic energy as a scalar field"""
+    return 0.5*(state.B['x']**2 + state.B['y']**2 + state.B['z']**2)
+
+diag = Diagnostics(custom_averages={'Emag': Emag})
+diag(state)
+
 # Initialize timestepper
 e = TimeStepper(state, ohm, manifold)
 
@@ -189,6 +199,8 @@ for it in range(nt):
     # The update is handled by the experiment class
     # e.iterate(dt)
     e.iterate(dt)
+
+    diag(e.state)
 
     # Difference between numerical and analytic solution
     local_rho = e.sources.rho.trim()
