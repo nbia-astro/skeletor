@@ -142,9 +142,9 @@ def test_circular(plot=False):
     y = ions['y']*manifold.dy
 
     # Perturbation to particle velocities
-    ions['vx'] = Ux_an(x, y, t=-dt/2)
-    ions['vy'] = Uy_an(x, y, t=-dt/2)
-    ions['vz'] = Uz_an(x, y, t=-dt/2)
+    ions['vx'] = Ux_an(x, y, t=0)
+    ions['vy'] = Uy_an(x, y, t=0)
+    ions['vz'] = Uz_an(x, y, t=0)
 
     def B_an(t):
         B_an = Field(manifold, dtype=Float3)
@@ -156,9 +156,9 @@ def test_circular(plot=False):
     # Create vector potential
     A_an = Field(manifold, dtype=Float3)
     A_an['x'].active = 0
-    A_an['y'].active = -((Bz + B0*(di.vec[m]['bz']*phase(xg, yg, -dt/2))) /
+    A_an['y'].active = -((Bz + B0*(di.vec[m]['bz']*phase(xg, yg, 0))) /
                          (1j*kx)).real
-    A_an['z'].active = ((By + B0*(di.vec[m]['by']*phase(xg, yg, -dt/2))) /
+    A_an['z'].active = ((By + B0*(di.vec[m]['by']*phase(xg, yg, 0))) /
                         (1j*kx)).real
     A_an.copy_guards()
 
