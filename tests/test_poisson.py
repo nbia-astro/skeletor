@@ -1,5 +1,5 @@
 from skeletor import Float3, Field, Sources
-from skeletor.manifolds.ppic2 import Manifold
+from skeletor.manifolds.second_order import Manifold
 import numpy as np
 from mpi4py.MPI import COMM_WORLD as comm
 
