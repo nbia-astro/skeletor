@@ -1,23 +1,22 @@
-class Experiment:
+class TimeStepper:
 
-    def __init__(self, manifold, ions, ohm, B, npc, io=None):
+    def __init__(self, state, ohm, manifold):
 
         from skeletor import Float3, Field, Sources, Faraday
+
+        self.state = state
 
         # Numerical grid with differential operators
         self.manifold = manifold
 
         # Ions
-        self.ions = ions
+        self.ions = state.ions
 
         # Ohm's law
         self.ohm = ohm
 
         # Faraday's law
         self.faraday = Faraday(manifold)
-
-        # IO
-        self.io = io
 
         # Initialize sources
         self.sources = Sources(manifold)
@@ -27,17 +26,17 @@ class Experiment:
         self.E.fill((0.0, 0.0, 0.0))
         self.E.copy_guards()
 
-        self.B = B
+        self.B = state.B
 
         # Crate extra arrays (Get rid of some of them later)
         self.E2 = Field(manifold, dtype=Float3)
         self.E3 = Field(manifold, dtype=Float3)
         self.B2 = Field(manifold, dtype=Float3)
         self.E2.copy_guards()
-        self.B2[:] = B
+        self.B2[:] = state.B
 
         # Initial time
-        self.t = 0.0
+        self.t = state.t
 
     def prepare(self, dt, tol=1.48e-8, maxiter=100):
 
@@ -104,6 +103,7 @@ class Experiment:
             self.B[:] = self.B2
             self.E[:] = self.E2
             self.t += dt
+            self.state.t = self.t
 
     def iterate(self, dt):
 
@@ -123,25 +123,3 @@ class Experiment:
         # Predict electric field at n+1
         for dim in ('x', 'y', 'z'):
             self.E[dim][...] = 0.5*(self.E3[dim] + self.E2[dim])
-
-    def run(self, dt, nt):
-
-        if self.io is None:
-            for it in range(nt):
-                # Update experiment
-                self.iterate(dt)
-        else:
-            # Dump initial data
-            self.io.output_fields(self.sources, self.E, self.manifold, self.t)
-
-            for it in range(nt):
-                # Update experiment
-                self.step(dt)
-
-                self.io.log(it, self.t, dt)
-
-                # Output fields
-                if self.io.dt*self.io.snap > self.t:
-                    self.io.output_fields(self.sources, self.E, self.manifold,
-                                          self.t)
-            self.io.finished()

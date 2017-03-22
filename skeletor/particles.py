@@ -221,3 +221,8 @@ class Particles(np.ndarray):
         # Apply periodicity in x and y
         self.periodic_x()
         self.periodic_y()
+
+    def kinetic_energy(self):
+        """Calculate total kinetic energy of particles"""
+        from .cython.energy import kinetic_energy
+        return kinetic_energy(self[:self.N])
