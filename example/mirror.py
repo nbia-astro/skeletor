@@ -1,7 +1,7 @@
 from skeletor import Float3, Field, Particles
-from skeletor import Ohm, Faraday, InitialCondition
+from skeletor import Ohm, Faraday, State
 from skeletor.manifolds.second_order import Manifold
-from skeletor.predictor_corrector import Experiment
+from skeletor.time_steppers.horowitz import TimeStepper
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
@@ -27,7 +27,7 @@ A = 0.005
 # Wavenumbers
 ikx = 1
 iky = 0
-ampl= 1e-6
+ampl = 1e-6
 # Thermal velocity of electrons in x- and y-direction
 
 # Magnetic field strength
@@ -142,11 +142,15 @@ B.copy_guards()
 # Initialize Ohm's law solver
 ohm = Ohm(manifold, temperature=Te, charge=charge)
 
-# Initialize experiment
-e = Experiment(manifold, ions, ohm, B, npc, io=None)
+# Initialize state
+state = State(ions, B)
+
+# Initialize timestepper
+e = TimeStepper(state, ohm, manifold)
 
 # Deposit charges and calculate initial electric field
 e.prepare(dt)
+
 
 # Concatenate local arrays to obtain global arrays
 # The result is available on all processors.

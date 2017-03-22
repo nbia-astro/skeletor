@@ -10,3 +10,4 @@ from .faraday import Faraday
 from .sources import Sources
 from .initial_condition import InitialCondition, DensityPertubation
 from .io import IO
+from .state import State
