@@ -1,6 +1,6 @@
 from skeletor import cppinit, Float, Float3, Grid, Field, Particles, Sources
 from skeletor import Poisson
-from skeletor.manifolds.mpifft4py import Manifold
+from skeletor.manifolds.second_order import Manifold
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm

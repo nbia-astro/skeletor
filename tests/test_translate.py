@@ -1,5 +1,5 @@
 from skeletor import Float, ShearField
-from skeletor.manifolds.mpifft4py import ShearingManifold
+from skeletor.manifolds.second_order import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy as np
 
