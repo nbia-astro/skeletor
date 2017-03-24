@@ -13,15 +13,15 @@ plot = False
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 64, 1
+nx, ny = 32, 1
 # Grid size in x- and y-direction (square cells!)
-Lx, Ly = 59.85537902, 59.85537902
+Lx, Ly = 65.29677711, 65.29677711
 
 # Grid distances
 dx, dy = Lx/nx, Ly/ny
 
 # Average number of particles per cell
-npc = 2**12
+npc = 2**10
 # Particle charge and mass
 charge = 1.0
 mass = 1.0
@@ -214,14 +214,14 @@ for it in range(nt):
 if comm.rank == 0:
     if fitplot:
 
-        Bx_mag = np.array(Bx_mag)
-        By_mag = np.array(By_mag)
-        By_mag = np.array(By_mag)
-        B_mag = Bx_mag + By_mag + Bz_mag
+        Bx_mag = np.sqrt(np.array(Bx_mag))
+        By_mag = np.sqrt(np.array(By_mag))
+        Bz_mag = np.sqrt(np.array(Bz_mag))
+        B_mag = np.sqrt(Bx_mag**2 + By_mag**2 + Bz_mag**2)
         time = np.array(time)
 
         # TODO: Solve this here!
-        gamma_t = 4/11.
+        gamma_t = 2/6.
 
         from scipy.optimize import curve_fit
 
@@ -239,14 +239,14 @@ if comm.rank == 0:
         popt, pcov = curve_fit(lin_func, time[first:last],
                                np.log(B_mag[first:last]))
         plt.figure(2)
-        plt.semilogy(time, Bx_mag, label=r"$(\delta B_x)^2$")
-        plt.semilogy(time, By_mag, label=r"$(\delta B_y)^2$")
-        plt.semilogy(time, Bz_mag, label=r"$(\delta B_z)^2$")
-        plt.semilogy(time, B_mag, label=r"$(\delta B)^2$")
-        gamma_f = popt[1]/2
-        plt.semilogy(time, func(time-3, 1e-12, popt[1]), '--',
+        plt.semilogy(time, Bx_mag, label=r"$|\delta B_x|$")
+        plt.semilogy(time, By_mag, label=r"$|\delta B_y|$")
+        plt.semilogy(time, Bz_mag, label=r"$|\delta B_z|$")
+        plt.semilogy(time, B_mag, label=r"$|\delta B|$")
+        gamma_f = popt[1]
+        plt.semilogy(time, func(time-3, 1e-6, popt[1]), '--',
                      label=r"Fit: $\gamma = %.5f$" % gamma_f)
-        plt.semilogy(time, func(time-3, 1e-12, gamma_t*2), 'k-',
+        plt.semilogy(time, func(time-3, 1e-6, gamma_t), 'k-',
                      label=r"Theory: $\gamma = %.5f$" % gamma_t)
         plt.legend(frameon=False, loc=2)
         plt.savefig("parallel-firehose.eps")
