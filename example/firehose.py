@@ -13,15 +13,15 @@ plot = False
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 32, 1
+nx, ny = 64, 1
 # Grid size in x- and y-direction (square cells!)
-Lx, Ly = 13.20370041, 13.20370041
+Lx, Ly = 59.85537902, 59.85537902
 
 # Grid distances
 dx, dy = Lx/nx, Ly/ny
 
 # Average number of particles per cell
-npc = 2**10
+npc = 2**12
 # Particle charge and mass
 charge = 1.0
 mass = 1.0
@@ -38,10 +38,10 @@ ampl = 1e-6
 # Magnetic field strength
 B0 = 1
 va = B0
-beta_para = 3
-beta_perp = 0.8
-vtx = np.sqrt(va**2*beta_para/2)
-vty = np.sqrt(va**2*beta_perp/2)
+p_para = 3
+p_perp = 1
+vtx = np.sqrt(2*p_para)
+vty = np.sqrt(p_perp)
 vtz = vty
 
 # Sound speed
@@ -61,7 +61,7 @@ theta = np.arctan(iky/ikx) if ikx != 0 else np.pi/2
 (Bx, By, Bz) = (B0*np.cos(theta), B0*np.sin(theta), 0)
 
 # Simulation time
-tend = 50
+tend = 40
 
 # Uniform distribution of particle positions (quiet start)
 sqrt_npc = int(np.sqrt(npc))
@@ -221,7 +221,7 @@ if comm.rank == 0:
         time = np.array(time)
 
         # TODO: Solve this here!
-        gamma_t = 0.1566
+        gamma_t = 4/11.
 
         from scipy.optimize import curve_fit
 
@@ -234,8 +234,8 @@ if comm.rank == 0:
 
         # Fit exponential to the evolution of sqrt(mean(B_x**2))
         # Disregard first half of data
-        first = int(0.34*nt/20)
-        last = int(0.6*nt/20)
+        first = int(0.5*nt/20)
+        last = int(0.8*nt/20)
         popt, pcov = curve_fit(lin_func, time[first:last],
                                np.log(B_mag[first:last]))
         plt.figure(2)
@@ -244,10 +244,13 @@ if comm.rank == 0:
         plt.semilogy(time, Bz_mag, label=r"$(\delta B_z)^2$")
         plt.semilogy(time, B_mag, label=r"$(\delta B)^2$")
         gamma_f = popt[1]/2
-        plt.semilogy(time, func(time, 1e-12, popt[1]),
+        plt.semilogy(time, func(time-3, 1e-12, popt[1]), '--',
                      label=r"Fit: $\gamma = %.5f$" % gamma_f)
-        plt.semilogy(time, func(time, 1e-12, gamma_t), 'k-',
+        plt.semilogy(time, func(time-3, 1e-12, gamma_t*2), 'k-',
                      label=r"Theory: $\gamma = %.5f$" % gamma_t)
         plt.legend(frameon=False, loc=2)
+        plt.savefig("parallel-firehose.eps")
+        err = (gamma_t - gamma_f)/gamma_t
+        print("Relative error: {}".format(err))
         plt.xlabel(r"$t$")
         plt.show()
