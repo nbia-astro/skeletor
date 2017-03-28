@@ -15,7 +15,7 @@ quiet = True
 # Number of grid points in x- and y-direction
 nx, ny = 32, 1
 # Grid size in x- and y-direction (square cells!)
-Lx, Ly = 65.29677711, 65.29677711
+Lx, Ly = 16.758881558993764, 16.758881558993764
 
 # Grid distances
 dx, dy = Lx/nx, Ly/ny
@@ -38,10 +38,10 @@ ampl = 1e-6
 # Magnetic field strength
 B0 = 1
 va = B0
-p_para = 3
-p_perp = 1
-vtx = np.sqrt(2*p_para)
-vty = np.sqrt(p_perp)
+beta_para = 4
+beta_perp = 1
+vtx = np.sqrt(beta_para/2)
+vty = np.sqrt(beta_perp/2)
 vtz = vty
 
 # Sound speed
@@ -221,7 +221,7 @@ if comm.rank == 0:
         time = np.array(time)
 
         # TODO: Solve this here!
-        gamma_t = 2/6.
+        gamma_t = 0.18894406899999999
 
         from scipy.optimize import curve_fit
 
@@ -249,7 +249,7 @@ if comm.rank == 0:
         plt.semilogy(time, func(time-3, 1e-6, gamma_t), 'k-',
                      label=r"Theory: $\gamma = %.5f$" % gamma_t)
         plt.legend(frameon=False, loc=2)
-        plt.savefig("parallel-firehose.eps")
+        # plt.savefig("parallel-firehose.pdf")
         err = (gamma_t - gamma_f)/gamma_t
         print("Relative error: {}".format(err))
         plt.xlabel(r"$t$")
