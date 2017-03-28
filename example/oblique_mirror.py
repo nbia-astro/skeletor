@@ -21,7 +21,7 @@ Lx, Ly = 10.0205777127, 10.0205777127
 dx, dy = Lx/nx, Ly/ny
 
 # Average number of particles per cell
-npc = 2**12
+npc = 2**14
 # Particle charge and mass
 charge = 1.0
 mass = 1.0
