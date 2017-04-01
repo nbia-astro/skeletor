@@ -236,14 +236,24 @@ def landau_ions(plot=False, fitplot=False):
     # Test if growth rate is correct
     if comm.rank == 0:
         from scipy.signal import argrelextrema
+        from scipy.special import wofz
+        from scipy.optimize import newton
 
         # Find first local maximum
         index = argrelextrema(ampl, np.greater)
         tmax = time[index][0]
         ymax = ampl[index][0]
 
-        # Theoretical gamma (TODO: Solve dispersion relation here)
-        gamma_t = -0.0203927225606
+        def W(z):
+            "Ichimaru's Plasma dispersion function."
+            return 1. + 1j*np.sqrt(0.5*np.pi)*z*wofz(np.sqrt(0.5)*z)
+        # Thermal velocity
+        vt = np.sqrt(Ti/Te)*cs
+        # Solve dispersion relation for the phase velocity vph=ω/k with
+        # Newton-Raphson. Use sound speed cs=√(Te/mi) as initial guess.
+        vph = newton(lambda vph: Ti/Te + W(vph/vt), cs)
+        # Negative growth rate
+        gamma_t = kx*vph.imag
 
         if plot or fitplot:
             import matplotlib.pyplot as plt
