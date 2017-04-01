@@ -166,13 +166,13 @@ def landau_ions(plot=False, fitplot=False):
             plt.rc('image', aspect='auto')
             plt.figure(1)
             plt.clf()
-            fig, (ax1, ax2, ax3) = plt.subplots(num=1, nrows=3)
-            im1 = ax1.imshow(global_rho)
-            im2 = ax2.imshow(global_E['x'])
-            im3 = ax3.imshow(global_E['y'])
+            fig, (ax1, ax2) = plt.subplots(num=1, nrows=2, sharex=True)
+            im1, = ax1.plot(global_rho.mean(axis=0))
+            im2, = ax2.plot(global_E['x'].mean(axis=0))
+            ax1.set_ylim(0.985, 1.015)
+            ax2.set_ylim(-0.005, 0.005)
             ax1.set_title(r'$\rho$')
             ax2.set_title(r'$E_x$')
-            ax3.set_title(r'$E_y$')
 
     # Compute square of Fourier amplitude by projecting the local density
     ampl2 = []
@@ -216,13 +216,8 @@ def landau_ions(plot=False, fitplot=False):
                 global_rho = concatenate(sources.rho.trim())
                 global_E = concatenate(E.trim())
                 if comm.rank == 0:
-                    im1.set_data(global_rho)
-                    im2.set_data(global_E['x'])
-                    im3.set_data(global_E['y'])
-                    im1.autoscale()
-                    im2.autoscale()
-                    im3.autoscale()
-                    plt.draw()
+                    im1.set_ydata(global_rho.mean(axis=0))
+                    im2.set_ydata(global_E['x'].mean(axis=0))
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
