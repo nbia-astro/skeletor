@@ -3,7 +3,6 @@ from skeletor import Ohm, Faraday, State
 from skeletor.manifolds.second_order import Manifold
 from skeletor.time_steppers.horowitz import TimeStepper
 import numpy as np
-from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 from scipy.special import erfinv
 
@@ -156,6 +155,7 @@ e.prepare(dt)
 # The result is available on all processors.
 def concatenate(arr):
     return np.concatenate(comm.allgather(arr))
+
 
 # Make initial figure
 if plot:

@@ -1,4 +1,4 @@
-from skeletor import cppinit, Float, Float3, Grid, Field, Particles, Sources
+from skeletor import cppinit, Float, Float3, Field, Particles, Sources
 from skeletor import Poisson
 from skeletor.manifolds.second_order import Manifold
 import numpy as np
@@ -32,7 +32,6 @@ def landau_electrons(plot=False, fitplot=False):
     # Background electron number density
     n0 = 1.0
 
-
     # Time step
     dt = cfl/vtx
 
@@ -55,11 +54,9 @@ def landau_electrons(plot=False, fitplot=False):
     # omega
     omega = omegap*np.sqrt(1+(kx*debye)**2)
 
-
-
     # Theoretical decay rate (TODO: Calculate 2D analytic result)
     gamma_t = -np.sqrt(np.pi/2)/2*omega/(kx*debye)**3 \
-                *np.exp(-0.5/(kx*debye)**2)
+        * np.exp(-0.5/(kx*debye)**2)
     # print(gamma_t, debye, kx)
 
     # Simulation time
@@ -264,6 +261,7 @@ def landau_electrons(plot=False, fitplot=False):
             plt.title(r'$|\hat{\rho}(ikx=%d, iky=%d)|$' % (ikx, iky))
             plt.xlabel("time")
             plt.show()
+
 
 if __name__ == "__main__":
     import argparse

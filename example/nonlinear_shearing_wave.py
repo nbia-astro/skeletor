@@ -72,6 +72,7 @@ else:
 a *= dx
 b *= dy
 
+
 def x_an(ap, bp, t):
     phi = kx*ap
     x = 2*Omega/kappa*ampl*(np.sin(kappa*t + phi) - np.sin(phi)) + ap \

@@ -74,6 +74,7 @@ def uy_an(x, y, t):
     """Analytic y-velocity as function of x, y and t"""
     return -A*vph*np.sin(kx*x+ky*y)*np.cos(omega*t)*ky/k
 
+
 if quiet:
     # Uniform distribution of particle positions (quiet start)
     sqrt_npc = int(np.sqrt(npc))
@@ -153,6 +154,7 @@ E.copy_guards()
 # The result is available on all processors.
 def concatenate(arr):
     return np.concatenate(comm.allgather(arr))
+
 
 # Make initial figure
 if plot:

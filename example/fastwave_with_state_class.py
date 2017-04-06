@@ -80,6 +80,7 @@ def uz_an(x, y, t):
     """Analytic z-velocity as function of x, y and t"""
     return -omega/k*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*0
 
+
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
 manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
@@ -138,6 +139,7 @@ e.prepare(dt)
 # The result is available on all processors.
 def concatenate(arr):
     return np.concatenate(comm.allgather(arr))
+
 
 # Make initial figure
 if plot:

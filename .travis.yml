@@ -38,7 +38,7 @@ install:
     - CC=mpicc LDFLAGS="-L/tmp/skeletor/lib -Wl,-rpath,/tmp/skeletor/lib -lmpich -lopa -lmpl -lrt -lpthread" python setup.py install
 
 before_script:
-    - flake8 skeletor tests
+    - flake8 example skeletor tests
 
 script:
     - mpiexec -n 4 py.test /tmp/skeletor/skeletor/tests/
