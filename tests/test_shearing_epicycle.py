@@ -217,6 +217,7 @@ def test_shearing_epicycle(plot=False):
                 # Check if test has passed
                 assert err < 2.0e-2
 
+
 if __name__ == "__main__":
 
     import argparse
