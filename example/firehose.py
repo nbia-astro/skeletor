@@ -3,7 +3,6 @@ from skeletor import Ohm, Faraday, State
 from skeletor.manifolds.second_order import Manifold
 from skeletor.time_steppers.horowitz import TimeStepper
 import numpy as np
-from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 from scipy.special import erfinv
 
@@ -27,7 +26,7 @@ A = 0.005
 # Wavenumbers
 ikx = 1
 iky = 0
-ampl= 1e-6
+ampl = 1e-6
 # Thermal velocity of electrons in x- and y-direction
 
 # Magnetic field strength
@@ -117,7 +116,7 @@ ions.initialize(x, y, vx, vy, vz)
 # init(manifold, ions)
 
 # Perturbation to particle velocities
-from np.random import normal
+# from np.random import normal
 # ions['vx'][:ions.N] = vtx*normal(size=ions.N)
 # ions['vy'][:ions.N] = vty*normal(size=ions.N)
 # ions['vz'][:ions.N] = vtz*normal(size=ions.N)
@@ -125,9 +124,9 @@ from np.random import normal
 # Add background magnetic field
 B = Field(manifold, dtype=Float3)
 B.fill((Bx, By, Bz))
-B['x'] += ampl*normal(size=B['x'].shape)
-B['y'] += ampl*normal(size=B['y'].shape)
-B['z'] += ampl*normal(size=B['z'].shape)
+B['x'] += ampl*np.random.normal(size=B['x'].shape)
+B['y'] += ampl*np.random.normal(size=B['y'].shape)
+B['z'] += ampl*np.random.normal(size=B['z'].shape)
 B.copy_guards()
 
 
@@ -143,10 +142,12 @@ e = TimeStepper(state, ohm, manifold)
 # Deposit charges and calculate initial electric field
 e.prepare(dt)
 
+
 # Concatenate local arrays to obtain global arrays
 # The result is available on all processors.
 def concatenate(arr):
     return np.concatenate(comm.allgather(arr))
+
 
 # Make initial figure
 if plot:

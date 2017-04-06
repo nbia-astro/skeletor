@@ -254,6 +254,7 @@ def landau_ions(plot=False, fitplot=False):
             # plt.savefig("landau-damping.pdf")
             plt.show()
 
+
 if __name__ == "__main__":
     import argparse
 

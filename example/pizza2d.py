@@ -1,5 +1,4 @@
-from skeletor import cppinit, Float, Float3, Particles, Sources
-from skeletor import ShearField
+from skeletor import cppinit, Particles, Sources
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy as np
 from mpi4py import MPI
@@ -146,6 +145,7 @@ sources.current.copy_guards()
 sources_periodic.rho.active = sources.rho.trim()
 sources_periodic.Jx.active = sources.Jx.trim()
 sources_periodic.Jy.active = sources.Jy.trim()
+
 
 def concatenate(arr):
     """Concatenate local arrays to obtain global arrays
