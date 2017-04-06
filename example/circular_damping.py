@@ -80,14 +80,15 @@ m = 0
 
 omega = -0.14922889208545562+0.095051744736327104j
 
-def frequency (kzva):
+def frequency(kzva):  # noqa: E302
     hel = 1
-    return kzva*(np.sqrt (1.0 + (0.5*kzva/oc)**2) + 0.5*kzva/(hel*oc))
+    return kzva*(np.sqrt(1.0 + (0.5*kzva/oc)**2) + 0.5*kzva/(hel*oc))
 
-def get_dt(kzva):
-    dt = cfl/frequency (kzva)
-    dt = 2.0**(np.floor (np.log2 (dt)))
+def get_dt(kzva):  # noqa: E302
+    dt = cfl/frequency(kzva)
+    dt = 2.0**(np.floor(np.log2(dt)))
     return dt
+
 
 kmax = np.pi
 
@@ -97,16 +98,23 @@ vph = omega.real/kmax
 tend = 20.
 
 # Phase factor
-phase = lambda x, y, t: A*np.exp(1j*(omega*t - kx*x - ky*y))
+def phase(x, y, t):  # noqa: E302
+    return A*np.exp(1j*(omega*t - kx*x - ky*y))
 
 # Linear solutions in real space
-rho_an = lambda x, y, t: rho0 + rho0*(di.vec[m]['drho']*phase(x, y, t)).real
-Bx_an = lambda x, y, t: Bx + B0*(di.vec[m]['bx']*phase(x, y, t)).real
-By_an = lambda x, y, t: By + B0*(di.vec[m]['by']*phase(x, y, t)).real
-Bz_an = lambda x, y, t: Bz + B0*(di.vec[m]['bz']*phase(x, y, t)).real
-Ux_an = lambda x, y, t:         (di.vec[m]['vx']*phase(x, y, t)).real
-Uy_an = lambda x, y, t:         (di.vec[m]['vy']*phase(x, y, t)).real
-Uz_an = lambda x, y, t:         (di.vec[m]['vz']*phase(x, y, t)).real
+def Bx_an(x, y, t):  # noqa: E302
+    return Bx + B0*(di.vec[m]['bx']*phase(x, y, t))
+def By_an(x, y, t):  # noqa: E302
+    return By + B0*(di.vec[m]['by']*phase(x, y, t))
+def Bz_an(x, y, t):  # noqa: E302
+    return Bz + B0*(di.vec[m]['bz']*phase(x, y, t))
+def Ux_an(x, y, t):  # noqa: E302
+    return (di.vec[m]['vx']*phase(x, y, t))
+def Uy_an(x, y, t):  # noqa: E302
+    return (di.vec[m]['vy']*phase(x, y, t))
+def Uz_an(x, y, t):  # noqa: E302
+    return (di.vec[m]['vz']*phase(x, y, t))
+
 
 # Uniform distribution of particle positions (quiet start)
 sqrt_npc = int(np.sqrt(npc))
@@ -174,24 +182,23 @@ ions.initialize(x, y, vx, vy, vz)
 # init(manifold, ions)
 
 # Perturbation to particle velocities
-ions['vx'] += Ux_an(ions['x'], ions['y'], t=-dt/2)
-ions['vy'] += Uy_an(ions['x'], ions['y'], t=-dt/2)
-ions['vz'] += Uz_an(ions['x'], ions['y'], t=-dt/2)
+ions['vx'] += Ux_an(ions['x'], ions['y'], t=-dt/2).real
+ions['vy'] += Uy_an(ions['x'], ions['y'], t=-dt/2).real
+ions['vz'] += Uz_an(ions['x'], ions['y'], t=-dt/2).real
 
-def B_an(t):
+def B_an(t):  # noqa: E302
     B_an = Field(manifold, dtype=Float3)
-    B_an['x'].active = Bx_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
-    B_an['y'].active = By_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
-    B_an['z'].active = Bz_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t)
+    B_an['x'].active = Bx_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t).real
+    B_an['y'].active = By_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t).real
+    B_an['z'].active = Bz_an(xg+manifold.dx/2, yg+manifold.dy/2, t=t).real
     return B_an
+
 
 # Create vector potential
 A_an = Field(manifold, dtype=Float3)
 A_an['x'].active = 0
-A_an['y'].active = -((Bz + B0*(di.vec[m]['bz']*phase(xg, yg, -dt/2)))/
-                    (1j*kx)).real
-A_an['z'].active =  ((By + B0*(di.vec[m]['by']*phase(xg, yg, -dt/2)))/
-                    (1j*kx)).real
+A_an['y'].active = -(Bz_an(xg, yg, -dt/2)/(1j*kx)).real
+A_an['z'].active = +(By_an(xg, yg, -dt/2)/(1j*kx)).real
 A_an.copy_guards()
 
 # Set initial magnetic field perturbation using the vector potential
@@ -222,8 +229,9 @@ e.prepare(dt)
 
 # Concatenate local arrays to obtain global arrays
 # The result is available on all processors.
-def concatenate(arr):
+def concatenate(arr):  # noqa: E302
     return np.concatenate(comm.allgather(arr))
+
 
 # Make initial figure
 if plot:
@@ -286,7 +294,6 @@ time = np.array(time)
 
 # Test if growth rate is correct
 if comm.rank == 0:
-    from scipy.signal import argrelextrema
 
     # Find first local maximum
     # index = argrelextrema(ampl, np.greater)
@@ -308,4 +315,3 @@ if comm.rank == 0:
         plt.xlabel("time")
         # plt.savefig("landau-damping.pdf")
         plt.show()
-
