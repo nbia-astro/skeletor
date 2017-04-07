@@ -4,6 +4,8 @@ from skeletor.manifolds.second_order import Manifold
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
+from scipy.special import wofz
+from scipy.optimize import newton
 
 
 def landau_electrons(plot=False, fitplot=False):
@@ -58,6 +60,23 @@ def landau_electrons(plot=False, fitplot=False):
     gamma_t = -np.sqrt(np.pi/2)/2*omega/(kx*debye)**3 \
         * np.exp(-0.5/(kx*debye)**2)
     # print(gamma_t, debye, kx)
+
+    def W(z):
+        "Ichimaru's Plasma dispersion function."
+        return 1. + 1j*np.sqrt(0.5*np.pi)*z*wofz(np.sqrt(0.5)*z)
+
+    # Debye wave number
+    kD = omegap/vtx
+
+    # Complex frequency
+    guess = omega + 1j*gamma_t
+
+    # Solve longitudinal dispersion relation numerically using Newton-Raphson.
+    # Use approximate frequency computed above as initial guess.
+    omega_e = newton(lambda omega: 1 + ((kD/kx)**2)*W(omega/(kx*vtx)), guess)
+    print('Approximate vs. exact frequency:')
+    print('omega = {}'.format(guess))
+    print('omega = {}'.format(omega_e))
 
     # Simulation time
     tend = 2*np.pi*nperiods/omega
@@ -257,6 +276,7 @@ def landau_electrons(plot=False, fitplot=False):
             plt.clf()
             plt.semilogy(time, ampl, 'b')
             plt.semilogy(time, ymax*np.exp(gamma_t*(time - tmax)), 'k-')
+            plt.semilogy(time, ymax*np.exp(omega_e.imag*(time - tmax)), 'r-')
 
             plt.title(r'$|\hat{\rho}(ikx=%d, iky=%d)|$' % (ikx, iky))
             plt.xlabel("time")
