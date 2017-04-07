@@ -20,9 +20,9 @@ def landau_electrons(plot=False, fitplot=False):
     charge = -1.0
     mass = 1.0
     # Electron temperature
-    Te = 1/2
+    Te = 1.5
     # Dimensionless amplitude of perturbation
-    A = 0.25
+    A = 0.025
     # Wavenumbers
     ikx, iky = 1, 0
     # Thermal velocity of electrons in x- and y-direction
