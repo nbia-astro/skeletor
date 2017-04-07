@@ -53,13 +53,10 @@ def landau_electrons(plot=False, fitplot=False):
     # Debye length
     debye = vtx/omegap
 
-    # omega
-    omega = omegap*np.sqrt(1+(kx*debye)**2)
-
-    # Theoretical decay rate (TODO: Calculate 2D analytic result)
-    gamma_t = -np.sqrt(np.pi/2)/2*omega/(kx*debye)**3 \
-        * np.exp(-0.5/(kx*debye)**2)
-    # print(gamma_t, debye, kx)
+    # Guess for frequency using eq. 4.12 and 4.13 in Ichimaru
+    omega = np.sqrt(omegap**2 + 3*(vtx*kx)**2)
+    gamma_t = -np.sqrt(np.pi/8)*omegap/(kx*debye)**3*np.exp(-omega**2 /
+                                                            (2*kx**2*vtx**2))
 
     def W(z):
         "Ichimaru's Plasma dispersion function."
@@ -264,10 +261,10 @@ def landau_electrons(plot=False, fitplot=False):
     if comm.rank == 0:
         from scipy.signal import argrelextrema
 
-        # Find first local maximum
+        # Find second local maximum
         index = argrelextrema(ampl, np.greater)
-        tmax = time[index][0]
-        ymax = ampl[index][0]
+        tmax = time[index][1]
+        ymax = ampl[index][1]
 
         if plot or fitplot:
             import matplotlib.pyplot as plt
@@ -275,7 +272,7 @@ def landau_electrons(plot=False, fitplot=False):
             plt.figure(2)
             plt.clf()
             plt.semilogy(time, ampl, 'b')
-            plt.semilogy(time, ymax*np.exp(gamma_t*(time - tmax)), 'k-')
+            plt.semilogy(time, ymax*np.exp(gamma_t*(time - tmax)), 'k--')
             plt.semilogy(time, ymax*np.exp(omega_e.imag*(time - tmax)), 'r-')
 
             plt.title(r'$|\hat{\rho}(ikx=%d, iky=%d)|$' % (ikx, iky))
