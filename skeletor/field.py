@@ -47,10 +47,6 @@ class Field(np.ndarray):
         return self.grid.comm.sendrecv(
                 sendbuf, dest=self.below, source=self.above)
 
-    def trim(self):
-        return np.asarray(self[self.grid.lby:self.grid.uby,
-                               self.grid.lbx:self.grid.ubx])
-
     @property
     def active(self):
         return np.asarray(self[self.grid.lby:self.grid.uby,
@@ -60,6 +56,9 @@ class Field(np.ndarray):
     def active(self, rhs):
         self[self.grid.lby:self.grid.uby,
              self.grid.lbx:self.grid.ubx] = rhs
+
+    def trim(self):
+        return self.active.squeeze()
 
     def copy_guards(self):
         "Copy data to guard cells from corresponding active cells."
