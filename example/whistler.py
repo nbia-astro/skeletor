@@ -65,6 +65,7 @@ kx = 2*np.pi*ikx/manifold.Lx
 k = kx*ex
 
 # Cold plasma wave frequency
+# TODO: Compute exact *numerical* frequency with finite dx and dt
 omega = kx*va*(kx*va + np.sqrt(4*oc*oc + kx*kx*va*va))/(2*oc)
 # # Warm plasma wave frequency
 # omega = newton(drel, omega)
