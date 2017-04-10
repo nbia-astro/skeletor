@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpi4py.MPI import COMM_WORLD as comm
 from scipy.special import wofz
-from scipy.optimize import newton
+# from scipy.optimize import newton
 
 
 def U(z):
