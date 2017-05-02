@@ -4,6 +4,7 @@ from skeletor.manifolds.second_order import Manifold
 from skeletor.time_steppers.horowitz import TimeStepper
 import numpy as np
 from numpy.random import normal
+from scipy.optimize import newton
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 from scipy.special import erfinv
@@ -14,17 +15,70 @@ plot = False
 quiet = True
 # Number of grid points in x- and y-direction
 nx, ny = 32, 1
-# Grid size in x- and y-direction (square cells!)
-Lx, Ly = 16.758881558993764, 16.758881558993764
+
+
+def det(omega, kpar):
+    """Returns the dispersion relation (that needs to be zero)"""
+    zeta = (omega/oc - n)/(kpar*va/oc)*np.sqrt(2/beta_para)
+    lhs = kpar**2*va**2 + omega/(omega - n*oc)*(1-W(zeta)) + W(zeta)*Delta \
+        + n*omega/oc
+    return lhs
+
+
+def W(z):
+    """Plasma response function"""
+    from scipy.special import wofz
+    from numpy import pi, sqrt
+    return (1. + 1j*sqrt(0.5*pi)*z*wofz(sqrt(0.5)*z))
+
+
+# Particle charge and mass
+charge = 1.0
+mass = 1.0
+
+# Magnetic field strength
+B0 = 1
+
+kmax = 2
+# Cyclotron frequency
+oc = charge*mass/B0
+# Mass density
+rho0 = 1.
+# Alfven speed
+va = B0/np.sqrt(rho0)
+n = -1
+# Parallel
+beta_para = 4
+beta_perp = 1
+
+# Anisotropy parameter
+Delta = 1 - beta_perp/beta_para
+
+# Solve dispersion relation
+kvec = np.linspace(1e-4, kmax, 1000)
+guess = 1 + 1j
+
+# Array for the complex phase-velocity
+omega = np.zeros(len(kvec), dtype=np.complex128)
+omega[0] = guess
+omega[0] = newton(det, omega[0], args=(kvec[0],))
+for i in range(1, len(kvec)):
+    omega[i] = newton(det, omega[i-1], args=(kvec[i],))
+
+# Maximum theoretical growth rate
+gamma_t = omega.imag.max()
+
+# Most unstable wavelength
+index = np.argmax(omega.imag)
+Lx = 2*np.pi/kvec[index]
+Ly = Lx*ny/nx
 
 # Grid distances
 dx, dy = Lx/nx, Ly/ny
 
 # Average number of particles per cell
-npc = 2**10
-# Particle charge and mass
-charge = 1.0
-mass = 1.0
+npc = 2**14
+
 # Electron temperature
 Te = 1.0
 # Dimensionless amplitude of perturbation
@@ -33,15 +87,9 @@ A = 0.005
 ikx = 1
 iky = 0
 ampl = 1e-6
-# Thermal velocity of electrons in x- and y-direction
 
-# Magnetic field strength
-B0 = 1
-va = B0
-beta_para = 4
-beta_perp = 1
-vtx = np.sqrt(beta_para/2)
-vty = np.sqrt(beta_perp/2)
+vtx = np.sqrt(beta_para/2)*va
+vty = np.sqrt(beta_perp/2)*va
 vtz = vty
 
 # Sound speed
@@ -156,6 +204,7 @@ e.prepare(dt)
 # The result is available on all processors.
 def concatenate(arr):
     return np.concatenate(comm.allgather(arr))
+
 
 if plot or fitplot:
     import matplotlib.pyplot as plt
