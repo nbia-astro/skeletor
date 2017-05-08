@@ -18,7 +18,7 @@ nx, ny = 32, 1
 Lx = nx
 Ly = Lx*ny/nx
 # Average number of particles per cell
-npc = 2**16
+npc = 2**12
 # Particle charge and mass
 charge = 0.19634954084936207
 mass = 1.0
@@ -287,6 +287,7 @@ for it in range(nt):
                     warnings.filterwarnings(
                             "ignore", category=mplDeprecation)
                     plt.pause(1e-7)
+raise SystemExit
 # Sum squared amplitude over processor, then take the square root
 ampl = np.sqrt(comm.allreduce(ampl2, op=MPI.SUM))
 # Convert list of times into NumPy array

@@ -180,7 +180,7 @@ class Particles(np.ndarray):
         sources.current.fill((0.0, 0.0, 0.0, 0.0))
 
         push_and_deposit(self[:self.N], E, B, qtmh, dt, self.manifold,
-                         self.ihole, sources.current, S, update)
+                         self.ihole, sources.current, S, update, True)
 
         # Set boundary flags to False
         sources.current.boundaries_set = False

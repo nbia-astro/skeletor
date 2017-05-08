@@ -7,11 +7,18 @@ from particle_boundary cimport periodic_x_cdef as periodic_x
 from particle_boundary cimport calculate_ihole_cdef as calculate_ihole
 from libc.math cimport fabs
 
+ctypedef void (*gather_func)(particle_t particle, real3_t[:,:] F, real3_t *f,
+        real2_t offset)
+
 def push_and_deposit(
          particle_t[:] particles, real3_t[:, :] E, real3_t[:, :] B,
          real_t qtmh, real_t dt, grid_t grid, int[:] ihole,
-         real4_t[:,:] current, real_t S, const bint update):
+         real4_t[:,:] current, real_t S, const bint update,
+         const bint switch):
 
+    cdef gather_func gather
+    if switch:
+        gather = gather_cic
     # Number of particles
     cdef int Np = particles.shape[0]
 
@@ -49,8 +56,8 @@ def push_and_deposit(
         particle = particles[ip]
 
         # Gather and electric & magnetic fields
-        gather_cic(particles[ip], E, &e, offsetE)
-        gather_cic(particles[ip], B, &b, offsetB)
+        gather(particles[ip], E, &e, offsetE)
+        gather(particles[ip], B, &b, offsetB)
 
         # Rescale values with qtmh = 0.5*dt*charge/mass
         rescale(&e, qtmh)
