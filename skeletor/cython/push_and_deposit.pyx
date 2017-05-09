@@ -1,21 +1,25 @@
 from types cimport real_t, real2_t, real3_t, real4_t, particle_t, grid_t
-from particle_push cimport gather_cic, rescale
+from particle_push cimport gather_cic, gather_tsc, rescale
 from particle_push cimport drift_particle as drift
 from particle_push cimport kick_particle as kick
-from deposit cimport deposit_particle
+from deposit cimport deposit_particle_cic, deposit_particle_tsc
 from particle_boundary cimport periodic_x_cdef as periodic_x
 from particle_boundary cimport calculate_ihole_cdef as calculate_ihole
 from libc.math cimport fabs
-
 
 def push_and_deposit(
          particle_t[:] particles, real3_t[:, :] E, real3_t[:, :] B,
          real_t qtmh, real_t dt, grid_t grid, int[:] ihole,
          real4_t[:,:] current, real_t S, const bint update,
-         const bint switch):
+         const int order):
 
-    if switch:
+    # CIC or TSC interpolation
+    if order == 1:
         gather = gather_cic
+        deposit_particle = deposit_particle_cic
+    elif order == 2:
+        gather = gather_tsc
+        deposit_particle = deposit_particle_tsc
 
     # Number of particles
     cdef int Np = particles.shape[0]

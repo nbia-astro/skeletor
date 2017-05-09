@@ -1,8 +1,8 @@
 from types cimport real_t, real2_t, real3_t, particle_t, grid_t
 from cython.parallel import prange
 
-def boris_push(particle_t[:] particles, real3_t[:, :] E,
-                      real3_t[:, :] B, real_t qtmh, real_t dt, grid_t grid):
+def boris_push(particle_t[:] particles, real3_t[:, :] E, real3_t[:, :] B,
+               real_t qtmh, real_t dt, grid_t grid, const int order):
 
     cdef int Np = particles.shape[0]
     # Electric and magnetic fields at particle location
@@ -10,6 +10,12 @@ def boris_push(particle_t[:] particles, real3_t[:, :] E,
 
     # It might be better to use `Py_ssize_t` instead of `int`
     cdef int ip
+
+    # CIC or TSC interpolation
+    if order == 1:
+        gather = gather_cic
+    elif order == 2:
+        gather = gather_tsc
 
     # Offset in interpolation for E and B-fields
     cdef real2_t offsetE, offsetB
@@ -27,8 +33,8 @@ def boris_push(particle_t[:] particles, real3_t[:, :] E,
 
     for ip in range(Np):
         # Gather and electric & magnetic fields
-        gather_cic(particles[ip], E, &e, offsetE)
-        gather_cic(particles[ip], B, &b, offsetB)
+        gather(particles[ip], E, &e, offsetE)
+        gather(particles[ip], B, &b, offsetB)
 
         # Rescale values with qtmh = 0.5*dt*charge/mass
         rescale(&e, qtmh)
@@ -39,7 +45,7 @@ def boris_push(particle_t[:] particles, real3_t[:, :] E,
 
 def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
                         real3_t[:, :] B, real_t qtmh, real_t dt, grid_t grid,
-                        real_t Omega, real_t S):
+                        real_t Omega, real_t S, const int order):
 
     cdef int Np = particles.shape[0]
     # Electric and magnetic fields at particle location
@@ -47,6 +53,12 @@ def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
 
     # It might be better to use `Py_ssize_t` instead of `int`
     cdef int ip
+
+    # CIC or TSC interpolation
+    if order == 1:
+        gather = gather_cic
+    elif order == 2:
+        gather = gather_tsc
 
     # Offset in interpolation for E and B-fields
     cdef real2_t offsetE, offsetB
@@ -64,8 +76,8 @@ def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
 
     for ip in range(Np):
         # Gather and electric & magnetic fields
-        gather_cic(particles[ip], E, &e, offsetE)
-        gather_cic(particles[ip], B, &b, offsetB)
+        gather(particles[ip], E, &e, offsetE)
+        gather(particles[ip], B, &b, offsetB)
 
         # Rescale values with qtmh = 0.5*dt*charge/mass
         rescale(&e, qtmh)
