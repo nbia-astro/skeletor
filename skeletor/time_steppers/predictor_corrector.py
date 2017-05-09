@@ -10,7 +10,7 @@ class TimeStepper:
         self.manifold = manifold
 
         # Ions
-        self.ions = state.ions
+        self.species = state.species
 
         # Ohm's law
         self.ohm = ohm
@@ -20,6 +20,8 @@ class TimeStepper:
 
         # Initialize sources
         self.sources = Sources(manifold)
+        # Used for storing
+        self.sources2 = Sources(manifold)
 
         # Set the electric field to zero
         self.E = Field(manifold, dtype=Float3)
@@ -44,13 +46,19 @@ class TimeStepper:
         from mpi4py.MPI import COMM_WORLD as comm, SUM
 
         # Deposit sources
-        self.sources.deposit(self.ions, set_boundaries=True)
+        self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
+        for ions in self.species:
+            self.sources2.deposit(ions, set_boundaries=True)
+            for dim in self.sources.current.dtype.names:
+                self.sources.current[dim] += self.sources2.current[dim]
+        self.sources.current.boundaries_set = True
 
         # Calculate electric field (Solve Ohm's law)
         self.ohm(self.sources, self.B, self.E, set_boundaries=True)
 
         # Drift particle positions by a half time step
-        self.ions.drift(dt/2)
+        for ions in self.species:
+            ions.drift(dt/2)
 
         # Iterate to find true electric field at time 0
         for it in range(maxiter):
@@ -91,7 +99,13 @@ class TimeStepper:
         # Push particle positions to n+1 (n+2) and kick velocities to n+1/2
         # (n+3/2). Deposit charge and current at n+1/2 (n+3/2) and only update
         # particle positions if update=True
-        self.ions.push_and_deposit(self.E2, self.B2, dt, self.sources, update)
+        self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
+        self.sources.current.boundaries_set = False
+        for ions in self.species:
+            ions.push_and_deposit(self.E2, self.B2, dt, self.sources2, update)
+            for dim in self.sources.current.dtype.names:
+                self.sources.current[dim] += self.sources2.current[dim]
+        self.sources.current.boundaries_set = True
 
         # Evolve magnetic field by a half step to n+1/2 (n+3/2)
         self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
