@@ -7,8 +7,6 @@ from particle_boundary cimport periodic_x_cdef as periodic_x
 from particle_boundary cimport calculate_ihole_cdef as calculate_ihole
 from libc.math cimport fabs
 
-ctypedef void (*gather_func)(particle_t particle, real3_t[:,:] F, real3_t *f,
-        real2_t offset)
 
 def push_and_deposit(
          particle_t[:] particles, real3_t[:, :] E, real3_t[:, :] B,
@@ -16,9 +14,9 @@ def push_and_deposit(
          real4_t[:,:] current, real_t S, const bint update,
          const bint switch):
 
-    cdef gather_func gather
     if switch:
         gather = gather_cic
+
     # Number of particles
     cdef int Np = particles.shape[0]
 
