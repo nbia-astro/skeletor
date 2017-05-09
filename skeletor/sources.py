@@ -30,7 +30,8 @@ class Sources:
     def Jz(self):
         return self.current['z']
 
-    def deposit(self, particles, erase=True, set_boundaries=False):
+    def deposit(self, particles, erase=True, set_boundaries=False,
+                order='cic'):
 
         if erase:
             self.current.fill((0.0, 0.0, 0.0, 0.0))
@@ -46,7 +47,11 @@ class Sources:
         else:
             S = grid.S
 
-        cython_deposit(particles[:particles.N], self.current, grid, S)
+        if order == 'cic':
+            order = 1
+        elif order == 'tsc':
+            order = 2
+        cython_deposit(particles[:particles.N], self.current, grid, S, order)
 
         self.current.boundaries_set = False
 

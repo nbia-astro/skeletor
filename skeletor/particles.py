@@ -134,7 +134,7 @@ class Particles(np.ndarray):
 
         self.periodic_y()
 
-    def push(self, E, B, dt):
+    def push(self, E, B, dt, order='cic'):
         """
         A standard Boris push which updates positions and velocities.
 
@@ -148,7 +148,12 @@ class Particles(np.ndarray):
 
         qtmh = self.charge/self.mass*dt/2
 
-        push(self[:self.N], E, B, qtmh, dt, self.manifold)
+        if order == 'cic':
+            order = 1
+        elif order == 'tsc':
+            order = 2
+
+        push(self[:self.N], E, B, qtmh, dt, self.manifold, order)
 
         # Shearing periodicity
         if self.manifold.shear:
@@ -159,7 +164,7 @@ class Particles(np.ndarray):
         # Apply periodicity in x
         self.periodic_x()
 
-    def push_and_deposit(self, E, B, dt, sources, update=True):
+    def push_and_deposit(self, E, B, dt, sources, update=True, order='cic'):
         """
         This function updates the particle position and velocities and
         depositis the charge and currents. If update=False only the new
@@ -178,9 +183,12 @@ class Particles(np.ndarray):
 
         # Zero out the sources
         sources.current.fill((0.0, 0.0, 0.0, 0.0))
-
+        if order == 'cic':
+            order = 1
+        elif order == 'tsc':
+            order = 2
         push_and_deposit(self[:self.N], E, B, qtmh, dt, self.manifold,
-                         self.ihole, sources.current, S, update, True)
+                         self.ihole, sources.current, S, update, order)
 
         # Set boundary flags to False
         sources.current.boundaries_set = False
@@ -194,7 +202,7 @@ class Particles(np.ndarray):
         if update:
             self.move()
 
-    def push_modified(self, E, B, dt):
+    def push_modified(self, E, B, dt, order='cic'):
         from .cython.particle_push import modified_boris_push as push
 
         # Update time
@@ -202,8 +210,13 @@ class Particles(np.ndarray):
 
         qtmh = self.charge/self.mass*dt/2
 
+        if order == 'cic':
+            order = 1
+        elif order == 'tsc':
+            order = 2
+
         push(self[:self.N], E, B, qtmh, dt, self.manifold,
-             self.manifold.Omega, self.manifold.S)
+             self.manifold.Omega, self.manifold.S, order)
 
         # Shearing periodicity
         if self.manifold.shear:
