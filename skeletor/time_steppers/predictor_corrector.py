@@ -1,6 +1,6 @@
 class TimeStepper:
 
-    def __init__(self, state, ohm, manifold):
+    def __init__(self, state, ohm, manifold, order='cic'):
 
         from skeletor import Float3, Field, Sources, Faraday
 
@@ -35,6 +35,9 @@ class TimeStepper:
         self.E2.copy_guards()
         self.B2[:] = state.B
 
+        # Order of particle interpolation
+        self.order = order
+
         # Initial time
         self.t = state.t
 
@@ -44,7 +47,7 @@ class TimeStepper:
         from mpi4py.MPI import COMM_WORLD as comm, SUM
 
         # Deposit sources
-        self.sources.deposit(self.ions, set_boundaries=True)
+        self.sources.deposit(self.ions, set_boundaries=True, order=self.order)
 
         # Calculate electric field (Solve Ohm's law)
         self.ohm(self.sources, self.B, self.E, set_boundaries=True)
@@ -91,7 +94,8 @@ class TimeStepper:
         # Push particle positions to n+1 (n+2) and kick velocities to n+1/2
         # (n+3/2). Deposit charge and current at n+1/2 (n+3/2) and only update
         # particle positions if update=True
-        self.ions.push_and_deposit(self.E2, self.B2, dt, self.sources, update)
+        self.ions.push_and_deposit(self.E2, self.B2, dt, self.sources, update,
+                                   self.order)
 
         # Evolve magnetic field by a half step to n+1/2 (n+3/2)
         self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
