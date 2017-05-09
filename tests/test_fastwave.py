@@ -16,7 +16,7 @@ def test_fastwave(plot=False):
     Lx = 1
     Ly = 1
     # Average number of particles per cell
-    npc = 64
+    npc = 1
     # Particle charge and mass
     charge = 1.0
     mass = 1.0
@@ -78,7 +78,7 @@ def test_fastwave(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
+    manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly, lbx=2, lby=2)
 
     # Time step
     dt = cfl*manifold.dx/vph
@@ -124,7 +124,7 @@ def test_fastwave(plot=False):
     state = State(ions, B)
 
     # Initialize experiment
-    e = TimeStepper(state, ohm, manifold)
+    e = TimeStepper(state, ohm, manifold, order='tsc')
 
     # Deposit charges and calculate initial electric field
     e.prepare(dt)
