@@ -5,7 +5,7 @@ import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
-plot = True
+plot = False
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
@@ -164,28 +164,26 @@ if plot:
 
     global_rho = concatenate(sources.rho.trim())
     global_E = concatenate(E.trim())
-    global_rho_an = concatenate(rho_an(xg, yg, 0))
+    global_rho_an = concatenate(rho_an(manifold.x, 0, 0))
 
     if comm.rank == 0:
         plt.rc('image', origin='lower', interpolation='nearest')
         plt.figure(1)
         plt.clf()
-        fig, (ax1, ax2, ax3) = plt.subplots(num=1, ncols=3)
+        fig, (ax1, ax2) = plt.subplots(num=1, ncols=2)
         vmin, vmax = charge*(1 - A), charge*(1 + A)
-        im1 = ax1.imshow(global_rho, vmin=vmin, vmax=vmax)
-        im2, = ax2.plot(xg[0, :], global_E['x'][0, :], 'b')
-        im3 = ax3.plot(xg[0, :], global_rho[0, :], 'b',
-                       xg[0, :], global_rho_an[0, :], 'k--')
-        ax1.set_title(r'$\rho$')
-        # ax3.set_ylim(vmin, vmax)
-        ax3.set_ylim((1-A), (1+A))
-        ax2.set_ylim(-1.2e-4, 1.2e-4)
+        im1, = ax1.plot(manifold.x, global_E['x'], 'b')
+        im2 = ax2.plot(manifold.x, global_rho, 'b',
+                       manifold.x, global_rho_an, 'k--')
+        ax2.set_title(r'$\rho$')
+        ax2.set_ylim((1-A), (1+A))
+        ax1.set_ylim(-1.2e-4, 1.2e-4)
 
 t = 0
 diff2 = 0
 # Big array for storing density at every time step
 if comm.rank == 0:
-    data = np.zeros((ny, nx, nt))
+    data = np.zeros((nx, nt))
 
 ##########################################################################
 # Main loop over time                                                    #
@@ -214,18 +212,17 @@ for it in range(nt):
     global_rho = concatenate(local_rho)
     global_E = concatenate(E.trim())
     if comm.rank == 0:
-        data[:, :, it] = global_rho
+        data[:, it] = global_rho
 
     # Make figures
     if plot:
         if (it % 100 == 0):
             global_rho = concatenate(local_rho)
-            global_rho_an = concatenate(rho_an(xg, yg, t))
+            global_rho_an = concatenate(rho_an(manifold.x, 0, t))
             if comm.rank == 0:
-                im1.set_data(global_rho)
-                im2.set_ydata(global_E['x'][0, :])
-                im3[0].set_ydata(global_rho[0, :])
-                im3[1].set_ydata(global_rho_an[0, :])
+                im1.set_ydata(global_E['x'])
+                im2[0].set_ydata(global_rho)
+                im2[1].set_ydata(global_rho_an)
                 with warnings.catch_warnings():
                     warnings.filterwarnings(
                             "ignore", category=mplDeprecation)
@@ -245,17 +242,13 @@ if comm.rank == 0:
     # Frequency
     w = 2*np.pi*np.fft.rfftfreq(nt)/dt
 
-    # Average out y dimension (for now)
-    sli = np.mean(data, axis=0).T
-
-    ikx_min = 32
     # Compute spacetime spectrum. Only show positive half of both frequency and
     # wavenumber spectra.
-    spec = np.fft.rfft2(sli)[:nt//2, :]
+    spec = np.fft.rfft2(data.T)[:nt//2, :]
 
     dx = manifold.dx
 
-    plt.rc('image', aspect='auto', interpolation='nearest')
+    plt.rc('image', aspect='auto', interpolation='nearest', origin='lower')
 
     plt.figure(2)
     plt.clf()
