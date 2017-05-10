@@ -31,5 +31,6 @@ cdef class grid_t:
     cdef public MPI.Comm comm
     cdef public real_t edges[2]
     cdef public int nyp, noff
-    cdef public int lbx, lby
+    cdef public int lbx, lby, ubx, uby
     cdef public real_t dx, dy
+    cdef public real_t Lx, Ly
