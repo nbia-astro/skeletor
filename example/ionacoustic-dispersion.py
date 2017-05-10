@@ -5,6 +5,19 @@ import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
+order = 'tsc'
+if order == 'cic':
+    lbx = 1
+    lby = 1
+    p = 2
+elif order == 'tsc':
+    lbx = 2
+    lby = 2
+    p = 3
+else:
+    raise RuntimeError("Order should be cic or tsc")
+
+
 plot = False
 # Quiet start
 quiet = True
@@ -101,7 +114,7 @@ vy += vty*np.random.normal(size=N).astype(Float)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
+manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly, lbx=lbx, lby=lby)
 
 # x- and y-grid
 xg, yg = np.meshgrid(manifold.x, manifold.y)
@@ -137,7 +150,7 @@ ohm = Ohm(manifold, temperature=Te, charge=charge)
 # Calculate initial density and force
 
 # Deposit sources
-sources.deposit(ions)
+sources.deposit(ions, order=order)
 assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
 sources.current.add_guards()
 assert np.isclose(comm.allreduce(
@@ -191,13 +204,13 @@ if comm.rank == 0:
 for it in range(nt):
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
-    ions.push(E, B, dt)
+    ions.push(E, B, dt, order=order)
 
     # Update time
     t += dt
 
     # Deposit sources
-    sources.deposit(ions)
+    sources.deposit(ions, order=order)
 
     # Boundary calls
     sources.current.add_guards()
@@ -252,18 +265,24 @@ if comm.rank == 0:
 
     plt.figure(2)
     plt.clf()
-    plt.imshow((np.log(np.abs(spec)**2.)),
-               extent=(kx[0], kx[-1], w[0], w[-1]))
+    ikmin = 4
+    plt.imshow((np.log(np.abs(spec[:, ikmin:])**2.)),
+               extent=(kx[ikmin], kx[-1], w[0], w[-1]))
 
     from dispersion_solvers import IonacousticDispersion
 
-    solve = IonacousticDispersion(Ti=1e-2, Te=Te, b=0, p=2, dx=dx)
     kxvec = np.linspace(1e-2, kx[-2], 100)
-    vph = solve.cold(kxvec)
-    plt.plot(kxvec, kxvec*vph, 'k')
-    plt.plot(kxvec, kxvec*cs, 'k--')
-    plt.ylim(0, 1.5*(kxvec*vph.real).max())
+
+    solve_cic = IonacousticDispersion(Ti=1e-2, Te=Te, b=0, p=2, dx=dx)
+    solve_tsc = IonacousticDispersion(Ti=1e-2, Te=Te, b=0, p=3, dx=dx)
+    vph_cic = solve_cic.cold(kxvec)
+    vph_tsc = solve_tsc.cold(kxvec)
+    plt.plot(kxvec, kxvec*vph_cic, 'k:', label='CIC')
+    plt.plot(kxvec, kxvec*vph_tsc, 'r:', label='TSC')
+    plt.plot(kxvec, kxvec*cs, 'k--', label=r'$k c_s$')
+    plt.ylim(0, 1.5*(kxvec*vph_cic.real).max())
     plt.xlabel(r'$k_x \Delta x$')
     plt.ylabel(r'$\omega$')
-    # plt.savefig('test.pdf')
+    plt.legend(frameon=False, loc='upper left')
+    plt.savefig('test2.pdf')
     plt.show()
