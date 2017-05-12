@@ -1,4 +1,5 @@
 import numpy as np
+from .sources import Sources
 
 
 class Particles(np.ndarray):
@@ -35,6 +36,9 @@ class Particles(np.ndarray):
         obj.rbufl = np.zeros(nbmax, Particle)
         obj.rbufr = np.zeros(nbmax, Particle)
 
+        # Create source array
+        obj.sources = Sources(manifold)
+
         # Info array used for checking errors in particle move
         obj.info = np.zeros(7, Int)
 
@@ -56,6 +60,7 @@ class Particles(np.ndarray):
         self.sbufr = getattr(obj, "sbufr", None)
         self.rbufl = getattr(obj, "rbufl", None)
         self.rbufr = getattr(obj, "rbufr", None)
+        self.sources = getattr(obj, "sources", None)
         self.info = getattr(obj, "info", None)
         self.time = getattr(obj, "time", None)
 
@@ -81,6 +86,9 @@ class Particles(np.ndarray):
         self["vx"][:self.N] = vx[ind]
         self["vy"][:self.N] = vy[ind]
         self["vz"][:self.N] = vz[ind]
+
+    def deposit(self, **kwds):
+        self.sources.deposit(self, **kwds)
 
     def move(self):
         """Uses ppic2's cppmove2 routine for moving particles
@@ -159,7 +167,7 @@ class Particles(np.ndarray):
         # Apply periodicity in x
         self.periodic_x()
 
-    def push_and_deposit(self, E, B, dt, sources, update=True):
+    def push_and_deposit(self, E, B, dt, update=True):
         """
         This function updates the particle position and velocities and
         depositis the charge and currents. If update=False only the new
@@ -177,18 +185,18 @@ class Particles(np.ndarray):
         S = 0.0
 
         # Zero out the sources
-        sources.current.fill((0.0, 0.0, 0.0, 0.0))
+        self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
 
         push_and_deposit(self[:self.N], E, B, qtmh, dt, self.manifold,
-                         self.ihole, sources.current, S, update)
+                         self.ihole, self.sources.current, S, update)
 
         # Set boundary flags to False
-        sources.current.boundaries_set = False
+        self.sources.current.boundaries_set = False
 
         # Normalize sources with particle charge
-        sources.normalize(self)
+        self.sources.normalize(self)
         # Add and copy boundary layers
-        sources.set_boundaries()
+        self.sources.set_boundaries()
 
         # Move particles across MPI domains
         if update:

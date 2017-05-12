@@ -17,8 +17,6 @@ class TimeStepper:
 
         # Initialize sources
         self.sources = Sources(manifold)
-        # Used for storing
-        self.sources2 = Sources(manifold)
 
         # Set the electric field to zero
         self.E = Field(manifold, dtype=Float3)
@@ -45,9 +43,9 @@ class TimeStepper:
         # Deposit sources
         self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
         for ions in self.state.species:
-            self.sources2.deposit(ions, set_boundaries=True)
+            ions.deposit(set_boundaries=True)
             for dim in self.sources.current.dtype.names:
-                self.sources.current[dim] += self.sources2.current[dim]
+                self.sources.current[dim] += ions.sources.current[dim]
         self.sources.current.boundaries_set = True
 
         # Calculate electric field (Solve Ohm's law)
@@ -99,9 +97,9 @@ class TimeStepper:
         self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
         self.sources.current.boundaries_set = False
         for ions in self.state.species:
-            ions.push_and_deposit(self.E2, self.B2, dt, self.sources2, update)
+            ions.push_and_deposit(self.E2, self.B2, dt, update)
             for dim in self.sources.current.dtype.names:
-                self.sources.current[dim] += self.sources2.current[dim]
+                self.sources.current[dim] += ions.sources.current[dim]
         self.sources.current.boundaries_set = True
 
         # Evolve magnetic field by a half step to n+1/2 (n+3/2)
