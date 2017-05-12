@@ -6,7 +6,8 @@ class Particles(np.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, manifold, Nmax, time=0.0, charge=1.0, mass=1.0, n0=1.0):
+    def __new__(cls, manifold, Nmax,
+                time=0.0, charge=1.0, mass=1.0, n0=1.0, order=1):
 
         from .cython.types import Int, Particle
 
@@ -23,6 +24,8 @@ class Particles(np.ndarray):
         obj.mass = mass
         # Average number density
         obj.n0 = n0
+        # Interpolation order (1 = cic, 2 = tsc)
+        obj.order = order
 
         obj.manifold = manifold
 
@@ -51,6 +54,7 @@ class Particles(np.ndarray):
         self.charge = getattr(obj, "charge", None)
         self.mass = getattr(obj, "mass", None)
         self.n0 = getattr(obj, "n0", None)
+        self.order = getattr(obj, "order", None)
         self.ihole = getattr(obj, "ihole", None)
         self.sbufl = getattr(obj, "sbufl", None)
         self.sbufr = getattr(obj, "sbufr", None)
@@ -134,7 +138,7 @@ class Particles(np.ndarray):
 
         self.periodic_y()
 
-    def push(self, E, B, dt, order='cic'):
+    def push(self, E, B, dt):
         """
         A standard Boris push which updates positions and velocities.
 
@@ -148,12 +152,7 @@ class Particles(np.ndarray):
 
         qtmh = self.charge/self.mass*dt/2
 
-        if order == 'cic':
-            order = 1
-        elif order == 'tsc':
-            order = 2
-
-        push(self[:self.N], E, B, qtmh, dt, self.manifold, order)
+        push(self[:self.N], E, B, qtmh, dt, self.manifold, self.order)
 
         # Shearing periodicity
         if self.manifold.shear:
@@ -164,7 +163,7 @@ class Particles(np.ndarray):
         # Apply periodicity in x
         self.periodic_x()
 
-    def push_and_deposit(self, E, B, dt, sources, update=True, order='cic'):
+    def push_and_deposit(self, E, B, dt, sources, update=True):
         """
         This function updates the particle position and velocities and
         depositis the charge and currents. If update=False only the new
@@ -183,12 +182,9 @@ class Particles(np.ndarray):
 
         # Zero out the sources
         sources.current.fill((0.0, 0.0, 0.0, 0.0))
-        if order == 'cic':
-            order = 1
-        elif order == 'tsc':
-            order = 2
+
         push_and_deposit(self[:self.N], E, B, qtmh, dt, self.manifold,
-                         self.ihole, sources.current, S, update, order)
+                         self.ihole, sources.current, S, update, self.order)
 
         # Set boundary flags to False
         sources.current.boundaries_set = False
@@ -202,7 +198,7 @@ class Particles(np.ndarray):
         if update:
             self.move()
 
-    def push_modified(self, E, B, dt, order='cic'):
+    def push_modified(self, E, B, dt):
         from .cython.particle_push import modified_boris_push as push
 
         # Update time
@@ -210,13 +206,8 @@ class Particles(np.ndarray):
 
         qtmh = self.charge/self.mass*dt/2
 
-        if order == 'cic':
-            order = 1
-        elif order == 'tsc':
-            order = 2
-
         push(self[:self.N], E, B, qtmh, dt, self.manifold,
-             self.manifold.Omega, self.manifold.S, order)
+             self.manifold.Omega, self.manifold.S, self.order)
 
         # Shearing periodicity
         if self.manifold.shear:

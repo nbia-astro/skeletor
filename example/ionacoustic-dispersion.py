@@ -5,20 +5,9 @@ import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
-order = 'tsc'
-if order == 'cic':
-    lbx = 1
-    lby = 1
-    p = 2
-elif order == 'tsc':
-    lbx = 2
-    lby = 2
-    p = 3
-else:
-    raise RuntimeError("Order should be cic or tsc")
-
-
 plot = False
+# Interpolation order
+order = 2
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
@@ -114,7 +103,7 @@ vy += vty*np.random.normal(size=N).astype(Float)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly, lbx=lbx, lby=lby)
+manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly, lbx=order, lby=order)
 
 # x- and y-grid
 xg, yg = np.meshgrid(manifold.x, manifold.y)
@@ -123,7 +112,7 @@ xg, yg = np.meshgrid(manifold.x, manifold.y)
 Nmax = int(1.5*N/comm.size)
 
 # Create particle array
-ions = Particles(manifold, Nmax, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, charge=charge, mass=mass, order=order)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
@@ -150,7 +139,7 @@ ohm = Ohm(manifold, temperature=Te, charge=charge)
 # Calculate initial density and force
 
 # Deposit sources
-sources.deposit(ions, order=order)
+sources.deposit(ions)
 assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
 sources.current.add_guards()
 assert np.isclose(comm.allreduce(
@@ -204,13 +193,13 @@ if comm.rank == 0:
 for it in range(nt):
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
-    ions.push(E, B, dt, order=order)
+    ions.push(E, B, dt)
 
     # Update time
     t += dt
 
     # Deposit sources
-    sources.deposit(ions, order=order)
+    sources.deposit(ions)
 
     # Boundary calls
     sources.current.add_guards()

@@ -93,7 +93,7 @@ def test_fastwave(plot=False):
     Nmax = int(1.5*N/comm.size)
 
     # Create particle array
-    ions = Particles(manifold, Nmax, charge=charge, mass=mass)
+    ions = Particles(manifold, Nmax, charge=charge, mass=mass, order=2)
 
     # Create a uniform density field
     init = InitialCondition(npc, quiet=quiet)
@@ -124,7 +124,7 @@ def test_fastwave(plot=False):
     state = State(ions, B)
 
     # Initialize experiment
-    e = TimeStepper(state, ohm, manifold, order='tsc')
+    e = TimeStepper(state, ohm, manifold)
 
     # Deposit charges and calculate initial electric field
     e.prepare(dt)
