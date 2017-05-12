@@ -9,9 +9,6 @@ class TimeStepper:
         # Numerical grid with differential operators
         self.manifold = manifold
 
-        # Ions
-        self.species = state.species
-
         # Ohm's law
         self.ohm = ohm
 
@@ -47,7 +44,7 @@ class TimeStepper:
 
         # Deposit sources
         self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
-        for ions in self.species:
+        for ions in self.state.species:
             self.sources2.deposit(ions, set_boundaries=True)
             for dim in self.sources.current.dtype.names:
                 self.sources.current[dim] += self.sources2.current[dim]
@@ -57,7 +54,7 @@ class TimeStepper:
         self.ohm(self.sources, self.B, self.E, set_boundaries=True)
 
         # Drift particle positions by a half time step
-        for ions in self.species:
+        for ions in self.state.species:
             ions.drift(dt/2)
 
         # Iterate to find true electric field at time 0
@@ -101,7 +98,7 @@ class TimeStepper:
         # particle positions if update=True
         self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
         self.sources.current.boundaries_set = False
-        for ions in self.species:
+        for ions in self.state.species:
             ions.push_and_deposit(self.E2, self.B2, dt, self.sources2, update)
             for dim in self.sources.current.dtype.names:
                 self.sources.current[dim] += self.sources2.current[dim]
