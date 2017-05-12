@@ -71,19 +71,23 @@ class Field(np.ndarray):
         # Short hand
         g = self.grid
 
-        # x-boundaries
-        self[g.uby:, g.lbx:g.ubx] = \
-            self.send_down(self[g.lby:g.lby+g.lby, g.lbx:g.ubx])
-        self[:g.lby, g.lbx:g.ubx] = \
-            self.send_up(self[g.uby-g.lby:g.uby, g.lbx:g.ubx])
-
         # y-boundaries
-        self[:, g.ubx:] = self[:, g.lbx:g.lbx+g.lbx]
-        self[:, :g.lbx] = self[:, g.ubx-g.lbx:g.ubx]
+        for iy in range(g.lby - 1, -1, -1):
+            self[iy, g.lbx:g.ubx] = self[iy + g.nyp, g.lbx:g.ubx]
+        for iy in range(g.uby, g.uby + g.lby):
+            self[iy, g.lbx:g.ubx] = self[iy - g.nyp, g.lbx:g.ubx]
+        self[g.uby:, g.lbx:g.ubx] = self.send_down(self[g.uby:, g.lbx:g.ubx])
+        self[:g.lby, g.lbx:g.ubx] = self.send_up(self[:g.lby, g.lbx:g.ubx])
+
+        # x-boundaries
+        for ix in range(g.lbx - 1, -1, -1):
+            self[:, ix] = self[:, ix + g.nx]
+        for ix in range(g.ubx, g.ubx + g.lbx):
+            self[:, ix] = self[:, ix - g.nx]
 
         self.boundaries_set = True
 
-    def add_guards(self):
+    def add_guards_old(self):
         "Add data from guard cells to corresponding active cells."
 
         # TODO: We might wanna do some kind of check analogous to the one being
@@ -114,6 +118,60 @@ class Field(np.ndarray):
                     self.send_up(self[g.uby:, :][dim])
                 self[g.uby-g.lby:g.uby, :][dim] += \
                     self.send_down(self[:g.lby, :][dim])
+
+        # Erase guard cells
+        # TODO: I suggest we get rid of this. The guard layes will be
+        # overwritten anyway by `copy_guards()`.
+        self[:g.lby, :] = 0.0
+        self[g.uby:, :] = 0.0
+        self[:, g.ubx:] = 0.0
+        self[:, :g.lbx] = 0.0
+
+    def add_guards(self):
+        "Add data from guard cells to corresponding active cells."
+
+        # TODO: We might wanna do some kind of check analogous to the one being
+        # done in `copy_guards()`. And here we should probably throw an error
+        # if it fails because calling this method multiple times actually does
+        # cause harm.
+
+        # Short hand
+        g = self.grid
+
+        if self.dtype.names is None:
+            # x-boundaries
+            for ix in range(g.lbx):
+                self[:, ix + g.nx] += self[:, ix]
+            for ix in range(g.ubx + g.lbx - 1, g.ubx - 1, -1):
+                self[:, ix - g.nx] += self[:, ix]
+            # y-boundaries
+            self[g.uby:, g.lbx:g.ubx] = \
+                self.send_up(self[g.uby:, g.lbx:g.ubx])
+            self[:g.lby, g.lbx:g.ubx] = \
+                self.send_down(self[:g.lby, g.lbx:g.ubx])
+            for iy in range(g.lby):
+                self[iy + g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
+            for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
+                self[iy - g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
+        else:
+            # x-boundaries
+            for dim in self.dtype.names:
+                for ix in range(g.lbx):
+                    self[:, ix + g.nx][dim] += self[:, ix][dim]
+                for ix in range(g.ubx + g.lbx - 1, g.ubx - 1, -1):
+                    self[:, ix - g.nx][dim] += self[:, ix][dim]
+            # y-boundaries
+            self[g.uby:, g.lbx:g.ubx] = \
+                self.send_up(self[g.uby:, g.lbx:g.ubx])
+            self[:g.lby, g.lbx:g.ubx] = \
+                self.send_down(self[:g.lby, g.lbx:g.ubx])
+            for dim in self.dtype.names:
+                for iy in range(g.lby):
+                    self[iy + g.nyp, g.lbx:g.ubx][dim] \
+                            += self[iy, g.lbx:g.ubx][dim]
+                for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
+                    self[iy - g.nyp, g.lbx:g.ubx][dim] \
+                            += self[iy, g.lbx:g.ubx][dim]
 
         # Erase guard cells
         # TODO: I suggest we get rid of this. The guard layes will be
