@@ -16,6 +16,9 @@ def boris_push(particle_t[:] particles, real3_t[:, :] E, real3_t[:, :] B,
         gather = gather_cic
     elif order == 2:
         gather = gather_tsc
+    else:
+        msg = 'Interpolation order {} not implemented.'
+        raise RuntimeError(msg.format(order))
 
     # Offset in interpolation for E and B-fields
     cdef real2_t offsetE, offsetB
@@ -59,6 +62,9 @@ def modified_boris_push(particle_t[:] particles, real3_t[:, :] E,
         gather = gather_cic
     elif order == 2:
         gather = gather_tsc
+    else:
+        msg = 'Interpolation order {} not implemented.'
+        raise RuntimeError(msg.format(order))
 
     # Offset in interpolation for E and B-fields
     cdef real2_t offsetE, offsetB

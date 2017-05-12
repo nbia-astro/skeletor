@@ -16,6 +16,9 @@ def deposit(particle_t[:] particles, real4_t[:,:] current,
         deposit_particle = deposit_particle_cic
     elif order == 2:
         deposit_particle = deposit_particle_tsc
+    else:
+        msg = 'Interpolation order {} not implemented.'
+        raise RuntimeError(msg.format(order))
 
     offset.x = grid.lbx - 0.5
     offset.y = grid.lby - 0.5 - grid.noff

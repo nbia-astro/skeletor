@@ -20,6 +20,9 @@ def push_and_deposit(
     elif order == 2:
         gather = gather_tsc
         deposit_particle = deposit_particle_tsc
+    else:
+        msg = 'Interpolation order {} not implemented.'
+        raise RuntimeError(msg.format(order))
 
     # Number of particles
     cdef int Np = particles.shape[0]
