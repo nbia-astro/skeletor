@@ -8,10 +8,10 @@ class State:
         a single particle object. In the latter case the particle object is
         still stored as a tuple.
         """
-        if type(species) == tuple:
+        if isinstance(species, list):
             self.species = species
         else:
-            # Convert single particle array to a tuple with one element.
-            self.species = (species,)
+            # Convert single particle array to a list with one element.
+            self.species = [species]
         self.B = B
         self.t = time

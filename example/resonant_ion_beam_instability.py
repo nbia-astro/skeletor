@@ -109,7 +109,7 @@ B.copy_guards()
 ohm = Ohm(manifold, temperature=Te, charge=charge)
 
 # Initialize state
-state = State((ions1, ions2), B)
+state = State([ions1, ions2], B)
 
 # Initialize experiment
 e = TimeStepper(state, ohm, manifold)
