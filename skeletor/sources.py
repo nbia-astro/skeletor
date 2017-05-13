@@ -6,10 +6,7 @@ class Sources:
 
     def __init__(self, manifold, **kwds):
 
-        if not manifold.shear:
-            from .field import Field
-        else:
-            from .field import ShearField as Field
+        from .field import Field
 
         # Electric four-current density (rho, Jx, Jy, Jz)
         self.current = Field(manifold, dtype=Float4, **kwds)

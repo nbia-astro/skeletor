@@ -1,11 +1,11 @@
-from skeletor import Float, ShearField
+from skeletor import Float, Field
 from skeletor.manifolds.second_order import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy as np
 
 
 def test_translate(plot=False):
-    """This function tests the translation implemented in the ShearField class.
+    """This function tests the translation implemented in the Field class.
     The result is compared with the analytical solution"""
 
     # Spatial resolution
@@ -34,7 +34,7 @@ def test_translate(plot=False):
         return 1 + A*np.sin(kx*xx + ky*yy)
 
     # Initialize density field using shear field class
-    rho = ShearField(manifold, time=t, dtype=Float)
+    rho = Field(manifold, time=t, dtype=Float)
     rho.fill(0.0)
     rho.active = rho_an(0)
     rho.copy_guards()

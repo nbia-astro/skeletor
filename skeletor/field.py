@@ -25,6 +25,17 @@ class Field(np.ndarray):
         # Time of the field
         obj.time = time
 
+        # Is there shear?
+        obj.shear = hasattr(grid, 'S')
+
+        if obj.shear:
+
+            # Wave numbers for real-to-complex transforms
+            obj.kx = 2*np.pi*np.fft.rfftfreq(grid.nx)/grid.dx
+
+            # Outer product of y and kx
+            obj.y_kx = np.outer(grid.y, obj.kx)
+
         return obj
 
     def __array_finalize__(self, obj):
@@ -38,6 +49,10 @@ class Field(np.ndarray):
         self.scr = getattr(obj, "scr", None)
         self.boundaries_set = getattr(obj, "boundaries_set", None)
         self.time = getattr(obj, "time", None)
+        self.shear = getattr(obj, "shear", None)
+        if self.shear:
+            self.kx = getattr(obj, "kx", None)
+            self.y_kx = getattr(obj, "y_kx", None)
 
     def __iadd__(self, other):
         """Overloads the += operator. This is convenient for doing arithmetic
@@ -119,6 +134,19 @@ class Field(np.ndarray):
         # x-boundaries
         self.copy_guards_x()
 
+        if self.shear:
+            # Short hand
+            g = self.grid
+            # Translate the y-ghostzones
+            if g.comm.rank == g.comm.size - 1:
+                trans = -g.Ly*g.S*self.time
+                for iy in range(g.uby, g.uby + g.lby):
+                    self._translate_boundary(trans, iy)
+            if g.comm.rank == 0:
+                trans = +g.Ly*g.S*self.time
+                for iy in range(0, g.lby):
+                    self._translate_boundary(trans, iy)
+
         self.boundaries_set = True
 
     def add_guards_x(self):
@@ -155,49 +183,32 @@ class Field(np.ndarray):
         # if it fails because calling this method multiple times actually does
         # cause harm.
 
-        # Short hand
-        g = self.grid
-
         # x-boundaries
         self.add_guards_x()
+
+        if self.shear:
+            # Short hand
+            g = self.grid
+            # Translate the y-ghostzones
+            if g.comm.rank == g.comm.size - 1:
+                trans = g.Ly*g.S*self.time
+                for iy in range(g.uby, g.uby + g.lby):
+                    self._translate_boundary(trans, iy)
+            if g.comm.rank == 0:
+                trans = -g.Ly*g.S*self.time
+                for iy in range(0, g.lby):
+                    self._translate_boundary(trans, iy)
+
         # y-boundaries
         self.add_guards_y()
 
         # Erase guard cells
         # TODO: I suggest we get rid of this. The guard layes will be
         # overwritten anyway by `copy_guards()`.
-        self[:g.lby, :] = 0.0
-        self[g.uby:, :] = 0.0
-        self[:, g.ubx:] = 0.0
-        self[:, :g.lbx] = 0.0
-
-
-class ShearField(Field):
-    # TODO: ShearField really needs to have a ShearManifold passed, it
-    # will fail if a standard Grid or Manifold is passed. Change variable name
-    # to manifold or shearmanifold?
-
-    def __new__(cls, grid, time=0.0, **kwds):
-
-        obj = super().__new__(cls, grid, time=time, **kwds)
-
-        # Wave numbers for real-to-complex transforms
-        obj.kx = 2*np.pi*np.fft.rfftfreq(grid.nx)/grid.dx
-
-        # Outer product of y and kx
-        obj.y_kx = np.outer(grid.y, obj.kx)
-
-        return obj
-
-    def __array_finalize__(self, obj):
-
-        super().__array_finalize__(obj)
-
-        if obj is None:
-            return
-
-        self.kx = getattr(obj, "kx", None)
-        self.y_kx = getattr(obj, "y_kx", None)
+        self[:self.grid.lby, :] = 0.0
+        self[self.grid.uby:, :] = 0.0
+        self[:, self.grid.ubx:] = 0.0
+        self[:, :self.grid.lbx] = 0.0
 
     def _translate_boundary(self, trans, iy):
         "Translation using FFTs"
@@ -219,53 +230,11 @@ class ShearField(Field):
         self[iy, g.ubx:] = self[iy, g.lbx:g.lbx+g.lbx]
         self[iy, :g.lbx] = self[iy, g.ubx-g.lbx:g.ubx]
 
-    def add_guards(self):
-
-        # Short hand
-        g = self.grid
-
-        # x-boundaries
-        super().add_guards_x()
-
-        # Translate the y-ghostzones
-        if self.grid.comm.rank == self.grid.comm.size - 1:
-            trans = self.grid.Ly*self.grid.S*self.time
-            for iy in range(g.uby, g.uby + g.lby):
-                self._translate_boundary(trans, iy)
-        if self.grid.comm.rank == 0:
-            trans = -self.grid.Ly*self.grid.S*self.time
-            for iy in range(0, g.lby):
-                self._translate_boundary(trans, iy)
-
-        # y-boundaries
-        super().add_guards_y()
-
-        # Erase guard cells
-        self[:g.lby, :] = 0.0
-        self[g.uby:, :] = 0.0
-        self[:, g.ubx:] = 0.0
-        self[:, :g.lbx] = 0.0
-
-    def copy_guards(self):
-
-        # Set boundaries as if there was no shear
-        super().copy_guards()
-
-        # Short hand
-        g = self.grid
-
-        # Translate the y-ghostzones
-        if self.grid.comm.rank == self.grid.comm.size - 1:
-            trans = -self.grid.Ly*self.grid.S*self.time
-            for iy in range(g.uby, g.uby + g.lby):
-                self._translate_boundary(trans, iy)
-        if self.grid.comm.rank == 0:
-            trans = +self.grid.Ly*self.grid.S*self.time
-            for iy in range(0, g.lby):
-                self._translate_boundary(trans, iy)
-
     def translate(self, time):
         """Translation using numpy's fft."""
+
+        if not self.shear:
+            return
 
         # Fourier transform along x
         fx_hat = np.fft.rfft(self.trim(), axis=1)
@@ -282,6 +251,9 @@ class ShearField(Field):
     def translate_vector(self, time):
         """Translation using numpy's fft."""
         # TODO: Combine this with `translate()`
+
+        if not self.shear:
+            return
 
         for dim in ('x', 'y', 'z'):
             # Fourier transform along x
