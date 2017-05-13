@@ -4,7 +4,7 @@ from skeletor.manifolds.second_order import Manifold
 from skeletor.time_steppers.predictor_corrector import TimeStepper
 import numpy as np
 from numpy.random import normal
-from scipy.optimize import newton
+from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 from scipy.special import erfinv
 
@@ -14,83 +14,34 @@ plot = False
 quiet = True
 # Number of grid points in x- and y-direction
 nx, ny = 32, 1
-
-np.random.seed(1928346143)
-
-
-def det(omega, kpar):
-    """Returns the dispersion relation (that needs to be zero)"""
-    zeta = (omega/oc - n)/(kpar*va/oc)*np.sqrt(2/beta_para)
-    lhs = kpar**2*va**2 + omega/(omega - n*oc)*(1-W(zeta)) + W(zeta)*Delta \
-        + n*omega/oc
-    return lhs
-
-
-def W(z):
-    """Plasma response function"""
-    from scipy.special import wofz
-    from numpy import pi, sqrt
-    return (1. + 1j*sqrt(0.5*pi)*z*wofz(sqrt(0.5)*z))
-
-
-# Particle charge and mass
-charge = 1.0
-mass = 1.0
-
-# Magnetic field strength
-B0 = 1
-
-kmax = 2
-# Cyclotron frequency
-oc = charge*mass/B0
-# Mass density
-rho0 = 1.
-# Alfven speed
-va = B0/np.sqrt(rho0)
-n = -1
-# Parallel
-beta_para = 4
-beta_perp = 1
-
-# Anisotropy parameter
-Delta = 1 - beta_perp/beta_para
-
-# Solve dispersion relation
-kvec = np.linspace(1e-4, kmax, 1000)
-guess = 1 + 1j
-
-# Array for the complex phase-velocity
-omega = np.zeros(len(kvec), dtype=np.complex128)
-omega[0] = guess
-omega[0] = newton(det, omega[0], args=(kvec[0],))
-for i in range(1, len(kvec)):
-    omega[i] = newton(det, omega[i-1], args=(kvec[i],))
-
-# Maximum theoretical growth rate
-gamma_t = omega.imag.max()
-
-# Most unstable wavelength
-index = np.argmax(omega.imag)
-Lx = 2*np.pi/kvec[index]
-Ly = Lx*ny/nx
+# Grid size in x- and y-direction (square cells!)
+Lx, Ly = 10.0205777127, 10.0205777127
 
 # Grid distances
 dx, dy = Lx/nx, Ly/ny
 
 # Average number of particles per cell
-npc = 2**10
-
+npc = 2**14
+# Particle charge and mass
+charge = 1.0
+mass = 1.0
 # Electron temperature
-Te = 1.0
+Te = 1
 # Dimensionless amplitude of perturbation
 A = 0.005
 # Wavenumbers
 ikx = 1
 iky = 0
 ampl = 1e-6
+# Thermal velocity of electrons in x- and y-direction
 
-vtx = np.sqrt(beta_para/2)*va
-vty = np.sqrt(beta_perp/2)*va
+# Magnetic field strength
+B0 = 1
+va = B0
+beta_para = 1
+beta_perp = 4
+vtx = np.sqrt(beta_para/2)
+vty = np.sqrt(beta_perp/2)
 vtz = vty
 
 # Sound speed
@@ -105,7 +56,7 @@ ky = 2*np.pi*iky/Ly
 k = np.sqrt(kx*kx + ky*ky)
 
 # Angle of k-vector with respect to x-axis
-theta = np.arctan(iky/ikx) if ikx != 0 else np.pi/2
+theta = np.pi/4
 
 (Bx, By, Bz) = (B0*np.cos(theta), B0*np.sin(theta), 0)
 
@@ -150,6 +101,12 @@ y = comm.bcast(y, root=0)
 vx = comm.bcast(vx, root=0)
 vy = comm.bcast(vy, root=0)
 vz = comm.bcast(vz, root=0)
+
+vxp = np.cos(-theta)*vx + np.sin(-theta)*vy
+vyp = -np.sin(-theta)*vx + np.cos(-theta)*vy
+
+vx = vxp
+vy = vyp
 
 x *= dx
 y *= dy
@@ -205,7 +162,6 @@ e.prepare(dt)
 # The result is available on all processors.
 def concatenate(arr):
     return np.concatenate(comm.allgather(arr))
-
 
 if plot or fitplot:
     import matplotlib.pyplot as plt
@@ -271,7 +227,7 @@ if comm.rank == 0:
         time = np.array(time)
 
         # TODO: Solve this here!
-        gamma_t = 0.18894406899999999
+        gamma_t = 0.131134294
 
         from scipy.optimize import curve_fit
 
@@ -284,23 +240,23 @@ if comm.rank == 0:
 
         # Fit exponential to the evolution of sqrt(mean(B_x**2))
         # Disregard first half of data
-        first = int(0.5*nt/20)
-        last = int(0.8*nt/20)
+        first = int(0.7*nt/20)
+        last = int(1*nt/20)
         popt, pcov = curve_fit(lin_func, time[first:last],
                                np.log(B_mag[first:last]))
-        # plt.figure(2)
-        # plt.semilogy(time, Bx_mag, label=r"$|\delta B_x|$")
-        # plt.semilogy(time, By_mag, label=r"$|\delta B_y|$")
-        # plt.semilogy(time, Bz_mag, label=r"$|\delta B_z|$")
-        # plt.semilogy(time, B_mag, label=r"$|\delta B|$")
+        plt.figure(2)
+        plt.semilogy(time, Bx_mag, label=r"$|\delta B_x|$")
+        plt.semilogy(time, By_mag, label=r"$|\delta B_y|$")
+        plt.semilogy(time, Bz_mag, label=r"$|\delta B_z|$")
+        plt.semilogy(time, B_mag, label=r"$|\delta B|$")
         gamma_f = popt[1]
-        # plt.semilogy(time, func(time-3, 1e-6, popt[1]), '--',
-        #              label=r"Fit: $\gamma = %.5f$" % gamma_f)
-        # plt.semilogy(time, func(time-3, 1e-6, gamma_t), 'k-',
-        #              label=r"Theory: $\gamma = %.5f$" % gamma_t)
-        # plt.legend(frameon=False, loc=2)
+        plt.semilogy(time, func(time-3, 1e-6, popt[1]), '--',
+                     label=r"Fit: $\gamma = %.5f$" % gamma_f)
+        plt.semilogy(time, func(time-3, 1e-6, gamma_t), 'k-',
+                     label=r"Theory: $\gamma = %.5f$" % gamma_t)
+        plt.legend(frameon=False, loc=2)
         # plt.savefig("parallel-firehose.pdf")
         err = (gamma_t - gamma_f)/gamma_t
         print("Relative error: {}".format(err))
-        # plt.xlabel(r"$t$")
-        # plt.show()
+        plt.xlabel(r"$t$")
+        plt.show()
