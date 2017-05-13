@@ -39,6 +39,22 @@ class Field(np.ndarray):
         self.boundaries_set = getattr(obj, "boundaries_set", None)
         self.time = getattr(obj, "time", None)
 
+    def __iadd__(self, other):
+        """Overloads the += operator. This is convenient for doing arithmetic
+        with structured Numpy arrays (in particular the sources array)."""
+
+        # If this is not a structured array, just call the corresponding method
+        # from ndarray. Note that we can't replace the call to __iadd__ with
+        #   self += other
+        # as that would lead to infinite recursion
+        if self.dtype.names is None:
+            return super().__iadd__(other)
+
+        # If this _is_ a structured array, loop over all names
+        for dim in self.dtype.names:
+            self[dim] += other[dim]
+        return self
+
     def send_up(self, sendbuf):
         return self.grid.comm.sendrecv(
                 sendbuf, dest=self.above, source=self.below)
