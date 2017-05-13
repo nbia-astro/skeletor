@@ -59,7 +59,7 @@ class Field(np.ndarray):
         return self.grid.comm.sendrecv(
                 sendbuf, dest=self.above, source=self.below)
 
-    def send_down(self, sendbuf):
+    def send_dn(self, sendbuf):
         return self.grid.comm.sendrecv(
                 sendbuf, dest=self.below, source=self.above)
 
@@ -92,7 +92,7 @@ class Field(np.ndarray):
             self[iy, g.lbx:g.ubx] = self[iy + g.nyp, g.lbx:g.ubx]
         for iy in range(g.uby, g.uby + g.lby):
             self[iy, g.lbx:g.ubx] = self[iy - g.nyp, g.lbx:g.ubx]
-        self[g.uby:, g.lbx:g.ubx] = self.send_down(self[g.uby:, g.lbx:g.ubx])
+        self[g.uby:, g.lbx:g.ubx] = self.send_dn(self[g.uby:, g.lbx:g.ubx])
         self[:g.lby, g.lbx:g.ubx] = self.send_up(self[:g.lby, g.lbx:g.ubx])
 
         # x-boundaries
@@ -121,7 +121,7 @@ class Field(np.ndarray):
             self[:, ix - g.nx] += self[:, ix]
         # y-boundaries
         self[g.uby:, g.lbx:g.ubx] = self.send_up(self[g.uby:, g.lbx:g.ubx])
-        self[:g.lby, g.lbx:g.ubx] = self.send_down(self[:g.lby, g.lbx:g.ubx])
+        self[:g.lby, g.lbx:g.ubx] = self.send_dn(self[:g.lby, g.lbx:g.ubx])
         for iy in range(g.lby):
             self[iy + g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
         for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
@@ -210,13 +210,13 @@ class ShearField(Field):
         # Add data from guard cells to corresponding active cells in y
         if self.dtype.names is None:
             self[g.lby:g.lby+g.lby, :] += self.send_up(self[g.uby:, :])
-            self[g.uby-g.lby:g.uby, :] += self.send_down(self[:g.lby, :])
+            self[g.uby-g.lby:g.uby, :] += self.send_dn(self[:g.lby, :])
         else:
             for dim in self.dtype.names:
                 self[g.lby:g.lby+g.lby, :][dim] += \
                     self.send_up(self[g.uby:, :][dim])
                 self[g.uby-g.lby:g.uby, :][dim] += \
-                    self.send_down(self[:g.lby, :][dim])
+                    self.send_dn(self[:g.lby, :][dim])
 
         # Erase guard cells
         self[:g.lby, :] = 0.0
@@ -234,7 +234,7 @@ class ShearField(Field):
 
         # lower active cells to upper guard layers
         self[g.uby:, g.lbx:g.ubx] = \
-            self.send_down(self[g.lby:g.lby+g.lby, g.lbx:g.ubx])
+            self.send_dn(self[g.lby:g.lby+g.lby, g.lbx:g.ubx])
         # upper active cells to lower guard layers
         self[:g.lby, g.lbx:g.ubx] = \
             self.send_up(self[g.uby-g.lby:g.uby, g.lbx:g.ubx])
