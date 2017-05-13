@@ -154,40 +154,18 @@ class Field(np.ndarray):
         # Short hand
         g = self.grid
 
-        if self.dtype.names is None:
-            # x-boundaries
-            for ix in range(g.lbx):
-                self[:, ix + g.nx] += self[:, ix]
-            for ix in range(g.ubx + g.lbx - 1, g.ubx - 1, -1):
-                self[:, ix - g.nx] += self[:, ix]
-            # y-boundaries
-            self[g.uby:, g.lbx:g.ubx] = \
-                self.send_up(self[g.uby:, g.lbx:g.ubx])
-            self[:g.lby, g.lbx:g.ubx] = \
-                self.send_down(self[:g.lby, g.lbx:g.ubx])
-            for iy in range(g.lby):
-                self[iy + g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
-            for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
-                self[iy - g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
-        else:
-            # x-boundaries
-            for dim in self.dtype.names:
-                for ix in range(g.lbx):
-                    self[:, ix + g.nx][dim] += self[:, ix][dim]
-                for ix in range(g.ubx + g.lbx - 1, g.ubx - 1, -1):
-                    self[:, ix - g.nx][dim] += self[:, ix][dim]
-            # y-boundaries
-            self[g.uby:, g.lbx:g.ubx] = \
-                self.send_up(self[g.uby:, g.lbx:g.ubx])
-            self[:g.lby, g.lbx:g.ubx] = \
-                self.send_down(self[:g.lby, g.lbx:g.ubx])
-            for dim in self.dtype.names:
-                for iy in range(g.lby):
-                    self[iy + g.nyp, g.lbx:g.ubx][dim] \
-                            += self[iy, g.lbx:g.ubx][dim]
-                for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
-                    self[iy - g.nyp, g.lbx:g.ubx][dim] \
-                            += self[iy, g.lbx:g.ubx][dim]
+        # x-boundaries
+        for ix in range(g.lbx):
+            self[:, ix + g.nx] += self[:, ix]
+        for ix in range(g.ubx + g.lbx - 1, g.ubx - 1, -1):
+            self[:, ix - g.nx] += self[:, ix]
+        # y-boundaries
+        self[g.uby:, g.lbx:g.ubx] = self.send_up(self[g.uby:, g.lbx:g.ubx])
+        self[:g.lby, g.lbx:g.ubx] = self.send_down(self[:g.lby, g.lbx:g.ubx])
+        for iy in range(g.lby):
+            self[iy + g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
+        for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
+            self[iy - g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
 
         # Erase guard cells
         # TODO: I suggest we get rid of this. The guard layes will be
