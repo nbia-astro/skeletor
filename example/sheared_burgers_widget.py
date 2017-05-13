@@ -5,7 +5,7 @@ the standard 1D Burgers' equation in the primed coordinate, x' = x + Sty. See
 also test_burgers.py.
 """
 
-from skeletor import cppinit, Float, Float3, Particles, Sources, ShearField
+from skeletor import cppinit, Particles, Sources
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy as np
 from mpi4py import MPI
@@ -54,6 +54,7 @@ b = b.flatten()
 
 a *= dx
 b *= dy
+
 
 def mean(f, axis=None):
     """Compute mean of an array across processors."""

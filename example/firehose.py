@@ -1,11 +1,10 @@
 from skeletor import Float3, Field, Particles
 from skeletor import Ohm, Faraday, State
 from skeletor.manifolds.second_order import Manifold
-from skeletor.time_steppers.horowitz import TimeStepper
+from skeletor.time_steppers.predictor_corrector import TimeStepper
 import numpy as np
 from numpy.random import normal
 from scipy.optimize import newton
-from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 from scipy.special import erfinv
 
@@ -15,6 +14,8 @@ plot = False
 quiet = True
 # Number of grid points in x- and y-direction
 nx, ny = 32, 1
+
+np.random.seed(1928346143)
 
 
 def det(omega, kpar):
@@ -77,7 +78,7 @@ Ly = Lx*ny/nx
 dx, dy = Lx/nx, Ly/ny
 
 # Average number of particles per cell
-npc = 2**14
+npc = 2**10
 
 # Electron temperature
 Te = 1.0
@@ -287,19 +288,19 @@ if comm.rank == 0:
         last = int(0.8*nt/20)
         popt, pcov = curve_fit(lin_func, time[first:last],
                                np.log(B_mag[first:last]))
-        plt.figure(2)
-        plt.semilogy(time, Bx_mag, label=r"$|\delta B_x|$")
-        plt.semilogy(time, By_mag, label=r"$|\delta B_y|$")
-        plt.semilogy(time, Bz_mag, label=r"$|\delta B_z|$")
-        plt.semilogy(time, B_mag, label=r"$|\delta B|$")
+        # plt.figure(2)
+        # plt.semilogy(time, Bx_mag, label=r"$|\delta B_x|$")
+        # plt.semilogy(time, By_mag, label=r"$|\delta B_y|$")
+        # plt.semilogy(time, Bz_mag, label=r"$|\delta B_z|$")
+        # plt.semilogy(time, B_mag, label=r"$|\delta B|$")
         gamma_f = popt[1]
-        plt.semilogy(time, func(time-3, 1e-6, popt[1]), '--',
-                     label=r"Fit: $\gamma = %.5f$" % gamma_f)
-        plt.semilogy(time, func(time-3, 1e-6, gamma_t), 'k-',
-                     label=r"Theory: $\gamma = %.5f$" % gamma_t)
-        plt.legend(frameon=False, loc=2)
+        # plt.semilogy(time, func(time-3, 1e-6, popt[1]), '--',
+        #              label=r"Fit: $\gamma = %.5f$" % gamma_f)
+        # plt.semilogy(time, func(time-3, 1e-6, gamma_t), 'k-',
+        #              label=r"Theory: $\gamma = %.5f$" % gamma_t)
+        # plt.legend(frameon=False, loc=2)
         # plt.savefig("parallel-firehose.pdf")
         err = (gamma_t - gamma_f)/gamma_t
         print("Relative error: {}".format(err))
-        plt.xlabel(r"$t$")
-        plt.show()
+        # plt.xlabel(r"$t$")
+        # plt.show()

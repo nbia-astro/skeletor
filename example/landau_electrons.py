@@ -1,9 +1,11 @@
-from skeletor import cppinit, Float, Float3, Grid, Field, Particles, Sources
+from skeletor import cppinit, Float, Float3, Field, Particles, Sources
 from skeletor import Poisson
 from skeletor.manifolds.second_order import Manifold
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
+from scipy.special import wofz
+from scipy.optimize import newton
 
 
 def landau_electrons(plot=False, fitplot=False):
@@ -18,9 +20,9 @@ def landau_electrons(plot=False, fitplot=False):
     charge = -1.0
     mass = 1.0
     # Electron temperature
-    Te = 1/2
+    Te = 1.5
     # Dimensionless amplitude of perturbation
-    A = 0.25
+    A = 0.025
     # Wavenumbers
     ikx, iky = 1, 0
     # Thermal velocity of electrons in x- and y-direction
@@ -31,7 +33,6 @@ def landau_electrons(plot=False, fitplot=False):
     nperiods = 3.0
     # Background electron number density
     n0 = 1.0
-
 
     # Time step
     dt = cfl/vtx
@@ -52,15 +53,27 @@ def landau_electrons(plot=False, fitplot=False):
     # Debye length
     debye = vtx/omegap
 
-    # omega
-    omega = omegap*np.sqrt(1+(kx*debye)**2)
+    # Guess for frequency using eq. 4.12 and 4.13 in Ichimaru
+    omega = np.sqrt(omegap**2 + 3*(vtx*kx)**2)
+    gamma_t = -np.sqrt(np.pi/8)*omegap/(kx*debye)**3*np.exp(-omega**2 /
+                                                            (2*kx**2*vtx**2))
 
+    def W(z):
+        "Ichimaru's Plasma dispersion function."
+        return 1. + 1j*np.sqrt(0.5*np.pi)*z*wofz(np.sqrt(0.5)*z)
 
+    # Debye wave number
+    kD = omegap/vtx
 
-    # Theoretical decay rate (TODO: Calculate 2D analytic result)
-    gamma_t = -np.sqrt(np.pi/2)/2*omega/(kx*debye)**3 \
-                *np.exp(-0.5/(kx*debye)**2)
-    # print(gamma_t, debye, kx)
+    # Complex frequency
+    guess = omega + 1j*gamma_t
+
+    # Solve longitudinal dispersion relation numerically using Newton-Raphson.
+    # Use approximate frequency computed above as initial guess.
+    omega_e = newton(lambda omega: 1 + ((kD/kx)**2)*W(omega/(kx*vtx)), guess)
+    print('Approximate vs. exact frequency:')
+    print('omega = {}'.format(guess))
+    print('omega = {}'.format(omega_e))
 
     # Simulation time
     tend = 2*np.pi*nperiods/omega
@@ -248,10 +261,10 @@ def landau_electrons(plot=False, fitplot=False):
     if comm.rank == 0:
         from scipy.signal import argrelextrema
 
-        # Find first local maximum
+        # Find second local maximum
         index = argrelextrema(ampl, np.greater)
-        tmax = time[index][0]
-        ymax = ampl[index][0]
+        tmax = time[index][1]
+        ymax = ampl[index][1]
 
         if plot or fitplot:
             import matplotlib.pyplot as plt
@@ -259,11 +272,13 @@ def landau_electrons(plot=False, fitplot=False):
             plt.figure(2)
             plt.clf()
             plt.semilogy(time, ampl, 'b')
-            plt.semilogy(time, ymax*np.exp(gamma_t*(time - tmax)), 'k-')
+            plt.semilogy(time, ymax*np.exp(gamma_t*(time - tmax)), 'k--')
+            plt.semilogy(time, ymax*np.exp(omega_e.imag*(time - tmax)), 'r-')
 
             plt.title(r'$|\hat{\rho}(ikx=%d, iky=%d)|$' % (ikx, iky))
             plt.xlabel("time")
             plt.show()
+
 
 if __name__ == "__main__":
     import argparse

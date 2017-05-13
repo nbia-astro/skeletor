@@ -12,7 +12,7 @@ before_install:
     - conda info -a
     - conda create -q -n skeletor python=3.5
     - source activate skeletor
-    - conda install -q mpi4py scipy pytest Cython sympy
+    - conda install -q mpi4py scipy pytest Cython sympy flake8
 
     # Install mpiFFT4py
     - pip install git+https://github.com/tberlok/mpiFFT4py.git
@@ -36,6 +36,9 @@ before_install:
 
 install:
     - CC=mpicc LDFLAGS="-L/tmp/skeletor/lib -Wl,-rpath,/tmp/skeletor/lib -lmpich -lopa -lmpl -lrt -lpthread" python setup.py install
+
+before_script:
+    - flake8 example skeletor tests
 
 script:
     - mpiexec -n 4 py.test /tmp/skeletor/skeletor/tests/

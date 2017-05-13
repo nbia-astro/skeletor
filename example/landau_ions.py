@@ -8,8 +8,6 @@ from mpi4py.MPI import COMM_WORLD as comm
 
 def landau_ions(plot=False, fitplot=False):
 
-    # Quiet start
-    quiet = True
     # Number of grid points in x- and y-direction
     nx, ny = 32, 1
     # Average number of particles per cell
@@ -35,15 +33,16 @@ def landau_ions(plot=False, fitplot=False):
     # Sound speed
     cs = np.sqrt(Te/mass)
 
-    # Time step
-    dt = cfl/cs
-
     # Total number of particles in simulation
     N = npc*nx*ny
 
+    # Create numerical grid. This contains information about the extent of
+    # the subdomain assigned to each processor.
+    manifold = Manifold(nx, ny, comm)
+
     # Wave vector and its modulus
-    kx = 2*np.pi*ikx/nx
-    ky = 2*np.pi*iky/ny
+    kx = 2*np.pi*ikx/manifold.Lx
+    ky = 2*np.pi*iky/manifold.Ly
     k = np.sqrt(kx*kx + ky*ky)
 
     # Frequency
@@ -51,6 +50,10 @@ def landau_ions(plot=False, fitplot=False):
 
     # Simulation time
     tend = 2*np.pi*nperiods/omega
+
+    # Time step
+    # TODO: This should also include dy
+    dt = cfl*manifold.dx/cs
 
     # Number of time steps
     nt = int(tend/dt)
@@ -67,17 +70,9 @@ def landau_ions(plot=False, fitplot=False):
         """Analytic y-velocity as function of x, y and t"""
         return -omega/k*A*np.sin(kx*x+ky*y)*np.cos(omega*t)*ky/k
 
-    if quiet:
-        # Uniform distribution of particle positions (quiet start)
-        sqrt_npc = int(np.sqrt(npc))
-        assert sqrt_npc**2 == npc
-        dx = dy = 1/sqrt_npc
-        x, y = np.meshgrid(np.arange(0, nx, dx), np.arange(0, ny, dy))
-        x = x.flatten()
-        y = y.flatten()
-    else:
-        x = nx*np.random.uniform(size=N).astype(Float)
-        y = ny*np.random.uniform(size=N).astype(Float)
+    # Particle positions
+    x = manifold.Lx*np.random.uniform(size=N).astype(Float)
+    y = manifold.Ly*np.random.uniform(size=N).astype(Float)
 
     # Perturbation to particle velocities
     vx = ux_an(x, y, t=0)
@@ -90,10 +85,6 @@ def landau_ions(plot=False, fitplot=False):
 
     # Start parallel processing
     idproc, nvp = cppinit(comm)
-
-    # Create numerical grid. This contains information about the extent of
-    # the subdomain assigned to each processor.
-    manifold = Manifold(nx, ny, comm, Lx=nx, Ly=ny)
 
     # x- and y-grid
     xg, yg = np.meshgrid(manifold.x, manifold.y)
@@ -166,13 +157,13 @@ def landau_ions(plot=False, fitplot=False):
             plt.rc('image', aspect='auto')
             plt.figure(1)
             plt.clf()
-            fig, (ax1, ax2, ax3) = plt.subplots(num=1, nrows=3)
-            im1 = ax1.imshow(global_rho)
-            im2 = ax2.imshow(global_E['x'])
-            im3 = ax3.imshow(global_E['y'])
+            fig, (ax1, ax2) = plt.subplots(num=1, nrows=2, sharex=True)
+            im1, = ax1.plot(global_rho.mean(axis=0))
+            im2, = ax2.plot(global_E['x'].mean(axis=0))
+            ax1.set_ylim(0.985, 1.015)
+            ax2.set_ylim(-0.2, 0.2)
             ax1.set_title(r'$\rho$')
             ax2.set_title(r'$E_x$')
-            ax3.set_title(r'$E_y$')
 
     # Compute square of Fourier amplitude by projecting the local density
     ampl2 = []
@@ -216,13 +207,8 @@ def landau_ions(plot=False, fitplot=False):
                 global_rho = concatenate(sources.rho.trim())
                 global_E = concatenate(E.trim())
                 if comm.rank == 0:
-                    im1.set_data(global_rho)
-                    im2.set_data(global_E['x'])
-                    im3.set_data(global_E['y'])
-                    im1.autoscale()
-                    im2.autoscale()
-                    im3.autoscale()
-                    plt.draw()
+                    im1.set_ydata(global_rho.mean(axis=0))
+                    im2.set_ydata(global_E['x'].mean(axis=0))
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
                                 "ignore", category=mplDeprecation)
@@ -236,14 +222,24 @@ def landau_ions(plot=False, fitplot=False):
     # Test if growth rate is correct
     if comm.rank == 0:
         from scipy.signal import argrelextrema
+        from scipy.special import wofz
+        from scipy.optimize import newton
 
         # Find first local maximum
         index = argrelextrema(ampl, np.greater)
         tmax = time[index][0]
         ymax = ampl[index][0]
 
-        # Theoretical gamma (TODO: Solve dispersion relation here)
-        gamma_t = -0.0203927225606
+        def W(z):
+            "Ichimaru's Plasma dispersion function."
+            return 1. + 1j*np.sqrt(0.5*np.pi)*z*wofz(np.sqrt(0.5)*z)
+        # Thermal velocity
+        vt = np.sqrt(Ti/Te)*cs
+        # Solve dispersion relation for the phase velocity vph=ω/k with
+        # Newton-Raphson. Use sound speed cs=√(Te/mi) as initial guess.
+        vph = newton(lambda vph: Ti/Te + W(vph/vt), cs)
+        # Negative growth rate
+        gamma_t = kx*vph.imag
 
         if plot or fitplot:
             import matplotlib.pyplot as plt
@@ -257,6 +253,7 @@ def landau_ions(plot=False, fitplot=False):
             plt.xlabel("time")
             # plt.savefig("landau-damping.pdf")
             plt.show()
+
 
 if __name__ == "__main__":
     import argparse
