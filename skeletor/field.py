@@ -76,6 +76,33 @@ class Field(np.ndarray):
     def trim(self):
         return self.active.squeeze()
 
+    def copy_guards_x(self):
+        """
+        Periodic boundary condition in x.
+        Note: this acts on _all_ grid points along y (active plus guards).
+        """
+        g = self.grid
+
+        for ix in range(g.lbx - 1, -1, -1):
+            self[:, ix] = self[:, ix + g.nx]
+        for ix in range(g.ubx, g.ubx + g.lbx):
+            self[:, ix] = self[:, ix - g.nx]
+
+    def copy_guards_y(self):
+        """
+        Periodic boundary condition in y.
+        Note: this only acts on active grid points along x.
+        """
+        g = self.grid
+
+        for iy in range(g.lby - 1, -1, -1):
+            self[iy, g.lbx:g.ubx] = self[iy + g.nyp, g.lbx:g.ubx]
+        for iy in range(g.uby, g.uby + g.lby):
+            self[iy, g.lbx:g.ubx] = self[iy - g.nyp, g.lbx:g.ubx]
+
+        self[g.uby:, g.lbx:g.ubx] = self.send_dn(self[g.uby:, g.lbx:g.ubx])
+        self[:g.lby, g.lbx:g.ubx] = self.send_up(self[:g.lby, g.lbx:g.ubx])
+
     def copy_guards(self):
         "Copy data to guard cells from corresponding active cells."
 
@@ -84,24 +111,38 @@ class Field(np.ndarray):
         # calling this multiple times doesn't really cause any harm.
         assert not self.boundaries_set, 'Boundaries are already set!'
 
-        # Short hand
-        g = self.grid
-
         # y-boundaries
-        for iy in range(g.lby - 1, -1, -1):
-            self[iy, g.lbx:g.ubx] = self[iy + g.nyp, g.lbx:g.ubx]
-        for iy in range(g.uby, g.uby + g.lby):
-            self[iy, g.lbx:g.ubx] = self[iy - g.nyp, g.lbx:g.ubx]
-        self[g.uby:, g.lbx:g.ubx] = self.send_dn(self[g.uby:, g.lbx:g.ubx])
-        self[:g.lby, g.lbx:g.ubx] = self.send_up(self[:g.lby, g.lbx:g.ubx])
-
+        self.copy_guards_y()
         # x-boundaries
-        for ix in range(g.lbx - 1, -1, -1):
-            self[:, ix] = self[:, ix + g.nx]
-        for ix in range(g.ubx, g.ubx + g.lbx):
-            self[:, ix] = self[:, ix - g.nx]
+        self.copy_guards_x()
 
         self.boundaries_set = True
+
+    def add_guards_x(self):
+        """
+        Add data from guard cells in x to corresponding active cells.
+        Note: this acts on _all_ grid points along y (active plus guards).
+        """
+        g = self.grid
+
+        for ix in range(g.lbx):
+            self[:, ix + g.nx] += self[:, ix]
+        for ix in range(g.ubx + g.lbx - 1, g.ubx - 1, -1):
+            self[:, ix - g.nx] += self[:, ix]
+
+    def add_guards_y(self):
+        """
+        Add data from guard cells in y to corresponding active cells.
+        Note: this only acts on active grid points along x.
+        """
+        g = self.grid
+
+        self[g.uby:, g.lbx:g.ubx] = self.send_up(self[g.uby:, g.lbx:g.ubx])
+        self[:g.lby, g.lbx:g.ubx] = self.send_dn(self[:g.lby, g.lbx:g.ubx])
+        for iy in range(g.lby):
+            self[iy + g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
+        for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
+            self[iy - g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
 
     def add_guards(self):
         "Add data from guard cells to corresponding active cells."
@@ -115,17 +156,9 @@ class Field(np.ndarray):
         g = self.grid
 
         # x-boundaries
-        for ix in range(g.lbx):
-            self[:, ix + g.nx] += self[:, ix]
-        for ix in range(g.ubx + g.lbx - 1, g.ubx - 1, -1):
-            self[:, ix - g.nx] += self[:, ix]
+        self.add_guards_x()
         # y-boundaries
-        self[g.uby:, g.lbx:g.ubx] = self.send_up(self[g.uby:, g.lbx:g.ubx])
-        self[:g.lby, g.lbx:g.ubx] = self.send_dn(self[:g.lby, g.lbx:g.ubx])
-        for iy in range(g.lby):
-            self[iy + g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
-        for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
-            self[iy - g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
+        self.add_guards_y()
 
         # Erase guard cells
         # TODO: I suggest we get rid of this. The guard layes will be
@@ -189,10 +222,7 @@ class ShearField(Field):
         g = self.grid
 
         # x-boundaries
-        for ix in range(g.lbx):
-            self[:, ix + g.nx] += self[:, ix]
-        for ix in range(g.ubx + g.lbx - 1, g.ubx - 1, -1):
-            self[:, ix - g.nx] += self[:, ix]
+        super().add_guards_x()
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
@@ -205,12 +235,7 @@ class ShearField(Field):
                 self._translate_boundary(trans, iy)
 
         # y-boundaries
-        self[g.uby:, g.lbx:g.ubx] = self.send_up(self[g.uby:, g.lbx:g.ubx])
-        self[:g.lby, g.lbx:g.ubx] = self.send_dn(self[:g.lby, g.lbx:g.ubx])
-        for iy in range(g.lby):
-            self[iy + g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
-        for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
-            self[iy - g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
+        super().add_guards_y()
 
         # Erase guard cells
         self[:g.lby, :] = 0.0
