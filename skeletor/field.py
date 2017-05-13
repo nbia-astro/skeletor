@@ -188,14 +188,11 @@ class ShearField(Field):
         # Short hand
         g = self.grid
 
-        # Add data from guard cells to corresponding active cells
-        if self.dtype.names is None:
-            self[:, g.lbx:g.lbx+g.lbx] += self[:, g.ubx:]
-            self[:, g.ubx-g.lbx:g.ubx] += self[:, :g.lbx]
-        else:
-            for dim in self.dtype.names:
-                self[:, g.lbx:g.lbx+g.lbx][dim] += self[:, g.ubx:][dim]
-                self[:, g.ubx-g.lbx:g.ubx][dim] += self[:, :g.lbx][dim]
+        # x-boundaries
+        for ix in range(g.lbx):
+            self[:, ix + g.nx] += self[:, ix]
+        for ix in range(g.ubx + g.lbx - 1, g.ubx - 1, -1):
+            self[:, ix - g.nx] += self[:, ix]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
@@ -207,16 +204,13 @@ class ShearField(Field):
             for iy in range(0, g.lby):
                 self._translate_boundary(trans, iy)
 
-        # Add data from guard cells to corresponding active cells in y
-        if self.dtype.names is None:
-            self[g.lby:g.lby+g.lby, :] += self.send_up(self[g.uby:, :])
-            self[g.uby-g.lby:g.uby, :] += self.send_dn(self[:g.lby, :])
-        else:
-            for dim in self.dtype.names:
-                self[g.lby:g.lby+g.lby, :][dim] += \
-                    self.send_up(self[g.uby:, :][dim])
-                self[g.uby-g.lby:g.uby, :][dim] += \
-                    self.send_dn(self[:g.lby, :][dim])
+        # y-boundaries
+        self[g.uby:, g.lbx:g.ubx] = self.send_up(self[g.uby:, g.lbx:g.ubx])
+        self[:g.lby, g.lbx:g.ubx] = self.send_dn(self[:g.lby, g.lbx:g.ubx])
+        for iy in range(g.lby):
+            self[iy + g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
+        for iy in range(g.uby + g.lby - 1, g.uby - 1, -1):
+            self[iy - g.nyp, g.lbx:g.ubx] += self[iy, g.lbx:g.ubx]
 
         # Erase guard cells
         self[:g.lby, :] = 0.0
@@ -226,22 +220,11 @@ class ShearField(Field):
 
     def copy_guards(self):
 
-        msg = 'Boundaries are already set!'
-        assert not self.boundaries_set, msg
+        # Set boundaries as if there was no shear
+        super().copy_guards()
 
         # Short hand
         g = self.grid
-
-        # lower active cells to upper guard layers
-        self[g.uby:, g.lbx:g.ubx] = \
-            self.send_dn(self[g.lby:g.lby+g.lby, g.lbx:g.ubx])
-        # upper active cells to lower guard layers
-        self[:g.lby, g.lbx:g.ubx] = \
-            self.send_up(self[g.uby-g.lby:g.uby, g.lbx:g.ubx])
-        # lower active cells to upper guard layers
-        self[:, g.ubx:] = self[:, g.lbx:g.lbx+g.lbx]
-        # upper active cells to lower guard layers
-        self[:, :g.lbx] = self[:, g.ubx-g.lbx:g.ubx]
 
         # Translate the y-ghostzones
         if self.grid.comm.rank == self.grid.comm.size - 1:
@@ -252,8 +235,6 @@ class ShearField(Field):
             trans = +self.grid.Ly*self.grid.S*self.time
             for iy in range(0, g.lby):
                 self._translate_boundary(trans, iy)
-
-        self.boundaries_set = True
 
     def translate(self, time):
         """Translation using numpy's fft."""
