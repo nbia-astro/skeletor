@@ -14,10 +14,6 @@ class Manifold(Grid):
         err = 'Not enough guard layers for second order finite difference.'
         assert self.lbx >= 1 and self.lby >= 1, err
 
-        # Rotation and shear is always false for this manifold
-        self.shear = False
-        self.rotation = False
-
         # Initialize Poisson solver (see definition below)
         self.grad_inv_del = PoissonSolver(self, ax=ax, ay=ay,
                                           custom_cppois22=custom_cppois22)
@@ -97,12 +93,9 @@ class ShearingManifold(Manifold):
 
         # Shear parameter
         self.S = S
-        # True if shear is turned on
-        self.shear = (S != 0)
 
         # Angular frequency
         self.Omega = Omega
-        self.rotation = (Omega != 0)
 
 
 class PoissonSolver:

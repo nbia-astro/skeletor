@@ -35,13 +35,8 @@ class Sources:
         # Short hand
         grid = self.current.grid
 
-        # TODO: Add the manifold as attribute to this class and use this here
-        # instead of self.current's grid. "S" and "shear" aren't actually
-        # attributes of the Grid class
-        if not grid.shear:
-            S = 0.0
-        else:
-            S = grid.S
+        # Rate of shear
+        S = getattr(grid, 'S', 0.0)
 
         cython_deposit(particles[:particles.N], self.current, grid, S)
 
