@@ -1,4 +1,3 @@
-from .cython.types import Float
 import numpy as np
 
 
@@ -15,9 +14,6 @@ class Field(np.ndarray):
         # MPI communication
         obj.above = (grid.comm.rank + 1) % grid.comm.size
         obj.below = (grid.comm.rank - 1) % grid.comm.size
-
-        # Scratch array needed for PPIC2's "add_guards" routine
-        obj.scr = np.zeros((2, grid.nx + 2), Float)
 
         # Boolean indicating whether boundaries are set
         obj.boundaries_set = False
@@ -46,7 +42,6 @@ class Field(np.ndarray):
         self.grid = getattr(obj, "grid", None)
         self.above = getattr(obj, "above", None)
         self.below = getattr(obj, "below", None)
-        self.scr = getattr(obj, "scr", None)
         self.boundaries_set = getattr(obj, "boundaries_set", None)
         self.time = getattr(obj, "time", None)
         self.shear = getattr(obj, "shear", None)
