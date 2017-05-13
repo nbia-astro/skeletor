@@ -50,7 +50,7 @@ class Ohm:
 
         for dim in ('x', 'y', 'z'):
             # Subtract ion current to get electron current
-            self.Je[dim] -= sources.current[dim]
+            self.Je[dim] -= sources[dim]
             # Negative electron fluid velocity
             self.Je[dim] /= sources.rho
 

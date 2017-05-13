@@ -1,46 +1,41 @@
+from .field import Field
 from .cython.deposit import deposit as cython_deposit
 from .cython.types import Float4
 
 
-class Sources:
+class Sources(Field):
 
-    def __init__(self, manifold, **kwds):
-
-        from .field import Field
-
-        # Electric four-current density (rho, Jx, Jy, Jz)
-        self.current = Field(manifold, dtype=Float4, **kwds)
+    def __new__(cls, manifold, **kwds):
+        obj = super().__new__(cls, manifold, dtype=Float4, **kwds)
+        return obj
 
     @property
     def rho(self):
-        return self.current['t']
+        return self['t']
 
     @property
     def Jx(self):
-        return self.current['x']
+        return self['x']
 
     @property
     def Jy(self):
-        return self.current['y']
+        return self['y']
 
     @property
     def Jz(self):
-        return self.current['z']
+        return self['z']
 
     def deposit(self, particles, erase=True, set_boundaries=False):
 
         if erase:
-            self.current.fill((0.0, 0.0, 0.0, 0.0))
-
-        # Short hand
-        grid = self.current.grid
+            self.fill((0.0, 0.0, 0.0, 0.0))
 
         # Rate of shear
-        S = getattr(grid, 'S', 0.0)
+        S = getattr(self.grid, 'S', 0.0)
 
-        cython_deposit(particles[:particles.N], self.current, grid, S)
+        cython_deposit(particles[:particles.N], self, self.grid, S)
 
-        self.current.boundaries_set = False
+        self.boundaries_set = False
 
         self.normalize(particles)
 
@@ -54,17 +49,15 @@ class Sources:
         # time and thus does not need to be calculated over and over again.
         from mpi4py.MPI import SUM
 
-        grid = self.current.grid
+        N = self.grid.comm.allreduce(particles.N, op=SUM)
 
-        N = grid.comm.allreduce(particles.N, op=SUM)
-
-        fac = particles.charge*particles.n0*grid.nx*grid.ny/N
-        for dim in self.current.dtype.names:
-            self.current[dim] *= fac
+        fac = particles.charge*particles.n0*self.grid.nx*self.grid.ny/N
+        for dim in self.dtype.names:
+            self[dim] *= fac
 
     def set_boundaries(self):
 
-            # Add guards
-            self.current.add_guards()
-            # Copy guards
-            self.current.copy_guards()
+        # Add guards
+        self.add_guards()
+        # Copy guards
+        self.copy_guards()

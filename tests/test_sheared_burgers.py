@@ -187,10 +187,10 @@ def test_sheared_burgers(plot=False):
     # Deposit sources
     sources.deposit(ions)
     assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-    sources.current.add_guards()
+    sources.add_guards()
     assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
-    sources.current.copy_guards()
+    sources.copy_guards()
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
@@ -273,10 +273,10 @@ def test_sheared_burgers(plot=False):
 
         # Deposit sources
         sources.deposit(ions)
-        sources.current.time = t
+        sources.time = t
 
-        sources.current.add_guards()
-        sources.current.copy_guards()
+        sources.add_guards()
+        sources.copy_guards()
 
         # Copy density into a shear field
         rho_periodic.active = sources.rho.trim()

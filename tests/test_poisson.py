@@ -32,8 +32,8 @@ x, y = np.meshgrid(manifold.x, manifold.y)
 
 # Initialize sources
 sources = Sources(manifold)
-sources.current['t'].active = rho0*(1 + A*np.cos(kx*x + ky*y))
-sources.current.copy_guards()
+sources['t'].active = rho0*(1 + A*np.cos(kx*x + ky*y))
+sources.copy_guards()
 
 # Compute E = ∇∇⁻²ρ, where ∇⁻² is the inverse Laplacian
 E = Field(manifold, dtype=Float3)

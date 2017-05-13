@@ -156,7 +156,7 @@ def test_burgers(plot=False):
         """
         # Deposit charge
         sources.deposit(ions)
-        sources.current.add_guards()
+        sources.add_guards()
 
         # Deposited charge density in the active cells averaged over y
         rho1 = sources.rho.active.mean(axis=0)

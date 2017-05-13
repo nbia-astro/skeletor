@@ -68,6 +68,6 @@ def test_add_guards():
     cells and all subdomains must yield the *total* number of particles times
     the particle charge.
     """
-    sources.current.add_guards()
+    sources.add_guards()
     assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=SUM), N*charge/npc)

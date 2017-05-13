@@ -109,14 +109,14 @@ def test_skeletor():
 
         # Add charge from guard cells to corresponding active cells.
         # Afterwards erases charge in guard cells.
-        sources.current.add_guards()
+        sources.add_guards()
 
         # Make sure the charge deposited into *active* cells (no guard cells)
         # equals the number of particles times the particle charge
         assert np.isclose(comm.allreduce(
             sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
-        sources.current.copy_guards()
+        sources.copy_guards()
 
         # Combine charge density from all processes into a single array
         global_rho += [np.concatenate(comm.allgather(sources.rho.trim()))]

@@ -63,8 +63,8 @@ def perturb_and_deposit(quiet, plot, num):
     # Deposit sources
     sources.deposit(ions)
     assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-    sources.current.add_guards()
-    sources.current.copy_guards()
+    sources.add_guards()
+    sources.copy_guards()
     assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=SUM), N*charge/npc)
 
