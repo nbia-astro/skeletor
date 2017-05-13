@@ -53,6 +53,9 @@ class Field(np.ndarray):
         # If this _is_ a structured array, loop over all names
         for dim in self.dtype.names:
             self[dim] += other[dim]
+        # NOTE: The following would be more efficient, but is not as generic
+        # because it only works for homogeneous floating point types.
+        #   self.view(Float) += other.view(Float)
         return self
 
     def send_up(self, sendbuf):
