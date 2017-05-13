@@ -151,7 +151,7 @@ class Particles(np.ndarray):
         push(self[:self.N], E, B, qtmh, dt, self.manifold)
 
         # Shearing periodicity
-        if self.manifold.shear:
+        if hasattr(self.manifold, 'S'):
             self.shear_periodic_y()
         else:
             self.periodic_y()
@@ -206,7 +206,7 @@ class Particles(np.ndarray):
              self.manifold.Omega, self.manifold.S)
 
         # Shearing periodicity
-        if self.manifold.shear:
+        if hasattr(self.manifold, 'S'):
             self.shear_periodic_y()
         else:
             self.periodic_y()
