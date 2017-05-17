@@ -1,7 +1,7 @@
 from skeletor import Float, Float3, Field, Particles
 from skeletor import Ohm, InitialCondition, State
 from skeletor.manifolds.second_order import Manifold
-from skeletor.time_steppers.predictor_corrector import TimeStepper
+from skeletor.time_steppers.horowitz import TimeStepper
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
