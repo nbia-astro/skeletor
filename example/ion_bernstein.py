@@ -3,11 +3,8 @@ from skeletor import Ohm, Faraday, State, InitialCondition
 from skeletor.manifolds.second_order import Manifold
 from skeletor.time_steppers.predictor_corrector import TimeStepper
 import numpy as np
-# from numpy.random import normal
 from mpi4py import MPI
-from mpi4py.MPI import COMM_WORLD as comm
-# from scipy.special import erfinv
-
+comm = MPI.COMM_WORLD
 
 order = 2
 
@@ -98,6 +95,7 @@ e.prepare(dt)
 # The result is available on all processors.
 def concatenate(arr):
     return np.concatenate(comm.allgather(arr))
+
 
 sampling_rate = 1
 Nt = int(nt/sampling_rate)
