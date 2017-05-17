@@ -1,4 +1,3 @@
-from .cython.deposit import deposit as cython_deposit
 from .cython.types import Float4
 
 
@@ -32,6 +31,14 @@ class Sources:
 
     def deposit(self, particles, erase=True, set_boundaries=False):
 
+        if particles.order == 1:
+            from .cython.deposit import deposit_cic as cython_deposit
+        elif particles.order == 2:
+            from .cython.deposit import deposit_tsc as cython_deposit
+        else:
+            msg = 'Interpolation order {} not implemented.'
+            raise RuntimeError(msg.format(particles.order))
+
         if erase:
             self.current.fill((0.0, 0.0, 0.0, 0.0))
 
@@ -46,8 +53,7 @@ class Sources:
         else:
             S = grid.S
 
-        cython_deposit(particles[:particles.N], self.current, grid, S,
-                       particles.order)
+        cython_deposit(particles[:particles.N], self.current, grid, S)
 
         self.current.boundaries_set = False
 

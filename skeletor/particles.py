@@ -11,6 +11,9 @@ class Particles(np.ndarray):
 
         from .cython.types import Int, Particle
 
+        msg = 'Interpolation order {} needs more guard layers'.format(order)
+        assert manifold.lbx >= order, msg
+
         # Size of buffer for passing particles between processors
         nbmax = int(max(0.1*Nmax, 1))
         # Size of ihole buffer for particles leaving processor
@@ -145,14 +148,20 @@ class Particles(np.ndarray):
         fxy is the electric field and dt is the time step.
         If shear is turned on, E needs to be E_star and B needs to be B_star
         """
-        from .cython.particle_push import boris_push as push
+        if self.order == 1:
+            from .cython.particle_push import boris_push_cic as push
+        elif self.order == 2:
+            from .cython.particle_push import boris_push_tsc as push
+        else:
+            msg = 'Interpolation order {} not implemented.'
+            raise RuntimeError(msg.format(self.order))
 
         # Update time
         self.time += dt
 
         qtmh = self.charge/self.mass*dt/2
 
-        push(self[:self.N], E, B, qtmh, dt, self.manifold, self.order)
+        push(self[:self.N], E, B, qtmh, dt, self.manifold)
 
         # Shearing periodicity
         if self.manifold.shear:
@@ -170,7 +179,15 @@ class Particles(np.ndarray):
         sources are stored (a predictor step).
         It currently does not work with shear.
         """
-        from .cython.push_and_deposit import push_and_deposit
+        if self.order == 1:
+            from .cython.push_and_deposit import push_and_deposit_cic \
+                                                    as push_and_deposit
+        elif self.order == 2:
+            from .cython.push_and_deposit import push_and_deposit_tsc \
+                                                    as push_and_deposit
+        else:
+            msg = 'Interpolation order {} not implemented.'
+            raise RuntimeError(msg.format(self.order))
 
         # Update time
         self.time += dt
@@ -184,7 +201,7 @@ class Particles(np.ndarray):
         sources.current.fill((0.0, 0.0, 0.0, 0.0))
 
         push_and_deposit(self[:self.N], E, B, qtmh, dt, self.manifold,
-                         self.ihole, sources.current, S, update, self.order)
+                         self.ihole, sources.current, S, update)
 
         # Set boundary flags to False
         sources.current.boundaries_set = False
@@ -199,7 +216,13 @@ class Particles(np.ndarray):
             self.move()
 
     def push_modified(self, E, B, dt):
-        from .cython.particle_push import modified_boris_push as push
+        if self.order == 1:
+            from .cython.particle_push import modified_boris_push_cic as push
+        elif self.order == 2:
+            from .cython.particle_push import modified_boris_push_tsc as push
+        else:
+            msg = 'Interpolation order {} not implemented.'
+            raise RuntimeError(msg.format(self.order))
 
         # Update time
         self.time += dt
@@ -207,7 +230,7 @@ class Particles(np.ndarray):
         qtmh = self.charge/self.mass*dt/2
 
         push(self[:self.N], E, B, qtmh, dt, self.manifold,
-             self.manifold.Omega, self.manifold.S, self.order)
+             self.manifold.Omega, self.manifold.S)
 
         # Shearing periodicity
         if self.manifold.shear:
