@@ -18,7 +18,7 @@ nx, ny = 32, 1
 Lx = nx
 Ly = Lx*ny/nx
 # Average number of particles per cell
-npc = 2**12
+npc = 2**16
 # Particle charge and mass
 charge = 0.19634954084936207
 mass = 1.0
@@ -266,7 +266,10 @@ time = []
 for it in range(nt):
 
     # The update is handled by the experiment class
+    t_temp = MPI.Wtime()
     e.iterate(dt)
+    t_iterate = MPI.Wtime() - t_temp
+    print("Microsecond per particle per timestep:", (t_iterate)/N*1e6)
 
     # if (it % 40): print(e.t)
     ampl2 += [(S*e.B['z'].trim()).sum()**2 + (C*e.B['z'].trim()).sum()**2]
