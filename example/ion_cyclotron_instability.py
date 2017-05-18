@@ -4,7 +4,6 @@ from skeletor.manifolds.second_order import Manifold
 from skeletor.time_steppers.horowitz import TimeStepper
 import numpy as np
 from numpy.random import normal
-from mpi4py import MPI
 from scipy.optimize import newton
 from mpi4py.MPI import COMM_WORLD as comm
 from scipy.special import erfinv
@@ -204,6 +203,7 @@ e.prepare(dt)
 # The result is available on all processors.
 def concatenate(arr):
     return np.concatenate(comm.allgather(arr))
+
 
 if plot or fitplot:
     import matplotlib.pyplot as plt
