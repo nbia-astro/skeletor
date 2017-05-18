@@ -141,3 +141,45 @@ class Sources(Field):
         self[self.grid.uby:, :] = 0.0
         self[:, self.grid.ubx:] = 0.0
         self[:, :self.grid.lbx] = 0.0
+
+    def add_guards_old(self):
+        "Add data from guard cells to corresponding active cells."
+        # NOTE: This is for testing purposes only!
+        # NOTE: This routine does not take shear into account.
+
+        # TODO: We might wanna do some kind of check analogous to the one being
+        # done in `copy_guards()`. And here we should probably throw an error
+        # if it fails because calling this method multiple times actually does
+        # cause harm.
+
+        # Short hand
+        g = self.grid
+
+        if self.dtype.names is None:
+            # x-boundaries
+            self[:, g.lbx:g.lbx+g.lbx] += self[:, g.ubx:]
+            self[:, g.ubx-g.lbx:g.ubx] += self[:, :g.lbx]
+            # y-boundaries
+            self[g.lby:g.lby+g.lby, :] += self.send_up(self[g.uby:, :])
+            self[g.uby-g.lby:g.uby, :] += self.send_dn(self[:g.lby, :])
+        else:
+            for dim in self.dtype.names:
+                # x-boundaries
+                self[:, g.lbx:g.lbx+g.lbx][dim] += self[:, g.ubx:][dim]
+                self[:, g.ubx-g.lbx:g.ubx][dim] += self[:, :g.lbx][dim]
+                # y-boundaries
+                # TODO: reduce number of communications. Separate
+                # communications for each vector field component can't be good
+                # for performance.
+                self[g.lby:g.lby+g.lby, :][dim] += \
+                    self.send_up(self[g.uby:, :][dim])
+                self[g.uby-g.lby:g.uby, :][dim] += \
+                    self.send_dn(self[:g.lby, :][dim])
+
+        # Erase guard cells
+        # TODO: I suggest we get rid of this. The guard layes will be
+        # overwritten anyway by `copy_guards()`.
+        self[:g.lby, :] = 0.0
+        self[g.uby:, :] = 0.0
+        self[:, g.ubx:] = 0.0
+        self[:, :g.lbx] = 0.0

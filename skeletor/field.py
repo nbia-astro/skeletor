@@ -125,6 +125,31 @@ class Field(np.ndarray):
 
         self.boundaries_set = True
 
+    def copy_guards_old(self):
+        "Copy data to guard cells from corresponding active cells."
+        # NOTE: This is for testing purposes only!
+        # NOTE: This routine does not take shear into account.
+
+        # Make sure boundaries aren't already set
+        # TODO: turn this into a warning. Other than communication overhead,
+        # calling this multiple times doesn't really cause any harm.
+        assert not self.boundaries_set, 'Boundaries are already set!'
+
+        # Short hand
+        g = self.grid
+
+        # x-boundaries
+        self[g.uby:, g.lbx:g.ubx] = \
+            self.send_dn(self[g.lby:g.lby+g.lby, g.lbx:g.ubx])
+        self[:g.lby, g.lbx:g.ubx] = \
+            self.send_up(self[g.uby-g.lby:g.uby, g.lbx:g.ubx])
+
+        # y-boundaries
+        self[:, g.ubx:] = self[:, g.lbx:g.lbx+g.lbx]
+        self[:, :g.lbx] = self[:, g.ubx-g.lbx:g.ubx]
+
+        self.boundaries_set = True
+
     def _translate_boundary(self, trans, iy):
         "Translation using FFTs"
 

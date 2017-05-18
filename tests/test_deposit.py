@@ -18,7 +18,8 @@ mass = 1.0
 manifold = Manifold(nx, ny, comm)
 
 # # Initialize sources
-sources = Sources(manifold)
+sources1 = Sources(manifold)
+sources2 = Sources(manifold)
 
 # Total number of particles
 N = npc*nx*ny
@@ -57,22 +58,38 @@ def test_deposit():
     The deposited charge summed over active *and* guard cells must be equal to
     the number of particles in each subdomain times the particle charge.
     """
-    sources.deposit(particles)
-    assert np.isclose(sources.rho.sum(), charge*particles.N/npc)
+    for sources in (sources1, sources2):
+        sources.deposit(particles)
+        assert np.isclose(sources.rho.sum(), charge*particles.N/npc)
 
 
 def test_add_guards():
     """
+    Check if the old and new add_guard routines give the same result.
+
     After the charge deposited in the guard cells has been added to the
     corresponding active cells, summing the charge density over all active
     cells and all subdomains must yield the *total* number of particles times
     the particle charge.
     """
-    sources.add_guards()
-    assert np.isclose(comm.allreduce(
-        sources.rho.trim().sum(), op=SUM), N*charge/npc)
+    sources1.add_guards()
+    sources2.add_guards_old()
+    assert np.all(sources1 == sources2)
+    for sources in (sources1, sources2):
+        assert np.isclose(comm.allreduce(
+            sources.rho.trim().sum(), op=SUM), N*charge/npc)
+
+
+def test_copy_guards():
+    """
+    Check if the old and new copy_guard routines give the same result.
+    """
+    sources1.copy_guards()
+    sources2.copy_guards_old()
+    assert np.all(sources1 == sources2)
 
 
 if __name__ == "__main__":
     test_deposit()
     test_add_guards()
+    test_copy_guards()
