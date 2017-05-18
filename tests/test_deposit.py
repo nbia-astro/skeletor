@@ -71,3 +71,8 @@ def test_add_guards():
     sources.add_guards()
     assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=SUM), N*charge/npc)
+
+
+if __name__ == "__main__":
+    test_deposit()
+    test_add_guards()
