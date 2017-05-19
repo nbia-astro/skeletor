@@ -1,5 +1,5 @@
 from skeletor import Float, Float3, Particles, Sources
-from skeletor import ShearField
+from skeletor import Field
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy as np
 from mpi4py import MPI
@@ -182,17 +182,17 @@ def test_sheared_disturbance(plot=False):
 
     # Initialize sources
     sources = Sources(manifold)
-    rho_periodic = ShearField(manifold, time=0, dtype=Float)
-    Jx_periodic = ShearField(manifold, time=0, dtype=Float)
-    Jy_periodic = ShearField(manifold, time=0, dtype=Float)
+    rho_periodic = Field(manifold, time=0, dtype=Float)
+    Jx_periodic = Field(manifold, time=0, dtype=Float)
+    Jy_periodic = Field(manifold, time=0, dtype=Float)
 
     # Deposit sources
     sources.deposit(ions)
     assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-    sources.current.add_guards()
+    sources.add_guards()
     assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
-    sources.current.copy_guards()
+    sources.copy_guards()
 
     # Copy density into a shear field
     rho_periodic.active = sources.rho.trim()
@@ -202,11 +202,11 @@ def test_sheared_disturbance(plot=False):
     ag = manifold.x
 
     # Electric field
-    E = ShearField(manifold, dtype=Float3)
+    E = Field(manifold, dtype=Float3)
     E.fill((0.0, 0.0, 0.0))
     E.copy_guards()
 
-    B = ShearField(manifold, dtype=Float3)
+    B = Field(manifold, dtype=Float3)
     B.fill((0.0, 0.0, 0.0))
     B.copy_guards()
 
@@ -266,9 +266,9 @@ def test_sheared_disturbance(plot=False):
     for it in range(nt):
         # Deposit sources
         sources.deposit(ions)
-        sources.current.time = t
-        sources.current.add_guards()
-        sources.current.copy_guards()
+        sources.time = t
+        sources.add_guards()
+        sources.copy_guards()
 
         # Push particles on each processor. This call also sends and
         # receives particles to and from other processors/subdomains.

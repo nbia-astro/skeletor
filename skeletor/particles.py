@@ -164,7 +164,7 @@ class Particles(np.ndarray):
         push(self[:self.N], E, B, qtmh, dt, self.manifold)
 
         # Shearing periodicity
-        if self.manifold.shear:
+        if hasattr(self.manifold, 'S'):
             self.shear_periodic_y()
         else:
             self.periodic_y()
@@ -198,13 +198,13 @@ class Particles(np.ndarray):
         S = 0.0
 
         # Zero out the sources
-        sources.current.fill((0.0, 0.0, 0.0, 0.0))
+        sources.fill((0.0, 0.0, 0.0, 0.0))
 
         push_and_deposit(self[:self.N], E, B, qtmh, dt, self.manifold,
-                         self.ihole, sources.current, S, update)
+                         self.ihole, sources, S, update)
 
         # Set boundary flags to False
-        sources.current.boundaries_set = False
+        sources.boundaries_set = False
 
         # Normalize sources with particle charge
         sources.normalize(self)
@@ -233,7 +233,7 @@ class Particles(np.ndarray):
              self.manifold.Omega, self.manifold.S)
 
         # Shearing periodicity
-        if self.manifold.shear:
+        if hasattr(self.manifold, 'S'):
             self.shear_periodic_y()
         else:
             self.periodic_y()

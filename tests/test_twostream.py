@@ -104,7 +104,7 @@ def test_twostream(plot=False, fitplot=False):
 
     # Deposit sources
     sources.deposit(electrons)
-    sources.current.add_guards()
+    sources.add_guards()
 
     # Solve Gauss' law
     poisson(sources.rho, E)
@@ -164,7 +164,7 @@ def test_twostream(plot=False, fitplot=False):
         sources.deposit(electrons)
 
         # Boundary calls
-        sources.current.add_guards()
+        sources.add_guards()
 
         # Solve Gauss' law
         poisson(sources.rho, E)

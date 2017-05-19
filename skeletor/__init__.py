@@ -2,7 +2,7 @@
 from .cython.ppic2_wrapper import cppinit
 from .cython.types import Complex, Complex2, Float, Float3, Int, Particle
 from .grid import Grid
-from .field import Field, ShearField
+from .field import Field
 from .particles import Particles
 from .particle_sort import ParticleSort
 from .poisson import Poisson
