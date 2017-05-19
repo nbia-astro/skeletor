@@ -15,10 +15,12 @@ def write_grid(file, grid):
     group = file.create_group('grid')
     group.attrs['vsType'] = np.array('mesh', dtype='S')
     group.attrs['vsKind'] = np.array('uniform', dtype='S')
-    group.attrs['vsNumCells'] = [grid.ny-1, grid.nx-1]
+    group.attrs['vsStartCell'] = [0, 0]
+    group.attrs['vsNumCells'] = [grid.nyp-1, grid.nx-1]
     group.attrs['ny_nx'] = [grid.ny, grid.nx]
-    group.attrs['vsLowerBounds'] = [0., 0.]
-    group.attrs['vsUpperBounds'] = [grid.Ly, grid.Lx]
+    group.attrs['lby_lbx'] = [grid.lby, grid.lbx]
+    group.attrs['vsLowerBounds'] = [grid.noff*grid.dy, 0.]
+    group.attrs['vsUpperBounds'] = [(grid.noff + grid.nyp)*grid.dy, grid.Lx]
 
 
 def write_time(file, t, it):

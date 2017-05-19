@@ -12,10 +12,10 @@ comm = MPI.COMM_WORLD
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 32, 8
+nx, ny = 32, 32
 # Grid size in x- and y-direction (square cells!)
 Lx = 16
-Ly = 1
+Ly = 16
 dx = Lx/nx
 # Average number of particles per cell
 npc = 1
@@ -206,21 +206,30 @@ diff2 = 0
 # Main loop over time                                                    #
 ##########################################################################
 snap = 0
+import subprocess
+subprocess.call('mkdir data', shell=True)
+subprocess.call('mkdir data/id{}'.format(comm.rank), shell=True)
+
 for it in range(nt):
 
     # The update is handled by the experiment class
     e.iterate(dt)
 
     if it % 100 == 0:
-        print(e.t, it, dt)
-        file = h5py.File('fields{:04d}.h5'.format(snap), 'w')
+        if comm.rank == 0:
+            print(e.t, it, dt)
+
+        filename = 'data/id{}/fields{:04d}.h5'.format(comm.rank, snap)
+        file = h5py.File(filename, 'w')
         write_grid(file, manifold)
         write_time(file, e.t, it)
         write_fields(file, e.E, e.B, e.sources)
         file.close()
 
-        file = h5py.File('particles_{:04d}.h5'.format(snap), 'w')
-        write_particles(file, ions, N)
+        filename = 'data/id{}/particles{:04d}.h5'.format(comm.rank, snap)
+        file = h5py.File(filename, 'w')
+        write_particles(file, ions, ions.N)
+        write_time(file, e.t, it)
         file.close()
 
         # Update snap shot number on all processors
