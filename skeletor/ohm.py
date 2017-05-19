@@ -41,6 +41,12 @@ class Ohm:
 
         # Ampere's law to calculate total current
         self.curl(B, self.Je)
+
+        # Resistive part (Je is still total current)
+        E['x'] += self.eta*self.Je['x']
+        E['y'] += self.eta*self.Je['y']
+        E['z'] += self.eta*self.Je['z']
+
         # Apply boundary condition to Je
         self.Je.copy_guards()
         # NOTE: This is only done to prevent warnings about doing arithmetic
