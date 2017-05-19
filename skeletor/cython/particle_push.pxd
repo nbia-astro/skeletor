@@ -26,6 +26,46 @@ cdef inline void gather_cic(particle_t particle, real3_t[:,:] F, real3_t *f,
     f.z  = dy*(dx*F[iy+1, ix+1].z + tx*F[iy+1, ix].z)  \
          + ty*(dx*F[iy  , ix+1].z + tx*F[iy  , ix].z)
 
+cdef inline void gather_tsc(particle_t particle, real3_t[:,:] F, real3_t *f,
+                        real2_t offset) nogil:
+
+    cdef int ix, iy
+    cdef real_t dx, dy
+    cdef real_t x, y
+    cdef real_t wmx, w0x, wpx, wmy, w0y, wpy
+
+    x = particle.x + offset.x
+    y = particle.y + offset.y
+
+    x = x + 0.5
+    y = y + 0.5
+
+    ix = <int> x
+    iy = <int> y
+
+    dx = x - <real_t> ix - 0.5
+    dy = y - <real_t> iy - 0.5
+
+    w0x = 0.75 - dx*dx
+    wpx = 0.5*(0.5 + dx)**2
+    wmx = 1.0 - (w0x + wpx)
+
+    w0y = 0.75 - dy*dy
+    wpy = 0.5*(0.5 + dy)**2
+    wmy = 1.0 - (w0y + wpy)
+
+    f.x = wmy*(wmx*F[iy-1, ix-1].x+w0x*F[iy-1, ix  ].x+wpx*F[iy-1, ix+1].x)\
+        + w0y*(wmx*F[iy  , ix-1].x+w0x*F[iy  , ix  ].x+wpx*F[iy  , ix+1].x)\
+        + wpy*(wmx*F[iy+1, ix-1].x+w0x*F[iy+1, ix  ].x+wpx*F[iy+1, ix+1].x)
+
+    f.y = wmy*(wmx*F[iy-1, ix-1].y+w0x*F[iy-1, ix  ].y+wpx*F[iy-1, ix+1].y)\
+        + w0y*(wmx*F[iy  , ix-1].y+w0x*F[iy  , ix  ].y+wpx*F[iy  , ix+1].y)\
+        + wpy*(wmx*F[iy+1, ix-1].y+w0x*F[iy+1, ix  ].y+wpx*F[iy+1, ix+1].y)
+
+    f.z = wmy*(wmx*F[iy-1, ix-1].z+w0x*F[iy-1, ix  ].z+wpx*F[iy-1, ix+1].z)\
+        + w0y*(wmx*F[iy  , ix-1].z+w0x*F[iy  , ix  ].z+wpx*F[iy  , ix+1].z)\
+        + wpy*(wmx*F[iy+1, ix-1].z+w0x*F[iy+1, ix  ].z+wpx*F[iy+1, ix+1].z)
+
 cdef inline void kick_particle(particle_t *particle,
                                real3_t e, real3_t b) nogil:
 

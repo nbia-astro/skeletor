@@ -1,5 +1,4 @@
 from .field import Field
-from .cython.deposit import deposit as cython_deposit
 from .cython.types import Float4
 
 
@@ -26,6 +25,14 @@ class Sources(Field):
         return self['z']
 
     def deposit(self, particles, erase=True, set_boundaries=False):
+
+        if particles.order == 1:
+            from .cython.deposit import deposit_cic as cython_deposit
+        elif particles.order == 2:
+            from .cython.deposit import deposit_tsc as cython_deposit
+        else:
+            msg = 'Interpolation order {} not implemented.'
+            raise RuntimeError(msg.format(particles.order))
 
         if erase:
             self.fill((0.0, 0.0, 0.0, 0.0))

@@ -6,9 +6,13 @@ class Particles(np.ndarray):
     Container class for particles in a given subdomain
     """
 
-    def __new__(cls, manifold, Nmax, time=0.0, charge=1.0, mass=1.0, n0=1.0):
+    def __new__(cls, manifold, Nmax,
+                time=0.0, charge=1.0, mass=1.0, n0=1.0, order=1):
 
         from .cython.types import Int, Particle
+
+        msg = 'Interpolation order {} needs more guard layers'.format(order)
+        assert manifold.lbx >= order, msg
 
         # Size of buffer for passing particles between processors
         nbmax = int(max(0.1*Nmax, 1))
@@ -23,6 +27,8 @@ class Particles(np.ndarray):
         obj.mass = mass
         # Average number density
         obj.n0 = n0
+        # Interpolation order (1 = cic, 2 = tsc)
+        obj.order = order
 
         obj.manifold = manifold
 
@@ -51,6 +57,7 @@ class Particles(np.ndarray):
         self.charge = getattr(obj, "charge", None)
         self.mass = getattr(obj, "mass", None)
         self.n0 = getattr(obj, "n0", None)
+        self.order = getattr(obj, "order", None)
         self.ihole = getattr(obj, "ihole", None)
         self.sbufl = getattr(obj, "sbufl", None)
         self.sbufr = getattr(obj, "sbufr", None)
@@ -141,7 +148,13 @@ class Particles(np.ndarray):
         fxy is the electric field and dt is the time step.
         If shear is turned on, E needs to be E_star and B needs to be B_star
         """
-        from .cython.particle_push import boris_push as push
+        if self.order == 1:
+            from .cython.particle_push import boris_push_cic as push
+        elif self.order == 2:
+            from .cython.particle_push import boris_push_tsc as push
+        else:
+            msg = 'Interpolation order {} not implemented.'
+            raise RuntimeError(msg.format(self.order))
 
         # Update time
         self.time += dt
@@ -166,7 +179,15 @@ class Particles(np.ndarray):
         sources are stored (a predictor step).
         It currently does not work with shear.
         """
-        from .cython.push_and_deposit import push_and_deposit
+        if self.order == 1:
+            from .cython.push_and_deposit import push_and_deposit_cic \
+                                                    as push_and_deposit
+        elif self.order == 2:
+            from .cython.push_and_deposit import push_and_deposit_tsc \
+                                                    as push_and_deposit
+        else:
+            msg = 'Interpolation order {} not implemented.'
+            raise RuntimeError(msg.format(self.order))
 
         # Update time
         self.time += dt
@@ -195,7 +216,13 @@ class Particles(np.ndarray):
             self.move()
 
     def push_modified(self, E, B, dt):
-        from .cython.particle_push import modified_boris_push as push
+        if self.order == 1:
+            from .cython.particle_push import modified_boris_push_cic as push
+        elif self.order == 2:
+            from .cython.particle_push import modified_boris_push_tsc as push
+        else:
+            msg = 'Interpolation order {} not implemented.'
+            raise RuntimeError(msg.format(self.order))
 
         # Update time
         self.time += dt

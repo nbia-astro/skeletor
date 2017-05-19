@@ -6,6 +6,8 @@ from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
 plot = False
+# Interpolation order
+order = 2
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
@@ -101,7 +103,7 @@ vy += vty*np.random.normal(size=N).astype(Float)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
+manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly, lbx=order, lby=order)
 
 # x- and y-grid
 xg, yg = np.meshgrid(manifold.x, manifold.y)
@@ -110,7 +112,7 @@ xg, yg = np.meshgrid(manifold.x, manifold.y)
 Nmax = int(1.5*N/comm.size)
 
 # Create particle array
-ions = Particles(manifold, Nmax, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, charge=charge, mass=mass, order=order)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
@@ -252,18 +254,24 @@ if comm.rank == 0:
 
     plt.figure(2)
     plt.clf()
-    plt.imshow((np.log(np.abs(spec)**2.)),
-               extent=(kx[0], kx[-1], w[0], w[-1]))
+    ikmin = 4
+    plt.imshow((np.log(np.abs(spec[:, ikmin:])**2.)),
+               extent=(kx[ikmin], kx[-1], w[0], w[-1]))
 
     from dispersion_solvers import IonacousticDispersion
 
-    solve = IonacousticDispersion(Ti=1e-2, Te=Te, b=0, p=2, dx=dx)
     kxvec = np.linspace(1e-2, kx[-2], 100)
-    vph = solve.cold(kxvec)
-    plt.plot(kxvec, kxvec*vph, 'k')
-    plt.plot(kxvec, kxvec*cs, 'k--')
-    plt.ylim(0, 1.5*(kxvec*vph.real).max())
+
+    solve_cic = IonacousticDispersion(Ti=1e-2, Te=Te, b=0, p=2, dx=dx)
+    solve_tsc = IonacousticDispersion(Ti=1e-2, Te=Te, b=0, p=3, dx=dx)
+    vph_cic = solve_cic.cold(kxvec)
+    vph_tsc = solve_tsc.cold(kxvec)
+    plt.plot(kxvec, kxvec*vph_cic, 'k:', label='CIC')
+    plt.plot(kxvec, kxvec*vph_tsc, 'r:', label='TSC')
+    plt.plot(kxvec, kxvec*cs, 'k--', label=r'$k c_s$')
+    plt.ylim(0, 1.5*(kxvec*vph_cic.real).max())
     plt.xlabel(r'$k_x \Delta x$')
     plt.ylabel(r'$\omega$')
-    # plt.savefig('test.pdf')
+    plt.legend(frameon=False, loc='upper left')
+    plt.savefig('test2.pdf')
     plt.show()

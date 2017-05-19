@@ -266,7 +266,10 @@ time = []
 for it in range(nt):
 
     # The update is handled by the experiment class
+    t_temp = MPI.Wtime()
     e.iterate(dt)
+    t_iterate = MPI.Wtime() - t_temp
+    print("Microsecond per particle per timestep:", (t_iterate)/N*1e6)
 
     # if (it % 40): print(e.t)
     ampl2 += [(S*e.B['z'].trim()).sum()**2 + (C*e.B['z'].trim()).sum()**2]
@@ -287,6 +290,7 @@ for it in range(nt):
                     warnings.filterwarnings(
                             "ignore", category=mplDeprecation)
                     plt.pause(1e-7)
+raise SystemExit
 # Sum squared amplitude over processor, then take the square root
 ampl = np.sqrt(comm.allreduce(ampl2, op=MPI.SUM))
 # Convert list of times into NumPy array
