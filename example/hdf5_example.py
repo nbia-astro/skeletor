@@ -7,6 +7,7 @@ from mpi4py import MPI
 from dispersion_solvers import HallDispersion
 from writer import write_grid, write_time, write_fields, write_particles
 import h5py
+import subprocess
 comm = MPI.COMM_WORLD
 
 # Quiet start
@@ -206,7 +207,6 @@ diff2 = 0
 # Main loop over time                                                    #
 ##########################################################################
 snap = 0
-import subprocess
 subprocess.call('mkdir data', shell=True)
 subprocess.call('mkdir data/id{}'.format(comm.rank), shell=True)
 
@@ -219,16 +219,16 @@ for it in range(nt):
         if comm.rank == 0:
             print(e.t, it, dt)
 
-        filename = 'data/id{}/fields{:04d}.h5'.format(comm.rank, snap)
+        filename = 'data/id{}/fields{:d}.h5'.format(comm.rank, snap)
         file = h5py.File(filename, 'w')
         write_grid(file, manifold)
         write_time(file, e.t, it)
         write_fields(file, e.E, e.B, e.sources)
         file.close()
 
-        filename = 'data/id{}/particles{:04d}.h5'.format(comm.rank, snap)
+        filename = 'data/id{}/particles{:d}.h5'.format(comm.rank, snap)
         file = h5py.File(filename, 'w')
-        write_particles(file, ions, ions.N)
+        write_particles(file, ions)
         write_time(file, e.t, it)
         file.close()
 

@@ -1,6 +1,6 @@
 import numpy as np
 
-# Example of writing hdf5 files in the VizSchema format
+# Example of writing hdf5 fs in the VizSchema format
 # See https://ice.txcorp.com/trac/vizschema
 
 # Parallel HDF5 can be installed by doing the following
@@ -11,8 +11,8 @@ import numpy as np
 # pip install --no-binary=h5py h5py
 
 
-def write_grid(file, grid):
-    group = file.create_group('grid')
+def write_grid(f, grid):
+    group = f.create_group('grid')
     group.attrs['vsType'] = np.array('mesh', dtype='S')
     group.attrs['vsKind'] = np.array('uniform', dtype='S')
     group.attrs['vsStartCell'] = [0, 0]
@@ -23,39 +23,39 @@ def write_grid(file, grid):
     group.attrs['vsUpperBounds'] = [(grid.noff + grid.nyp)*grid.dy, grid.Lx]
 
 
-def write_time(file, t, it):
-    group = file.create_group('timeGroup')
+def write_time(f, t, it):
+    group = f.create_group('timeGroup')
     group.attrs['vsKind'] = np.array('time', dtype='S')
     group.attrs['vsTime'] = t
     group.attrs['vsStep'] = it
 
 
-def write_scalar(file, scalar, name):
-    phi = file.create_dataset(name, data=scalar)
+def write_scalar(f, scalar, name):
+    phi = f.create_dataset(name, data=scalar)
     phi.attrs['vsType'] = np.array('variable', dtype='S')
     phi.attrs['vsMesh'] = np.array('grid', dtype='S')
     phi.attrs['vsTimeGroup'] = np.array('timeGroup', dtype='S')
 
 
-def write_fields(file, E=None, B=None, sources=None):
+def write_fields(f, E=None, B=None, sources=None):
     if E is not None:
-        write_scalar(file, E['y'].trim(), 'Ey')
-        write_scalar(file, B['z'].trim(), 'Bz')
-        write_scalar(file, E['z'].trim(), 'Ez')
+        write_scalar(f, E['y'].trim(), 'Ey')
+        write_scalar(f, B['z'].trim(), 'Bz')
+        write_scalar(f, E['z'].trim(), 'Ez')
     if B is not None:
-        write_scalar(file, B['x'].trim(), 'Bx')
-        write_scalar(file, E['x'].trim(), 'Ex')
-        write_scalar(file, B['y'].trim(), 'By')
+        write_scalar(f, B['x'].trim(), 'Bx')
+        write_scalar(f, E['x'].trim(), 'Ex')
+        write_scalar(f, B['y'].trim(), 'By')
     if sources is not None:
-        write_scalar(file, sources.rho.trim(), 'rho')
-        write_scalar(file, sources.Jx.trim(), 'Jx')
-        write_scalar(file, sources.Jy.trim(), 'Jy')
-        write_scalar(file, sources.Jz.trim(), 'Jz')
+        write_scalar(f, sources.rho.trim(), 'rho')
+        write_scalar(f, sources.Jx.trim(), 'Jx')
+        write_scalar(f, sources.Jy.trim(), 'Jy')
+        write_scalar(f, sources.Jz.trim(), 'Jz')
 
 
-def write_particles(file, ions, N):
-    dset = file.create_dataset('ions', (N, 5), dtype=np.float64)
-    dset[:, :] = ions.view('(5,)f8')[:N, :]
+def write_particles(f, ions):
+    dset = f.create_dataset('ions', (ions.N, 5), dtype=np.float64)
+    dset[:, :] = ions.view('(5,)f8')[:ions.N, :]
     dset.attrs['vsType'] = np.array('variableWithMesh', dtype='S')
     dset.attrs['vsNumSpatialDims'] = 2
     dset.attrs['vsLabels'] = np.array('x, y, vx, vy, vz', dtype='S')

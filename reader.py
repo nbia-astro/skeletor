@@ -13,48 +13,47 @@ class Snapshot():
         self.it = it
 
 
-def read_grid(name):
+def read_grid(filename):
     from mpi4py.MPI import COMM_WORLD as comm
     from skeletor import Grid
 
-    file = h5py.File(name, 'r')
-    (ny, nx) = file['grid'].attrs.__getitem__('ny_nx')
-    (Ly, Lx) = file['grid'].attrs.__getitem__('vsUpperBounds')
+    f = h5py.File(filename, 'r')
+    (ny, nx) = f['grid'].attrs['ny_nx']
+    (Ly, Lx) = f['grid'].attrs['vsUpperBounds']
     grid = Grid(nx, ny, comm, Lx=Lx, Ly=Ly, lbx=0, lby=0)
-    file.close()
+    f.close()
 
     return grid
 
 
-def read_fields_old(name):
+def read_fields_old(filename):
     from skeletor import Sources, Field, Float3
     """
     Read all the fields from a HDF5 snapshot
     Returns an object with Skeletor fields and sources as attributes.
     """
-    grid = read_grid(name)
-    file = h5py.File(name, 'r')
+    grid = read_grid(filename)
+    f = h5py.File(filename, 'r')
     E = Field(grid, dtype=Float3)
-    E['x'].active = np.array(file['Ex'])
-    E['y'].active = np.array(file['Ey'])
-    E['z'].active = np.array(file['Ez'])
+    E['x'].active = np.array(f['Ex'])
+    E['y'].active = np.array(f['Ey'])
+    E['z'].active = np.array(f['Ez'])
     B = Field(grid, dtype=Float3)
-    B['x'].active = np.array(file['Bx'])
-    B['y'].active = np.array(file['By'])
-    B['z'].active = np.array(file['Bz'])
+    B['x'].active = np.array(f['Bx'])
+    B['y'].active = np.array(f['By'])
+    B['z'].active = np.array(f['Bz'])
     sources = Sources(grid)
-    sources.rho.active = np.array(file['rho'])
-    sources.Jx.active = np.array(file['rho'])
-    sources.Jy.active = np.array(file['rho'])
-    sources.Jz.active = np.array(file['rho'])
-    t = file['timeGroup'].attrs.__getitem__('vsTime')
-    it = file['timeGroup'].attrs.__getitem__('vsStep')
-    file.close()
-    f = Snapshot(E, B, sources, t, it)
-    return f
+    sources.rho.active = np.array(f['rho'])
+    sources.Jx.active = np.array(f['rho'])
+    sources.Jy.active = np.array(f['rho'])
+    sources.Jz.active = np.array(f['rho'])
+    t = f['timeGroup'].attrs['vsTime']
+    it = f['timeGroup'].attrs['vsStep']
+    f.close()
+    return Snapshot(E, B, sources, t, it)
 
 
-def read_fields(name):
+def read_fields(filename):
     """
     Read all the fields from a HDF5 snapshot
     """
@@ -62,30 +61,32 @@ def read_fields(name):
               ('Bx', Float), ('By', Float), ('Bz', Float),
               ('Jx', Float), ('Jy', Float), ('Jz', Float),
               ('rho', Float)]
-    file = h5py.File(name, 'r')
-    shape = np.array(file['Ex']).squeeze().shape
-    f = np.ndarray(shape=shape, dtype=Fields)
-    for name in f.dtype.names:
-        f[name] = np.array(file[name]).squeeze()
+    f = h5py.File(filename, 'r')
+    shape = np.array(f['Ex']).squeeze().shape
+    fields = np.ndarray(shape=shape, dtype=Fields)
+    for name in fields.dtype.names:
+        fields[name] = np.array(f[name]).squeeze()
 
     # header information
-    t = file['timeGroup'].attrs.__getitem__('vsTime')
-    it = file['timeGroup'].attrs.__getitem__('vsStep')
+    t = f['timeGroup'].attrs.__getitem__('vsTime')
+    it = f['timeGroup'].attrs.__getitem__('vsStep')
     h = {'t': t, 'it': it}
-    file.close()
-    return (f, h)
+    f.close()
+    return (fields, h)
 
 
-def read_particles(name):
-    # from skeletor import Particle
-    Particle = np.dtype(
-        [('x', float), ('y', float), ('vx', float), ('vy', float),
-         ('vz', float)])
-    file = h5py.File(name, 'r')
-    ions = np.ndarray(file['ions'].shape[0], dtype=Particle)
-    ions.view('(5,)f8')[:] = np.array(file['ions'])
-    file.close()
-    return ions
+def read_particles(filename):
+    from skeletor import Particle
+    f = h5py.File(filename, 'r')
+    ions = np.ndarray(f['ions'].shape[0], dtype=Particle)
+    ions.view('(5,)f8')[:] = np.array(f['ions'])
+
+    # header information
+    t = f['timeGroup'].attrs['vsTime']
+    it = f['timeGroup'].attrs['vsStep']
+    h = {'t': t, 'it': it}
+    f.close()
+    return (ions, h)
 
 
 if __name__ == '__main__':
