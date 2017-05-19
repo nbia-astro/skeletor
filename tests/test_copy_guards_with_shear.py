@@ -1,4 +1,4 @@
-from skeletor import Float, Field, ShearField
+from skeletor import Float, Field
 from skeletor.manifolds.second_order import ShearingManifold
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy as np
@@ -35,7 +35,7 @@ def test_copy_guards_with_shear(plot=False):
     f.active = 1 + A*np.sin(kx*xx + ky*yy)
 
     # Initialize density field using shear field class
-    g = ShearField(manifold, time=t, dtype=Float)
+    g = Field(manifold, time=t, dtype=Float)
     g.active = 1 + A*np.sin(kx*xx + ky*yy)
 
     # Apply boundaries

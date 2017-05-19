@@ -115,7 +115,7 @@ def test_plasmafrequency(plot=False):
     # Adjust density (we should do this somewhere else)
     # sources.rho /= npc
     # assert np.isclose(sources.rho.sum(), electrons.N*charge/npc)
-    sources.current.add_guards()
+    sources.add_guards()
     # assert np.isclose(comm.allreduce(
     # sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
@@ -167,7 +167,7 @@ def test_plasmafrequency(plot=False):
         # sources.rho /= npc
         # assert np.isclose(sources.rho.sum(),electrons.N*charge/npc)
         # Boundary calls
-        sources.current.add_guards()
+        sources.add_guards()
 
         # assert np.isclose(comm.allreduce(
         #     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
