@@ -44,12 +44,12 @@ class TimeStepper:
         from mpi4py.MPI import COMM_WORLD as comm
 
         # Deposit sources
-        self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
+        self.sources.fill((0.0, 0.0, 0.0, 0.0))
         for ions in self.state.species:
             ions.deposit(set_boundaries=True)
-            for dim in self.sources.current.dtype.names:
-                self.sources.current[dim] += ions.sources.current[dim]
-        self.sources.current.boundaries_set = True
+            for dim in self.sources.dtype.names:
+                self.sources[dim] += ions.sources[dim]
+        self.sources.boundaries_set = True
 
         # Calculate electric field (Solve Ohm's law)
         self.ohm(self.sources, self.B, self.E, set_boundaries=True)
@@ -96,13 +96,13 @@ class TimeStepper:
         # Push particle positions to n+1 (n+2) and kick velocities to n+1/2
         # (n+3/2). Deposit charge and current at n+1/2 (n+3/2) and only update
         # particle positions if update=True
-        self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
-        self.sources.current.boundaries_set = False
+        self.sources.fill((0.0, 0.0, 0.0, 0.0))
+        self.sources.boundaries_set = False
         for ions in self.state.species:
             ions.push_and_deposit(self.E2, self.B2, dt, False)
-            for dim in self.sources.current.dtype.names:
-                self.sources.current[dim] += ions.sources.current[dim]
-        self.sources.current.boundaries_set = True
+            for dim in self.sources.dtype.names:
+                self.sources[dim] += ions.sources[dim]
+        self.sources.boundaries_set = True
 
         # Evolve magnetic field by a half step to n+1/2 (n+3/2)
         self.faraday(self.E2, self.B2, dt/2, set_boundaries=True)
@@ -124,13 +124,13 @@ class TimeStepper:
         """Update fields and particles using Horowitz method"""
 
         # Push and deposit the particles, depositing the sources at n+1/2
-        self.sources.current.fill((0.0, 0.0, 0.0, 0.0))
-        self.sources.current.boundaries_set = False
+        self.sources.fill((0.0, 0.0, 0.0, 0.0))
+        self.sources.boundaries_set = False
         for ions in self.state.species:
             ions.push_and_deposit(self.E, self.B, dt, True)
-            for dim in self.sources.current.dtype.names:
-                self.sources.current[dim] += ions.sources.current[dim]
-        self.sources.current.boundaries_set = True
+            for dim in self.sources.dtype.names:
+                self.sources[dim] += ions.sources[dim]
+        self.sources.boundaries_set = True
 
         # Start iteration by assuming E^(n+1) = E^n
         self.E3[:] = self.E[:]
