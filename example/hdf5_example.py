@@ -13,7 +13,7 @@ comm = MPI.COMM_WORLD
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 32, 32
+nx, ny = 16, 32
 # Grid size in x- and y-direction (square cells!)
 Lx = 16
 Ly = 16
@@ -221,9 +221,9 @@ for it in range(nt):
 
         filename = 'data/id{}/fields{:d}.h5'.format(comm.rank, snap)
         file = h5py.File(filename, 'w')
-        write_grid(file, manifold)
+        write_grid(file, manifold, write_ghosts=True)
         write_time(file, e.t, it)
-        write_fields(file, e.E, e.B, e.sources)
+        write_fields(file, e.E, e.B, e.sources, write_ghosts=True)
         file.close()
 
         filename = 'data/id{}/particles{:d}.h5'.format(comm.rank, snap)
