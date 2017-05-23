@@ -4,7 +4,8 @@ import numpy as np
 
 class Grid(grid_t):
 
-    def __init__(self, nx, ny, comm, lbx=1, lby=1, Lx=1.0, Ly=1.0):
+    def __init__(self, nx, ny, comm,
+                 lbx=1, lby=1, Lx=1.0, Ly=1.0, x0=0.0, y0=0.0):
 
         from .cython.ppic2_wrapper import cppinit
 
@@ -15,6 +16,10 @@ class Grid(grid_t):
         # Grid size in x- and y-direction
         self.Lx = Lx
         self.Ly = Ly
+
+        # Coordinate origin
+        self.x0 = x0
+        self.y0 = y0
 
         # Grid cell size
         self.dx = self.Lx/self.nx
@@ -64,15 +69,17 @@ class Grid(grid_t):
     @property
     def x(self):
         "One-dimensional x-coordinate array"
-        return (np.arange(self.nx) + 0.5)*self.dx
+        return self.x0 + (np.arange(self.nx) + 0.5)*self.dx
 
     @property
     def y(self):
         "One-dimensional y-coordinate array"
-        return (np.arange(self.noff, self.noff + self.nyp) + 0.5)*self.dy
+        yrange = np.arange(self.noff, self.noff + self.nyp)
+        return self.y0 + (yrange + 0.5)*self.dy
 
     @property
     def yg(self):
         "One-dimensional y-coordinate array including ghost"
-        return (np.arange(self.noff - self.lby,
-                          self.noff + self.nyp + self.lby) + 0.5)*self.dy
+        yrange = np.arange(self.noff - self.lby,
+                           self.noff + self.nyp + self.lby)
+        return self.y0 + (yrange + 0.5)*self.dy

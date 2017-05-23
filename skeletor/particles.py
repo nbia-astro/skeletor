@@ -78,8 +78,12 @@ class Particles(np.ndarray):
 
         from warnings import warn
 
-        ind = np.logical_and(y >= self.manifold.edges[0]*self.manifold.dy,
-                             y < self.manifold.edges[1]*self.manifold.dy)
+        # Short hand
+        m = self.manifold
+
+        # Array of indices of particles on this processor
+        ind = np.logical_and(y >= m.y0 + m.edges[0]*m.dy,
+                             y < m.y0 + m.edges[1]*m.dy)
 
         # Number of particles in subdomain
         self.N = np.sum(ind)
@@ -91,8 +95,8 @@ class Particles(np.ndarray):
             warn(msg + " (N={}, Nmax={})".format(self.N, self.size))
 
         # Fill structured array
-        self["x"][:self.N] = x[ind]/self.manifold.dx
-        self["y"][:self.N] = y[ind]/self.manifold.dy
+        self["x"][:self.N] = (x[ind] - m.x0)/m.dx
+        self["y"][:self.N] = (y[ind] - m.y0)/m.dy
         self["vx"][:self.N] = vx[ind]
         self["vy"][:self.N] = vy[ind]
         self["vz"][:self.N] = vz[ind]

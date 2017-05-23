@@ -73,8 +73,7 @@ def modified_boris_push_cic(particle_t[:] particles, real3_t[:, :] E,
 
         # Modify fields due to rotation and shear
         b.z = b.z + Omega*dt
-        # TODO: We need to get this working/Make this more general
-        e.y = e.y - S*particles[ip].y*grid.dy*b.z
+        e.y = e.y - S*(grid.y0 + particles[ip].y*grid.dy)*b.z
 
         kick_particle(&particles[ip], e, b)
         drift_particle(&particles[ip], dtds)
@@ -151,8 +150,7 @@ def modified_boris_push_tsc(particle_t[:] particles, real3_t[:, :] E,
 
         # Modify fields due to rotation and shear
         b.z = b.z + Omega*dt
-        # TODO: We need to get this working/Make this more general
-        e.y = e.y - S*particles[ip].y*grid.dy*b.z
+        e.y = e.y - S*(grid.y0 + particles[ip].y*grid.dy)*b.z
 
         kick_particle(&particles[ip], e, b)
         drift_particle(&particles[ip], dtds)

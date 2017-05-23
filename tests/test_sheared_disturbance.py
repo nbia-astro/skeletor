@@ -42,6 +42,12 @@ def test_sheared_disturbance(plot=False):
     # Number of grid points in x- and y-direction
     nx, ny = 64, 64
 
+    # Box size
+    Lx, Ly = 1.0, 1.0
+
+    # Coordinate origin
+    x0, y0 = -Lx/2, -Ly/2
+
     # Average number of particles per cell
     npc = 16
 
@@ -129,7 +135,8 @@ def test_sheared_disturbance(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
+    manifold = ShearingManifold(nx, ny, comm,
+                                S=S, Omega=Omega, x0=x0, y0=y0, Lx=Lx, Ly=Ly)
 
     # x- and y-grid
     xx, yy = np.meshgrid(manifold.x, manifold.y)
@@ -149,22 +156,22 @@ def test_sheared_disturbance(plot=False):
         sqrt_npc = int(np.sqrt(npc))
         assert sqrt_npc**2 == npc, "'npc' must be a square of an integer."
         a, b = [ab.flatten().astype(Float) for ab in np.meshgrid(
-            (np.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
-            (np.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
+            x0 + (np.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
+            y0 + (np.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
     else:
-        a = manifold.Lx*np.random.uniform(size=N).astype(Float)
-        b = manifold.Ly*np.random.uniform(size=N).astype(Float)
+        a = x0 + Lx*np.random.uniform(size=N).astype(Float)
+        b = y0 + Ly*np.random.uniform(size=N).astype(Float)
 
     # Assign particles to subdomains
     ions.initialize(a, b, a*0, b*0, b*0)
 
     # Set initial condition for particles
     # Position and velocities for this subdomain only
-    x_sub = ions['x'][:ions.N]*manifold.dx
-    y_sub = ions['y'][:ions.N]*manifold.dy
+    x_sub = x0 + ions['x'][:ions.N]*manifold.dx
+    y_sub = y0 + ions['y'][:ions.N]*manifold.dy
     # Particle positions at time=t
-    ions['x'][:ions.N] = x_an(x_sub, y_sub, t)/manifold.dx
-    ions['y'][:ions.N] = y_an(x_sub, y_sub, t)/manifold.dy
+    ions['x'][:ions.N] = (x_an(x_sub, y_sub, t) - x0)/manifold.dx
+    ions['y'][:ions.N] = (y_an(x_sub, y_sub, t) - y0)/manifold.dy
     # Particle velocities at time = t-dt/2
     ions['vx'][:ions.N] = vx_an(x_sub, y_sub, t-dt/2)
     ions['vy'][:ions.N] = vy_an(x_sub, y_sub, t-dt/2)
@@ -257,7 +264,7 @@ def test_sheared_disturbance(plot=False):
             ax2.set_ylim(-1*ampl, 1*ampl)
             ax3.set_ylim(-2*ampl, 2*ampl)
             for ax in (ax1, ax2, ax3):
-                ax.set_xlim(0, manifold.Lx)
+                ax.set_xlim(x0, x0 + manifold.Lx)
 
     ##########################################################################
     # Main loop over time                                                    #
@@ -326,7 +333,7 @@ def test_sheared_disturbance(plot=False):
                     vy = global_Jy_periodic/global_rho_periodic
                     im6[0].set_ydata(vy.mean(axis=0))
                     xp_par = euler(ag, 0, t)
-                    xp_par %= manifold.Lx
+                    xp_par = (xp_par - x0) % manifold.Lx + x0
                     ind = np.argsort(xp_par)
                     im4[1].set_data(xp_par[ind], rho_an(ag, t)[ind])
                     im5[1].set_data(xp_par[ind], vx_an(ag, 0, t)[ind]

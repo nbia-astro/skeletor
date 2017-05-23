@@ -47,8 +47,8 @@ class InitialCondition():
 
         if self.global_init:
             # Distributed particles across subdomains
-            x *= manifold.dx
-            y *= manifold.dy
+            x = manifold.x0 + x*manifold.dx
+            y = manifold.y0 + y*manifold.dy
             ions.initialize(x, y, vx, vy, vz)
         else:
             # Set initial position

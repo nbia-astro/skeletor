@@ -34,3 +34,4 @@ cdef class grid_t:
     cdef public int lbx, lby, ubx, uby
     cdef public real_t dx, dy
     cdef public real_t Lx, Ly
+    cdef public real_t x0, y0

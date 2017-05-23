@@ -9,10 +9,11 @@ import numpy as np
 quiet = True
 # Number of grid points in x- and y-direction
 nx, ny = 128, 8
-# Grid size in x- and y-direction (square cells!)
-Lx = 4
-Ly = 1
-dx = Lx/nx
+# Box size in x- and y-direction (square cells!)
+Lx, Ly = 4, 1
+# Coordinate origin
+x0 = -Lx/2
+y0 = -Ly/2
 # Average number of particles per cell
 npc = 256
 # Particle charge and mass
@@ -32,7 +33,7 @@ ky = 2*np.pi*iky/Ly
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly)
+manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly, x0=x0, y0=y0)
 
 # x- and y-grid
 xg, yg = np.meshgrid(manifold.x, manifold.y)
@@ -72,7 +73,7 @@ def perturb_and_deposit(quiet, plot, num):
         return np.concatenate(comm.allgather(arr))
 
     rho = np.concatenate(comm.allgather(sources.rho.trim())).mean(axis=0)
-    rho_exact = ions.n0*ions.charge*(1 + ampl*np.cos(kx*manifold.x))
+    rho_exact = ions.n0*ions.charge*(1 + ampl*np.cos(kx*(manifold.x - x0)))
 
     if quiet:
         assert np.sqrt(np.mean((rho - rho_exact)**2)) < 0.005*ampl
