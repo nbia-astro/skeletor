@@ -13,7 +13,10 @@ class Particles(np.ndarray):
         from .cython.types import Int, Particle
 
         msg = 'Interpolation order {} needs more guard layers'.format(order)
-        assert manifold.lbx >= order, msg
+        # The number of guard layers on each side needs to be equal to
+        # int(ceil(order*0.5 + 0.5)).
+        # The additional 0.5 is due to the staggered electric field.
+        assert manifold.lbx >= order//2 + 1, msg
 
         # Size of buffer for passing particles between processors
         nbmax = int(max(0.1*Nmax, 1))
