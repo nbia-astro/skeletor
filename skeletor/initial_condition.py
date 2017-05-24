@@ -95,6 +95,8 @@ class DensityPertubation(InitialCondition):
 
         self.Lx = manifold.Lx
         self.Ly = manifold.Ly
+        self.x0 = manifold.x0
+        self.y0 = manifold.y0
 
         self.kx = self.ikx*2*np.pi/self.Lx
         self.ky = self.iky*2*np.pi/self.Ly
@@ -102,7 +104,7 @@ class DensityPertubation(InitialCondition):
         # x-coordinate in units of the box size
         x = ions['x'][:ions.N]/manifold.nx
         # y-coordinate in "physical" units
-        y = ions['y'][:ions.N]*manifold.dy
+        y = self.y0 + ions['y'][:ions.N]*manifold.dy
 
         # Find cdf
         cdf = self.find_cdf()
@@ -110,12 +112,12 @@ class DensityPertubation(InitialCondition):
         for ip in range(ions.N):
             # This guess is exact if the self.ampl is zero and it's presumably
             # still a decent guess if self.ampl is small compared to unity.
-            guess = x[ip]*manifold.Lx
+            guess = self.x0 + x[ip]*manifold.Lx
             x[ip] = newton(lambda X: cdf(X, y[ip]) - x[ip], guess)
 
         # Set initial positions
-        ions['x'][:ions.N] = x/manifold.dx
-        ions['y'][:ions.N] = y/manifold.dy
+        ions['x'][:ions.N] = (x - self.x0)/manifold.dx
+        ions['y'][:ions.N] = (y - self.y0)/manifold.dy
 
     def find_cdf(self, phase=0.0):
         """
@@ -134,8 +136,8 @@ class DensityPertubation(InitialCondition):
         self.f = sympy.lambdify((x, y), n, "numpy")
 
         # Symbolic pdf and cdf
-        pdf_sym = n/sympy.integrate(n, (x, 0, self.Lx))
-        cdf_sym = sympy.integrate(pdf_sym, (x, 0, x))
+        pdf_sym = n/sympy.integrate(n, (x, self.x0, self.x0 + self.Lx))
+        cdf_sym = sympy.integrate(pdf_sym, (x, self.x0, x))
 
         # Turn sympy function into numpy function
         return sympy.lambdify((x, y), cdf_sym, "numpy")

@@ -73,7 +73,7 @@ def perturb_and_deposit(quiet, plot, num):
         return np.concatenate(comm.allgather(arr))
 
     rho = np.concatenate(comm.allgather(sources.rho.trim())).mean(axis=0)
-    rho_exact = ions.n0*ions.charge*(1 + ampl*np.cos(kx*(manifold.x - x0)))
+    rho_exact = ions.n0*ions.charge*(1 + ampl*np.cos(kx*manifold.x))
 
     if quiet:
         assert np.sqrt(np.mean((rho - rho_exact)**2)) < 0.005*ampl
