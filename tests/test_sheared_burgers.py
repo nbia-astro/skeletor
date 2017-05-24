@@ -13,6 +13,12 @@ from mpi4py.MPI import COMM_WORLD as comm
 
 def test_sheared_burgers(plot=False):
 
+    # Order of particle interpolation
+    order = 1
+
+    # Required number of guard layers on each side
+    ghost = order//2 + 1
+
     # Time step
     dt = 0.5e-2
 
@@ -39,7 +45,13 @@ def test_sheared_burgers(plot=False):
     ampl = 0.0625
 
     # Number of grid points in x- and y-direction
-    nx, ny = 32, 32
+    nx, ny = 64, 64
+
+    # Box size
+    Lx, Ly = 1.0, 1.0
+
+    # Coordinate origin
+    x0, y0 = -Lx/2, -Ly/2
 
     # Average number of particles per cell
     npc = 16
@@ -119,7 +131,7 @@ def test_sheared_burgers(plot=False):
         position, (x, y), and time, t. Accepts 2D arrays for x and y.
         """
         xp = x + S*y*t
-        xp %= nx
+        xp = (xp - x0) % manifold.Lx + x0
         a = lagrange(xp, t)
         return rho_an(a, t)
 
@@ -134,7 +146,8 @@ def test_sheared_burgers(plot=False):
 
     # Create numerical grid. This contains information about the extent of
     # the subdomain assigned to each processor.
-    manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega)
+    manifold = ShearingManifold(nx, ny, comm, lbx=ghost, lby=ghost,
+                                S=S, Omega=Omega, x0=x0, y0=y0, Lx=Lx, Ly=Ly)
 
     # x- and y-grid
     xx, yy = np.meshgrid(manifold.x, manifold.y)
@@ -147,14 +160,15 @@ def test_sheared_burgers(plot=False):
     Nmax = int(5*N/comm.size)
 
     # Create particle array
-    ions = Particles(manifold, Nmax, time=t, charge=charge, mass=mass)
+    ions = Particles(manifold, Nmax, time=t, charge=charge, mass=mass,
+                     order=order)
 
     # Lagrangian particle coordinates (quiet start)
     sqrt_npc = int(np.sqrt(npc))
     assert sqrt_npc**2 == npc, "'npc' must be a square of an integer."
     a, b = [ab.flatten().astype(Float) for ab in np.meshgrid(
-        (np.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
-        (np.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
+        x0 + (np.arange(nx*sqrt_npc) + 0.5)*manifold.dx/sqrt_npc,
+        y0 + (np.arange(ny*sqrt_npc) + 0.5)*manifold.dy/sqrt_npc)]
 
     # Eulerian particle coordinates and veloctities
     x = x_an(a, b, t)
@@ -238,7 +252,7 @@ def test_sheared_burgers(plot=False):
             ax1.set_ylim(0, 2)
             ax2.set_ylim(-1*ampl, 1*ampl)
             for ax in (ax1, ax2):
-                ax.set_xlim(0, manifold.Lx)
+                ax.set_xlim(x0, x0 + Lx)
             ax1.set_xlabel(r"$x'$")
             ax1.set_title(r'$\rho/\rho_0$')
             # Create slider widget for changing time
@@ -300,7 +314,7 @@ def test_sheared_burgers(plot=False):
         if comm.rank == 0:
             # Make sure that test has passed
             assert err < 1e-2, err
-            if (it % 100 == 0):
+            if (it % 50 == 0):
                 if plot:
                     # Update 2D images
                     im1a.set_data(global_rho)

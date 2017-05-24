@@ -6,6 +6,12 @@ from mpi4py.MPI import COMM_WORLD as comm
 import matplotlib.pyplot as plt
 import matplotlib.widgets as mw
 
+# Order of particle interpolation
+order = 1
+
+# Required number of guard layers on each side
+ghost = order//2 + 1
+
 # Particle charge and mass
 charge = 1
 mass = 1
@@ -25,7 +31,11 @@ ampl = 0.2
 # Number of grid points in x- and y-direction
 nx, ny = 64, 128
 
-Lx, Ly = 1, 2
+# Box size
+Lx, Ly = 1.0, 2.0
+
+# Coordinate origin
+x0, y0 = -Lx/2, -Ly/2
 
 dx, dy = Lx/nx, Ly/ny
 
@@ -48,8 +58,8 @@ a, b = np.meshgrid(
 a = a.flatten()
 b = b.flatten()
 
-a *= dx
-b *= dy
+a = x0 + a*dx
+b = y0 + b*dy
 
 
 def x_an(ap, bp, t):
@@ -106,7 +116,8 @@ idproc, nvp = cppinit(comm)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega, Lx=Lx, Ly=Ly)
+manifold = ShearingManifold(nx, ny, comm, lbx=ghost, lby=ghost,
+                            S=S, Omega=Omega, x0=x0, y0=y0, Lx=Lx, Ly=Ly)
 
 # x- and y-grid
 xx, yy = np.meshgrid(manifold.x, manifold.y)
@@ -116,7 +127,8 @@ xx, yy = np.meshgrid(manifold.x, manifold.y)
 Nmax = int(5*N/nvp)
 
 # Create particle array
-ions = Particles(manifold, Nmax, time=0, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, time=0, charge=charge, mass=mass,
+                 order=order)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
@@ -136,10 +148,10 @@ sources_periodic = Sources(manifold, time=0)
 # Deposit sources
 sources.deposit(ions)
 assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-sources.current.add_guards()
+sources.add_guards()
 assert np.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
-sources.current.copy_guards()
+sources.copy_guards()
 
 # Copy density into a shear field
 sources_periodic.rho.active = sources.rho.trim()
@@ -155,8 +167,8 @@ def concatenate(arr):
 
 def update(t):
 
-    ions['x'][:N] = x_an(a, b, t)/dx
-    ions['y'][:N] = y_an(a, b, t)/dy
+    ions['x'][:N] = (x_an(a, b, t) - x0)/dx
+    ions['y'][:N] = (y_an(a, b, t) - y0)/dy
     ions['vx'][:N] = vx_an(a, b, t)
     ions['vy'][:N] = vy_an(a, b, t)
     ions.time = t
@@ -165,15 +177,15 @@ def update(t):
 
     # Deposit sources
     sources.deposit(ions)
-    sources.current.time = t
+    sources.time = t
 
     assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-    sources.current.add_guards()
+    sources.add_guards()
 
     assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
-    sources.current.copy_guards()
+    sources.copy_guards()
 
     assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
@@ -217,7 +229,7 @@ def update(t):
         im6[0].set_ydata((global_Jy_periodic/global_rho_periodic).
                          mean(axis=0))
         xp_par = x_an(manifold.x, 0, t) + S*y_an(manifold.x, 0, t)*t
-        xp_par %= Lx
+        xp_par = (xp_par - x0) % manifold.Lx + x0
         ind = np.argsort(xp_par)
         im4[1].set_data(xp_par[ind], rho_an_particle(manifold.x, t)[ind])
         im6[1].set_data(xp_par[ind], vy_an(manifold.x, 0, t)[ind])
@@ -245,7 +257,7 @@ if comm.rank == 0:
     im1c = axes[2, 0].imshow(global_Jy/global_rho)
     im2c = axes[2, 1].imshow(global_Jy_periodic/global_rho_periodic)
     axtime1 = plt.axes([0.125, 0.1, 0.775, 0.03])
-    stime1 = mw.Slider(axtime1, 'Time', -np.pi/4, np.pi/8, 0)
+    stime1 = mw.Slider(axtime1, 'Time', -np.pi/4, np.pi/4, 0)
     stime1.on_changed(update)
 
     plt.figure(2)
@@ -256,15 +268,15 @@ if comm.rank == 0:
     ax2.set_ylim(-1*ampl, 1*ampl)
     ax3.set_ylim(-2*ampl, 2*ampl)
     for ax in (ax1, ax2, ax3):
-        ax.set_xlim(0, Lx)
+        ax.set_xlim(x0, x0 + Lx)
     ax1.set_xlabel(r"$x'$")
     ax1.set_title(r'$\rho/\rho_0$')
     # Create slider widget for changing time
     axtime2 = plt.axes([0.125, 0.1, 0.775, 0.03])
-    stime2 = mw.Slider(axtime2, 'Time', -np.pi/4, np.pi/8, 0)
+    stime2 = mw.Slider(axtime2, 'Time', -np.pi/4, np.pi/4, 0)
     stime2.on_changed(update)
     xp_par = x_an(a, b, 0) + S*y_an(a, b, 0)*0
-    xp_par %= Lx
+    xp_par = (xp_par - x0) % manifold.Lx + x0
     xp_par = np.sort(xp_par)
     im4 = ax1.plot(manifold.x, (global_rho_periodic.mean(axis=0)),
                    'b',
