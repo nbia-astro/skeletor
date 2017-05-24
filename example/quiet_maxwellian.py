@@ -59,6 +59,9 @@ vz = np.empty(Np)
 assemple_arrays(x_cell, y_cell, vx_cell, vy_cell, vz_cell,
                 x, y, vx, vy, vz, npc, manifold)
 
+# Add grid offset
+y += manifold.edges[0]
+
 # Plot positions and velocities
 plt.figure(comm.rank)
 plt.plot(x, y, '.')

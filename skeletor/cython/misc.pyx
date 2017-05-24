@@ -1,5 +1,4 @@
 from types cimport real_t, grid_t
-from types import Float
 
 
 def assemple_arrays(real_t[:] x_cell, real_t[:] y_cell, real_t[:] vx_cell,
@@ -21,7 +20,7 @@ def assemple_arrays(real_t[:] x_cell, real_t[:] y_cell, real_t[:] vx_cell,
         for j in range(grid.nyp):
             for k in range(npc):
                 x[l] = x_cell[k] + i
-                y[l] = y_cell[k] + j + grid.noff
+                y[l] = y_cell[k] + j
                 vx[l] = vx_cell[k]
                 vy[l] = vy_cell[k]
                 vz[l] = vz_cell[k]
