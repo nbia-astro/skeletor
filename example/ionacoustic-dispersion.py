@@ -141,10 +141,10 @@ ohm = Ohm(manifold, temperature=Te, charge=charge)
 # Deposit sources
 sources.deposit(ions)
 assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-sources.current.add_guards()
+sources.add_guards()
 assert np.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
-sources.current.copy_guards()
+sources.copy_guards()
 
 # Calculate electric field (Solve Ohm's law)
 ohm(sources, B, E)
@@ -202,8 +202,8 @@ for it in range(nt):
     sources.deposit(ions)
 
     # Boundary calls
-    sources.current.add_guards()
-    sources.current.copy_guards()
+    sources.add_guards()
+    sources.copy_guards()
 
     # Calculate forces (Solve Ohm's law)
     ohm(sources, B, E)

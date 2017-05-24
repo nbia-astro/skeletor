@@ -163,7 +163,7 @@ def landau_electrons(plot=False, fitplot=False):
     # Deposit sources
     sources.deposit(electrons)
     assert np.isclose(sources.rho.sum(), electrons.N*charge/npc)
-    sources.current.add_guards()
+    sources.add_guards()
     assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
@@ -222,7 +222,7 @@ def landau_electrons(plot=False, fitplot=False):
         sources.deposit(electrons)
 
         # Boundary calls
-        sources.current.add_guards()
+        sources.add_guards()
 
         # Calculate forces (Solve Gauss' law)
         poisson(sources.rho, E)

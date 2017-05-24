@@ -31,7 +31,7 @@ mass = 1
 ampl = 0.1
 
 # Number of grid points in x- and y-direction
-nx, ny = 64, 1
+nx, ny = 64, 2
 
 # Average number of particles per cell
 npc = 16
@@ -101,7 +101,7 @@ sources = Sources(manifold)
 # Deposit sources
 sources.deposit(ions)
 assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-sources.current.add_guards()
+sources.add_guards()
 assert np.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
@@ -168,11 +168,11 @@ for it in range(nt):
     sources.deposit(ions)
 
     assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-    sources.current.add_guards()
+    sources.add_guards()
     assert np.isclose(comm.allreduce(
         sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
 
-    sources.current.copy_guards()
+    sources.copy_guards()
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.

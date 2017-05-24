@@ -97,15 +97,15 @@ assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(manifold)
-sources.current.time = t
+sources.time = t
 
 # Deposit sources
 sources.deposit(ions)
 assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-sources.current.add_guards()
+sources.add_guards()
 assert np.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
-sources.current.copy_guards()
+sources.copy_guards()
 
 
 def concatenate(arr):
