@@ -1,9 +1,15 @@
 from skeletor import cppinit, Float, Float3, Particles, Sources
-from skeletor import ShearField
+from skeletor import Field
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
+
+# Order of particle interpolation
+order = 1
+
+# Required number of guard layers on each side
+ghost = order//2 + 1
 
 # Quiet start
 quiet = True
@@ -18,7 +24,7 @@ dt = 0.5e-3
 t = 0
 
 # Simulation time
-tend = np.pi/4
+tend = np.pi/6
 
 # Number of time steps
 nt = int((tend-t)/dt)
@@ -42,7 +48,11 @@ ampl = 0.2
 # Number of grid points in x- and y-direction
 nx, ny = 64, 64
 
-Lx, Ly = 1, 1
+# Box size
+Lx, Ly = 1.0, 1.0
+
+# Coordinate origin
+x0, y0 = -Lx/2, -Ly/2
 
 dx, dy = Lx/nx, Ly/ny
 
@@ -69,8 +79,8 @@ else:
     a = Lx*np.random.uniform(size=N).astype(Float)
     b = Ly*np.random.uniform(size=N).astype(Float)
 
-a *= dx
-b *= dy
+a = x0 + a*dx
+b = y0 + b*dy
 
 
 def x_an(ap, bp, t):
@@ -178,7 +188,8 @@ idproc, nvp = cppinit(comm)
 
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
-manifold = ShearingManifold(nx, ny, comm, S=S, Omega=Omega, Lx=Lx, Ly=Ly)
+manifold = ShearingManifold(nx, ny, comm, lbx=ghost, lby=ghost,
+                            S=S, Omega=Omega, x0=x0, y0=y0, Lx=Lx, Ly=Ly)
 
 # x- and y-grid
 xx, yy = np.meshgrid(manifold.x, manifold.y)
@@ -188,7 +199,8 @@ xx, yy = np.meshgrid(manifold.x, manifold.y)
 Nmax = int(1.25*N/nvp)
 
 # Create particle array
-ions = Particles(manifold, Nmax, time=dt/2, charge=charge, mass=mass)
+ions = Particles(manifold, Nmax, time=dt/2, charge=charge, mass=mass,
+                 order=order)
 
 # Assign particles to subdomains
 ions.initialize(x, y, vx, vy, vz)
@@ -208,10 +220,10 @@ sources_periodic = Sources(manifold, time=0)
 # Deposit sources
 sources.deposit(ions)
 assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
-sources.current.add_guards()
+sources.add_guards()
 assert np.isclose(comm.allreduce(
     sources.rho.trim().sum(), op=MPI.SUM), N*charge/npc)
-sources.current.copy_guards()
+sources.copy_guards()
 
 # Copy density into a shear field
 sources_periodic.rho.active = sources.rho.trim()
@@ -221,11 +233,11 @@ sources_periodic.Jy.active = sources.Jy.trim()
 ag = manifold.x
 
 # Electric field
-E = ShearField(manifold, dtype=Float3)
+E = Field(manifold, time=0, dtype=Float3)
 E.fill((0.0, 0.0, 0.0))
 
 # Magnetic field
-B = ShearField(manifold, dtype=Float3)
+B = Field(manifold, time=0, dtype=Float3)
 B.fill((0.0, 0.0, 0.0))
 
 
@@ -279,7 +291,7 @@ if plot:
         ax2.set_ylim(-1*ampl, 1*ampl)
         ax3.set_ylim(-2*ampl, 2*ampl)
         for ax in (ax1, ax2, ax3):
-            ax.set_xlim(0, Lx)
+            ax.set_xlim(x0, x0 + Lx)
 
 ##########################################################################
 # Main loop over time                                                    #
@@ -288,10 +300,10 @@ if plot:
 for it in range(nt):
     # Deposit sources
     sources.deposit(ions)
-    sources.current.time = t
-    sources.current.add_guards()
+    sources.time = t
+    sources.add_guards()
 
-    sources.current.copy_guards()
+    sources.copy_guards()
 
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
@@ -349,7 +361,7 @@ for it in range(nt):
                 im6[0].set_ydata((global_Jy_periodic/global_rho_periodic).
                                  mean(axis=0))
                 xp_par = euler(ag, 0, t)
-                xp_par %= Lx
+                xp_par = (xp_par - x0) % manifold.Lx + x0
                 ind = np.argsort(xp_par)
                 im4[1].set_data(xp_par[ind], rho_an(ag, t)[ind])
                 im5[1].set_data(xp_par[ind], vx_an(ag, 0, t)[ind]
