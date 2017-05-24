@@ -10,5 +10,6 @@ from .ohm import Ohm
 from .faraday import Faraday
 from .sources import Sources
 from .initial_condition import InitialCondition, DensityPertubation
+from .initial_condition import QuietMaxwellian
 from .io import IO
 from .state import State
