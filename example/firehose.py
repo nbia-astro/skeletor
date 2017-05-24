@@ -1,21 +1,17 @@
 from skeletor import Float3, Field, Particles
-from skeletor import Ohm, Faraday, State
+from skeletor import Ohm, Faraday, State, QuietMaxwellian
 from skeletor.manifolds.second_order import Manifold
 from skeletor.time_steppers.predictor_corrector import TimeStepper
 import numpy as np
 from numpy.random import normal
 from scipy.optimize import newton
 from mpi4py.MPI import COMM_WORLD as comm
-from scipy.special import erfinv
 
 fitplot = True
 plot = False
-# Quiet start
-quiet = True
+
 # Number of grid points in x- and y-direction
 nx, ny = 32, 1
-
-np.random.seed(1928346143)
 
 
 def det(omega, kpar):
@@ -112,48 +108,6 @@ theta = np.arctan(iky/ikx) if ikx != 0 else np.pi/2
 # Simulation time
 tend = 40
 
-# Uniform distribution of particle positions (quiet start)
-sqrt_npc = int(np.sqrt(npc))
-assert sqrt_npc**2 == npc
-a = (np.arange(sqrt_npc) + 0.5)/sqrt_npc
-x_cell, y_cell = np.meshgrid(a, a)
-x_cell = x_cell.flatten()
-y_cell = y_cell.flatten()
-
-if comm.rank == 0:
-    R = (np.arange(npc) + 0.5)/npc
-    vx_cell = erfinv(2*R - 1)*np.sqrt(2)*vtx
-    vy_cell = erfinv(2*R - 1)*np.sqrt(2)*vty
-    vz_cell = erfinv(2*R - 1)*np.sqrt(2)*vtz
-    np.random.shuffle(vx_cell)
-    np.random.shuffle(vy_cell)
-    np.random.shuffle(vz_cell)
-    for i in range(nx):
-        for j in range(ny):
-            if i == 0 and j == 0:
-                x = x_cell + i
-                y = y_cell + j
-                vx = vx_cell
-                vy = vy_cell
-                vz = vz_cell
-            else:
-                x = np.concatenate((x, x_cell + i))
-                y = np.concatenate((y, y_cell + j))
-                vx = np.concatenate((vx, vx_cell))
-                vy = np.concatenate((vy, vy_cell))
-                vz = np.concatenate((vz, vz_cell))
-else:
-    x, y, vx, vy, vz = None, None, None, None, None
-
-x = comm.bcast(x, root=0)
-y = comm.bcast(y, root=0)
-vx = comm.bcast(vx, root=0)
-vy = comm.bcast(vy, root=0)
-vz = comm.bcast(vz, root=0)
-
-x *= dx
-y *= dy
-
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
 manifold = Manifold(nx, ny, comm, Lx=Lx, Ly=Ly, lbx=2, lby=2)
@@ -174,9 +128,8 @@ Nmax = int(1.5*N/comm.size)
 
 # Create particle array
 ions = Particles(manifold, Nmax, charge=charge, mass=mass)
-
-# Assign particles to subdomains
-ions.initialize(x, y, vx, vy, vz)
+init = QuietMaxwellian(npc, vtx, vty, vtz)
+init(manifold, ions)
 
 # Perturbation to magnetic field
 # Add background magnetic field
@@ -270,9 +223,6 @@ if comm.rank == 0:
         B_mag = np.sqrt(Bx_mag**2 + By_mag**2 + Bz_mag**2)
         time = np.array(time)
 
-        # TODO: Solve this here!
-        gamma_t = 0.18894406899999999
-
         from scipy.optimize import curve_fit
 
         # Exponential growth function
@@ -288,19 +238,19 @@ if comm.rank == 0:
         last = int(0.8*nt/20)
         popt, pcov = curve_fit(lin_func, time[first:last],
                                np.log(B_mag[first:last]))
-        # plt.figure(2)
-        # plt.semilogy(time, Bx_mag, label=r"$|\delta B_x|$")
-        # plt.semilogy(time, By_mag, label=r"$|\delta B_y|$")
-        # plt.semilogy(time, Bz_mag, label=r"$|\delta B_z|$")
-        # plt.semilogy(time, B_mag, label=r"$|\delta B|$")
+        plt.figure(2)
+        plt.semilogy(time, Bx_mag, label=r"$|\delta B_x|$")
+        plt.semilogy(time, By_mag, label=r"$|\delta B_y|$")
+        plt.semilogy(time, Bz_mag, label=r"$|\delta B_z|$")
+        plt.semilogy(time, B_mag, label=r"$|\delta B|$")
         gamma_f = popt[1]
-        # plt.semilogy(time, func(time-3, 1e-6, popt[1]), '--',
-        #              label=r"Fit: $\gamma = %.5f$" % gamma_f)
-        # plt.semilogy(time, func(time-3, 1e-6, gamma_t), 'k-',
-        #              label=r"Theory: $\gamma = %.5f$" % gamma_t)
-        # plt.legend(frameon=False, loc=2)
+        plt.semilogy(time, func(time-3, 1e-6, popt[1]), '--',
+                     label=r"Fit: $\gamma = %.5f$" % gamma_f)
+        plt.semilogy(time, func(time-3, 1e-6, gamma_t), 'k-',
+                     label=r"Theory: $\gamma = %.5f$" % gamma_t)
+        plt.legend(frameon=False, loc=2)
         # plt.savefig("parallel-firehose.pdf")
         err = (gamma_t - gamma_f)/gamma_t
         print("Relative error: {}".format(err))
-        # plt.xlabel(r"$t$")
-        # plt.show()
+        plt.xlabel(r"$t$")
+        plt.show()
