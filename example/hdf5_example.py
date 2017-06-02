@@ -5,7 +5,8 @@ from skeletor.time_steppers.horowitz import TimeStepper
 import numpy as np
 from mpi4py import MPI
 from dispersion_solvers import HallDispersion
-from writer import write_grid, write_time, write_fields, write_particles
+from skeletor.writer import write_grid, write_time, write_fields
+from skeletor.writer import write_particles
 import h5py
 import subprocess
 comm = MPI.COMM_WORLD
