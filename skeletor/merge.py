@@ -54,6 +54,7 @@ def merge_files(snap, size):
 
     f_merged.close()
 
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import warnings
