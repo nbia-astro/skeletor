@@ -10,8 +10,6 @@ class HallDispersion():
     def __init__(self, kperp, va, cs, kpar=0, eta=0, etaH=0, etaA=0,
                  along_x=True, theta=0):
 
-        import numpy as np
-
         # Perpendicular wavenumber
         self.kperp = kperp
         # Alfvén speed
@@ -29,25 +27,37 @@ class HallDispersion():
         # True if rotation is needed
         self.along_x = along_x
 
+        self.__call__(kpar, kperp, theta)
+
+    def __call__(self, kpar, kperp, theta):
+        import numpy as np
+
         # Main calculation assumes $\vec{B} = B \hat{z}$
         kx = kperp
         kz = kpar
+        eta = self.eta
+        etaH = self.etaH
+        etaA = self.etaA
+        cs = self.cs
+        va = self.va
 
         # Define matrix
-        A = np.array( \
-        [[0, -kx, 0, -kz, 0, 0, 0], \
-        [-cs**2*kx, 0, 0, 0, kz*va**2, 0, -kx*va**2], \
-        [0, 0, 0, 0, 0, kz*va**2, 0], \
-        [-cs**2*kz, 0, 0, 0, 0, 0, 0], \
-        [0, kz, 0, 0, -1j*eta*kz**2  -1j*etaA*kz**2, -1j*etaH*kz**2, 1j*eta*kx*kz + 1j*etaA*kx*kz],\
-        [0, 0, kz, 0, 1j*etaH*kz**2, -1j*etaA*kz**2  -1j*eta*(kx**2 + kz**2), -1j*etaH*kx*kz],\
-        [0, -kx, 0, 0, 1j*eta*kx*kz + 1j*etaA*kx*kz,  1j*etaH*kx*kz, -1j*eta*kx**2 - 1j*etaA*kx**2]])
+        A = np.array([[0, -kx, 0, -kz, 0, 0, 0],
+                      [-cs**2*kx, 0, 0, 0, kz*va**2, 0, -kx*va**2],
+                      [0, 0, 0, 0, 0, kz*va**2, 0],
+                      [-cs**2*kz, 0, 0, 0, 0, 0, 0],
+                      [0, kz, 0, 0, -1j*eta*kz**2 - 1j*etaA*kz**2,
+                       -1j*etaH*kz**2, 1j*eta*kx*kz + 1j*etaA*kx*kz],
+                      [0, 0, kz, 0, 1j*etaH*kz**2, -1j*etaA*kz**2 -
+                       1j*eta*(kx**2 + kz**2), -1j*etaH*kx*kz],
+                      [0, -kx, 0, 0, 1j*eta*kx*kz + 1j*etaA*kx*kz,
+                      1j*etaH*kx*kz, -1j*eta*kx**2 - 1j*etaA*kx**2]])
 
         # Compute eigenvalues and eigenvectors
         # Notice that we calculate eig(-A)!
         (vals, vecs) = np.linalg.eig(-A)
 
-        if along_x:
+        if self.along_x:
             # Rotate around y-direction: x_new = z_old, y_new = y_old
             # and z_new = - x_old
             vecs2 = np.copy(vecs)
@@ -79,8 +89,8 @@ class HallDispersion():
             # Normalize eigenvectors
             vecs[:, k] /= np.max(real_positive[:, k])
 
-        # Sort solutions by the absolute value of the eigenvalues
-        index = np.argsort(np.abs(np.real(vals)))[::-1]
+        # Sort solutions by the value of the eigenvalues
+        index = np.argsort(np.real(vals))[::-1]
 
         # Frequencies
         omega = vals[index]
@@ -100,9 +110,9 @@ class HallDispersion():
 
 if __name__ == '__main__':
     import numpy as np
-    kx   = 2*np.pi
-    va   = 1
-    cs   = 1
-    oc   = 7
+    kx = 2*np.pi
+    va = 1
+    cs = 1
+    oc = 7
 
-    disp = HallDispersion(kperp=kx, va=va, cs=cs, eta = 0.)
+    disp = HallDispersion(kperp=kx, va=va, cs=cs, eta=0.)
