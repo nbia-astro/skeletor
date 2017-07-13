@@ -17,8 +17,6 @@ cpdef void calc_form_factors(
 
     cdef int nx = grid.nx
     cdef int ny = grid.ny
-    cdef real_t Lx = grid.dx*<real_t> nx
-    cdef real_t Ly = grid.dy*<real_t> ny
     cdef int kxp = qt.shape[0]
 
     cdef int nxh, nyh, ks, joff, kxps, j, k
@@ -31,8 +29,8 @@ cpdef void calc_form_factors(
     kxps = nxh - joff
     kxps = 0 if 0 > kxps else kxps
     kxps = kxp if kxp < kxps else kxps
-    dnx = 2.0*M_PI/Lx
-    dny = 2.0*M_PI/Ly
+    dnx = 2.0*M_PI/grid.Lx
+    dny = 2.0*M_PI/grid.Ly
 
     if kstrt > nxh:
         return
@@ -68,8 +66,6 @@ cpdef real_t grad_inv_del(
 
     cdef int nx = grid.nx
     cdef int ny = grid.ny
-    cdef real_t Lx = grid.dx*<real_t> nx
-    cdef real_t Ly = grid.dy*<real_t> ny
     cdef int kxp = qt.shape[0]
     cdef double wp = 0.0
 
@@ -84,8 +80,8 @@ cpdef real_t grad_inv_del(
     kxps = nxh - joff
     kxps = 0 if 0 > kxps else kxps
     kxps = kxp if kxp < kxps else kxps
-    dnx = 2.0*M_PI/Lx
-    dny = 2.0*M_PI/Ly
+    dnx = 2.0*M_PI/grid.Lx
+    dny = 2.0*M_PI/grid.Ly
     zero = 0.0
 
     if kstrt > nxh:
