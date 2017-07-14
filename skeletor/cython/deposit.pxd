@@ -132,7 +132,7 @@ cdef inline void deposit_particle_tsc_fix(particle_t particle, real4_t[:,:]
         cdef real_t x_boost
 
         cdef bint lower = 0.0 <= particle.y < 1.0
-        cdef bint upper = grid.nx - 1.0 <= particle.y < grid.ny
+        cdef bint upper = grid.ny - 1.0 <= particle.y < grid.ny
 
         if lower or upper:
                 nx = <real_t> grid.nx
