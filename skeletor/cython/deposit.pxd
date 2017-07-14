@@ -172,10 +172,10 @@ cdef inline void deposit_particle_tsc_fix(particle_t particle, real4_t[:,:]
         wpy = 0.5*(0.5 + dy)**2
         wmy = 1.0 - (w0y + wpy)
 
-        # Particle velocity relative to the background shear
-        vx += S*(particle.y*grid.dy + grid.y0)
-
         if lower:
+                # Particle velocity relative to the background shear
+                vx += S*(particle.y*grid.dy + grid.y0 + grid.Ly)
+
                 current[iy-1 ,ix-1].t += wmy*wmx
                 current[iy-1 ,ix-1].x += wmy*wmx*vx
                 current[iy-1 ,ix-1].y += wmy*wmx*particle.vy
@@ -192,6 +192,9 @@ cdef inline void deposit_particle_tsc_fix(particle_t particle, real4_t[:,:]
                 current[iy-1 ,ix+1].z += wmy*wpx*particle.vz
 
         if upper:
+                # Particle velocity relative to the background shear
+                vx += S*(particle.y*grid.dy + grid.y0 - grid.Ly)
+
                 current[iy+1, ix-1].t += wpy*wmx
                 current[iy+1, ix-1].x += wpy*wmx*vx
                 current[iy+1, ix-1].y += wpy*wmx*particle.vy
