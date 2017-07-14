@@ -32,3 +32,18 @@ def deposit_tsc(particle_t[:] particles, real4_t[:,:] current,
     # Density deposition
     for ip in range(Np):
         deposit_particle_tsc(particles[ip], current, grid, S, offset)
+
+def deposit_tsc_fix(particle_t[:] particles, real4_t[:,:] current,
+            grid_t grid, real_t S, real_t t):
+
+    cdef int Np = particles.shape[0]
+    cdef int ip
+
+    cdef real2_t offset
+
+    offset.x = grid.lbx - 0.5
+    offset.y = grid.lby - 0.5 - grid.noff
+
+    # Density deposition
+    for ip in range(Np):
+        deposit_particle_tsc_fix(particles[ip], current, grid, S, t, offset)
