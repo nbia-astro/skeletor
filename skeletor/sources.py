@@ -44,10 +44,33 @@ class Sources(Field):
 
         self.boundaries_set = False
 
-        self.normalize(particles)
+        # self.normalize(particles)
 
         if set_boundaries:
             self.set_boundaries()
+
+    def deposit_fix(self, particles):
+
+        if particles.order == 1:
+            from .cython.deposit import deposit_cic_fix as cython_deposit
+        elif particles.order == 2:
+            from .cython.deposit import deposit_tsc_fix as cython_deposit
+        else:
+            msg = 'Interpolation order {} not implemented.'
+            raise RuntimeError(msg.format(particles.order))
+
+        assert not self.boundaries_set
+
+        self[:self.grid.lby, :] = (0.0, 0.0, 0.0, 0.0)
+        self[self.grid.uby:, :] = (0.0, 0.0, 0.0, 0.0)
+
+        # Rate of shear
+        S = getattr(self.grid, 'S', 0.0)
+
+        t = particles.time
+        cython_deposit(particles[:particles.N], self, self.grid, S, t)
+
+        self.normalize(particles)
 
     def normalize(self, particles):
         """Normalize the charge and current densities such that the mean charge

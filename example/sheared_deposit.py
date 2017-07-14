@@ -1,6 +1,7 @@
 from skeletor import Float, Particles, Sources
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy as np
+from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 import matplotlib.pyplot as plt
 
@@ -32,8 +33,7 @@ N = npc*nx*ny
 # Create numerical grid. This contains information about the extent of
 # the subdomain assigned to each processor.
 manifold = ShearingManifold(nx, ny, comm,
-                            Lx=nx, Ly=ny, x0=-nx/2, y0=-ny/2,
-                            S=S, Omega=Omega, lbx=2, lby=2)
+                            lbx=2, lby=2, Lx=nx, Ly=ny, S=S, Omega=Omega)
 
 # x- and y-grid
 xx, yy = np.meshgrid(manifold.x, manifold.y)
@@ -82,31 +82,19 @@ vy = np.zeros_like(vx)
 vz = np.zeros_like(vx)
 
 # Assign particles to subdomains (zero velocity and uniform distribution)
-N = 2
-x = np.array([-1, -1+nx-1e-8])
-y = np.array([-1, -1+ny-1e-8])
-vx = np.ones_like(x)
-vy = np.ones_like(x)
-vz = np.zeros_like(x)
 ions.initialize(x, y, vx, vy, vz)
-ions.N = 2
-ions["x"][:ions.N] = x
-ions["y"][:ions.N] = y
-ions["vx"][:ions.N] = vx
-ions["vy"][:ions.N] = vy
-ions["vz"][:ions.N] = vz
 
 # Set boundary condition on particles
-# ions.shear_periodic_y()
-# ions.periodic_x()
+ions.shear_periodic_y()
+ions.periodic_x()
 
 # Make sure particles actually reside in the local subdomain
-# assert all(ions["y"][:ions.N] >= manifold.edges[0])
-# assert all(ions["y"][:ions.N] < manifold.edges[1])
+assert all(ions["y"][:ions.N] >= manifold.edges[0])
+assert all(ions["y"][:ions.N] < manifold.edges[1])
 
 # Make sure the numbers of particles in each subdomain add up to the
 # total number of particles
-# assert comm.allreduce(ions.N, op=MPI.SUM) == N
+assert comm.allreduce(ions.N, op=MPI.SUM) == N
 
 # Initialize sources
 sources = Sources(manifold)
@@ -114,6 +102,10 @@ sources.time = t
 
 # Deposit sources
 sources.deposit(ions)
+sources.deposit_fix(ions)
+sources.add_guards_x()
+sources.add_guards_y()
+sources.copy_guards()
 # assert np.isclose(sources.rho.sum(), ions.N*charge/npc)
 # sources.add_guards()
 # assert np.isclose(comm.allreduce(
@@ -127,17 +119,14 @@ def concatenate(arr):
     return np.concatenate(comm.allgather(arr))
 
 
-# global_rho = concatenate(sources.rho.trim())
-# global_Jx = concatenate(sources.Jx.trim())
+global_rho = concatenate(sources.rho.trim())
+global_Jx = concatenate(sources.Jx.trim())
 
 plt.rc('image', origin='lower', interpolation='nearest', cmap='coolwarm')
-plt.figure(1)
-plt.clf()
-plt.imshow(sources.rho)
+# plt.figure(1)
+# plt.clf()
+# plt.plot(manifold.x, (global_Jx/global_rho)[:, 5])
 plt.figure(2)
 plt.clf()
-plt.imshow(sources.Jx)
-plt.figure(3)
-plt.clf()
-plt.imshow(sources.Jy)
+plt.imshow(sources.rho)
 plt.show()
