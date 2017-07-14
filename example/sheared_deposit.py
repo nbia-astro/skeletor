@@ -1,7 +1,6 @@
 from skeletor import Float, Particles, Sources
 from skeletor.manifolds.second_order import ShearingManifold
 import numpy as np
-from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 import matplotlib.pyplot as plt
 
