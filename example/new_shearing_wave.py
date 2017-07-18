@@ -1,11 +1,15 @@
 from skeletor import Float3, Field, Particles, Sources
 from skeletor import Ohm, DensityPertubation
 from skeletor.manifolds.second_order import ShearingManifold
+from skeletor.writer import write_grid, write_time, write_fields
+import h5py
+import subprocess
 import numpy as np
 from mpi4py import MPI
 from mpi4py.MPI import COMM_WORLD as comm
 
-plot = True
+plot = False
+store = True
 
 # Order of particle interpolation
 order = 2
@@ -16,9 +20,9 @@ ghost = order//2 + 1
 # Quiet start
 quiet = True
 # Number of grid points in x- and y-direction
-nx, ny = 32, 64
+nx, ny = 128, 32
 # Average number of particles per cell
-npc = 256
+npc = 1024*4
 # Particle charge and mass
 charge = 1
 mass = 1.0
@@ -39,22 +43,22 @@ cs = np.sqrt(Te/mass)
 alpha = Te/charge
 
 # Box size
-Lx, Ly = 2.0, 1.0
+Lx, Ly = 4.0, 1.0
 x0, y0 = -Lx/2, -Ly/2
 
 # Wavenumbers
 ikx = -1
-iky = -1
+iky = -2
 
 # Wave vector and its modulus
-t0 = Lx/Ly/S
+t0 = 0#Lx/Ly/S
 kx = 2*np.pi*ikx/Lx
 ky0 = 2*np.pi*iky/Ly
 k = np.sqrt(kx*kx + ky0*ky0)
 
 kappa2 = 2.0*(2*Omega + S)*Omega
 
-dQ = 0.001
+dQ = 0.2
 dp_p = -cs*(1j*kx*cs + 2*Omega)/(k**2*cs**2 + kappa2 + 2*S*1j*kx*cs)*dQ
 dp_m = -cs*(1j*kx*cs - 2*Omega)/(k**2*cs**2 + kappa2 - 2*S*1j*kx*cs)*dQ
 dpy = 0.5*(dp_p + dp_m)
@@ -80,7 +84,7 @@ def rho_an(x, y, t):
 
 def ux_an(x, y, t):
     """Analytic x-velocity as function of x, y and t"""
-    return (dpx*phase(x, y, t) - S*y).real/rho_an(x, y, t)
+    return (dpx*phase(x, y, t)).real/rho_an(x, y, t)  - S*y
 
 def uy_an(x, y, t):
     """Analytic y-velocity as function of x, y and t"""
@@ -115,7 +119,7 @@ N = npc*nx*ny
 omega = k*cs
 
 # Simulation time
-tend = 5 + t0
+tend = 12.5
 
 # Number of time steps
 nt = int(tend/dt)
@@ -247,6 +251,12 @@ maxrho = []
 minrho = []
 rmsrho = []
 time = []
+
+if store:
+    snap = 0
+    subprocess.call('mkdir data', shell=True)
+    subprocess.call('mkdir data/id{}'.format(comm.rank), shell=True)
+
 for it in range(nt):
     # Push particles on each processor. This call also sends and
     # receives particles to and from other processors/subdomains.
@@ -279,6 +289,21 @@ for it in range(nt):
 
     local_rho_an = rho_an(xg, yg, t)
     diff2 += ((local_rho_an - local_rho)**2).mean()
+
+    if store:
+        if it % 10 == 0:
+            if comm.rank == 0:
+                print(t, it, dt)
+
+            filename = 'data/id{}/fields_doubleres_{:d}.h5'.format(comm.rank, snap)
+            file = h5py.File(filename, 'w')
+            write_grid(file, manifold, write_ghosts=True)
+            write_time(file, t, it)
+            write_fields(file, E, B, sources, write_ghosts=True)
+            file.close()
+
+            # Update snap shot number on all processors
+            snap += 1
 
     # Make figures
     if plot:
