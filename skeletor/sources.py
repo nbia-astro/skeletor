@@ -61,8 +61,10 @@ class Sources(Field):
 
         assert not self.boundaries_set
 
-        self[:self.grid.lby, :] = (0.0, 0.0, 0.0, 0.0)
-        self[self.grid.uby:, :] = (0.0, 0.0, 0.0, 0.0)
+        if self.grid.comm.rank == 0:
+            self[:self.grid.lby, :] = (0.0, 0.0, 0.0, 0.0)
+        if self.grid.comm.rank == self.grid.comm.size - 1:
+            self[self.grid.uby:, :] = (0.0, 0.0, 0.0, 0.0)
 
         # Rate of shear
         S = getattr(self.grid, 'S', 0.0)
