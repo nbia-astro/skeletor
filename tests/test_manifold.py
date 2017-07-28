@@ -1,6 +1,4 @@
-from skeletor import Float, Float3, Field
-# from skeletor.manifolds.ppic2 import Manifold as ppic2
-# from skeletor.manifolds.mpifft4py import Manifold as mpifft4py
+from skeletor import Field, Float, Float3
 from skeletor.manifolds.second_order import Manifold as second_order
 from mpi4py.MPI import COMM_WORLD as comm
 import numpy as np
@@ -46,7 +44,7 @@ def test_manifold():
     ky = 2*np.pi*iky/Ly
 
     # Error tolerance for single and double precision
-    eps_single = 2e-7
+    # eps_single = 2e-7
     eps_double = 1e-15
 
     # Second-order finite-difference manifold
@@ -63,6 +61,7 @@ def test_manifold():
     ky_eff = np.sin(ky*dy)/dy
     assert rms_diff(Ex, kx_eff*np.cos(phase)) < eps_double
     assert rms_diff(Ey, ky_eff*np.cos(phase)) < eps_double
+
 
 if __name__ == "__main__":
 
